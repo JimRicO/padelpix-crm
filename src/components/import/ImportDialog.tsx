@@ -233,7 +233,34 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
             
             <TabsContent value="json" className="flex-1 flex flex-col gap-4">
               <div className="text-sm text-muted-foreground">
-                Paste JSON array of club objects
+                Upload a JSON file or paste JSON array of club objects
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="flex items-center gap-2 px-4 py-2 border rounded-md cursor-pointer hover:bg-muted transition-colors">
+                  <Upload className="w-4 h-4" />
+                  <span className="text-sm">Upload .json file</span>
+                  <input
+                    type="file"
+                    accept=".json,application/json"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                          const content = event.target?.result as string;
+                          setRawData(content);
+                        };
+                        reader.onerror = () => {
+                          setParseError('Failed to read file');
+                        };
+                        reader.readAsText(file);
+                      }
+                      e.target.value = '';
+                    }}
+                  />
+                </label>
+                {rawData && <span className="text-sm text-muted-foreground">File loaded</span>}
               </div>
               <Textarea 
                 placeholder={`[\n  {\n    "name": "Padel Club One",\n    "instagram": "@padelclub1",\n    "city": "Cape Town",\n    "courts": 4\n  }\n]`}
