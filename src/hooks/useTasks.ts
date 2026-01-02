@@ -27,10 +27,10 @@ export function useTasks(clubId?: string) {
 interface CreateTaskData {
   club_id: string;
   title: string;
-  description?: string;
-  task_type?: string;
+  description?: string | null;
+  task_type?: string | null;
   priority?: 'high' | 'medium' | 'low';
-  due_date?: string;
+  due_date?: string | null;
 }
 
 export function useCreateTask() {
