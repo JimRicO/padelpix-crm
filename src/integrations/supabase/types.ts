@@ -14,16 +14,378 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      activities: {
+        Row: {
+          activity_date: string | null
+          activity_type: string
+          club_id: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          link: string | null
+          metadata: Json | null
+          title: string
+        }
+        Insert: {
+          activity_date?: string | null
+          activity_type: string
+          club_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          link?: string | null
+          metadata?: Json | null
+          title: string
+        }
+        Update: {
+          activity_date?: string | null
+          activity_type?: string
+          club_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          link?: string | null
+          metadata?: Json | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activities_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clubs: {
+        Row: {
+          address: string | null
+          city: string | null
+          club_name: string
+          contact_name: string | null
+          content_created_date: string | null
+          converted_date: string | null
+          country: string | null
+          created_at: string | null
+          created_by: string | null
+          email: string | null
+          first_comment_date: string | null
+          first_dm_date: string | null
+          first_response_date: string | null
+          followed_date: string | null
+          id: string
+          instagram_handle: string | null
+          next_action: string | null
+          next_action_date: string | null
+          notes: string | null
+          number_of_courts: number | null
+          pipeline_stage: Database["public"]["Enums"]["pipeline_stage"] | null
+          priority: Database["public"]["Enums"]["priority_level"] | null
+          response_time_hours: number | null
+          tier: Database["public"]["Enums"]["club_tier"] | null
+          total_comments: number | null
+          total_content_pieces: number | null
+          total_dms: number | null
+          trial_start_date: string | null
+          updated_at: string | null
+          website: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          club_name: string
+          contact_name?: string | null
+          content_created_date?: string | null
+          converted_date?: string | null
+          country?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          email?: string | null
+          first_comment_date?: string | null
+          first_dm_date?: string | null
+          first_response_date?: string | null
+          followed_date?: string | null
+          id?: string
+          instagram_handle?: string | null
+          next_action?: string | null
+          next_action_date?: string | null
+          notes?: string | null
+          number_of_courts?: number | null
+          pipeline_stage?: Database["public"]["Enums"]["pipeline_stage"] | null
+          priority?: Database["public"]["Enums"]["priority_level"] | null
+          response_time_hours?: number | null
+          tier?: Database["public"]["Enums"]["club_tier"] | null
+          total_comments?: number | null
+          total_content_pieces?: number | null
+          total_dms?: number | null
+          trial_start_date?: string | null
+          updated_at?: string | null
+          website?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          club_name?: string
+          contact_name?: string | null
+          content_created_date?: string | null
+          converted_date?: string | null
+          country?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          email?: string | null
+          first_comment_date?: string | null
+          first_dm_date?: string | null
+          first_response_date?: string | null
+          followed_date?: string | null
+          id?: string
+          instagram_handle?: string | null
+          next_action?: string | null
+          next_action_date?: string | null
+          notes?: string | null
+          number_of_courts?: number | null
+          pipeline_stage?: Database["public"]["Enums"]["pipeline_stage"] | null
+          priority?: Database["public"]["Enums"]["priority_level"] | null
+          response_time_hours?: number | null
+          tier?: Database["public"]["Enums"]["club_tier"] | null
+          total_comments?: number | null
+          total_content_pieces?: number | null
+          total_dms?: number | null
+          trial_start_date?: string | null
+          updated_at?: string | null
+          website?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
+      content_pieces: {
+        Row: {
+          club_id: string | null
+          club_response: string | null
+          created_at: string | null
+          created_by: string | null
+          created_date: string | null
+          description: string | null
+          dimensions: string | null
+          id: string
+          image_url: string | null
+          sent_date: string | null
+          status: string | null
+          style: string | null
+          thumbnail_url: string | null
+          title: string
+        }
+        Insert: {
+          club_id?: string | null
+          club_response?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          created_date?: string | null
+          description?: string | null
+          dimensions?: string | null
+          id?: string
+          image_url?: string | null
+          sent_date?: string | null
+          status?: string | null
+          style?: string | null
+          thumbnail_url?: string | null
+          title: string
+        }
+        Update: {
+          club_id?: string | null
+          club_response?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          created_date?: string | null
+          description?: string | null
+          dimensions?: string | null
+          id?: string
+          image_url?: string | null
+          sent_date?: string | null
+          status?: string | null
+          style?: string | null
+          thumbnail_url?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_pieces_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dm_templates: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string
+          last_used: string | null
+          template_body: string
+          template_name: string
+          template_type: string | null
+          updated_at: string | null
+          use_count: number | null
+          variables: string[] | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          last_used?: string | null
+          template_body: string
+          template_name: string
+          template_type?: string | null
+          updated_at?: string | null
+          use_count?: number | null
+          variables?: string[] | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          last_used?: string | null
+          template_body?: string
+          template_name?: string
+          template_type?: string | null
+          updated_at?: string | null
+          use_count?: number | null
+          variables?: string[] | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          club_id: string | null
+          completed_date: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          priority: Database["public"]["Enums"]["priority_level"] | null
+          status: string | null
+          task_type: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          club_id?: string | null
+          completed_date?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: Database["public"]["Enums"]["priority_level"] | null
+          status?: string | null
+          task_type?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          club_id?: string | null
+          completed_date?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: Database["public"]["Enums"]["priority_level"] | null
+          status?: string | null
+          task_type?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
+      club_tier: "enterprise" | "multi_court" | "boutique"
+      pipeline_stage:
+        | "not_contacted"
+        | "followed"
+        | "engaged"
+        | "dm_sent"
+        | "responded"
+        | "content_created"
+        | "trial"
+        | "customer"
+        | "dead"
+      priority_level: "high" | "medium" | "low"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +512,21 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+      club_tier: ["enterprise", "multi_court", "boutique"],
+      pipeline_stage: [
+        "not_contacted",
+        "followed",
+        "engaged",
+        "dm_sent",
+        "responded",
+        "content_created",
+        "trial",
+        "customer",
+        "dead",
+      ],
+      priority_level: ["high", "medium", "low"],
+    },
   },
 } as const
