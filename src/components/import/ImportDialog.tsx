@@ -121,19 +121,32 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
 
   const parseJSON = (text: string): ParsedClub[] => {
     const data = JSON.parse(text);
-    const clubs = Array.isArray(data) ? data : [data];
     
-    return clubs.map(item => {
+    // Handle nested structures like { padel_clubs: [...] } or { clubs: [...] }
+    let clubs: unknown[];
+    if (Array.isArray(data)) {
+      clubs = data;
+    } else if (data.padel_clubs && Array.isArray(data.padel_clubs)) {
+      clubs = data.padel_clubs;
+    } else if (data.clubs && Array.isArray(data.clubs)) {
+      clubs = data.clubs;
+    } else if (typeof data === 'object') {
+      clubs = [data];
+    } else {
+      throw new Error('Invalid JSON structure');
+    }
+    
+    return clubs.map((item: Record<string, unknown>) => {
       const club: ParsedClub = {
-        club_name: item.club_name || item.clubName || item.name || '',
-        instagram_handle: cleanInstagramHandle(item.instagram_handle || item.instagram || item.ig),
-        city: item.city,
-        country: item.country,
-        website: item.website || item.url,
-        whatsapp: item.whatsapp || item.phone,
-        email: item.email,
-        number_of_courts: parseInt(item.number_of_courts || item.courts || item.numCourts, 10) || undefined,
-        address: item.address,
+        club_name: (item.club_name || item.clubName || item.name || '') as string,
+        instagram_handle: cleanInstagramHandle((item.instagram_handle || item.instagram || item.ig) as string | undefined),
+        city: item.city as string | undefined,
+        country: item.country as string | undefined,
+        website: (item.website || item.url) as string | undefined,
+        whatsapp: (item.whatsapp || item.whatsapp_number || item.phone) as string | undefined,
+        email: item.email as string | undefined,
+        number_of_courts: parseInt(String(item.number_of_courts || item.courts || item.numCourts || ''), 10) || undefined,
+        address: item.address as string | undefined,
       };
       
       club.tier = inferTier(club.number_of_courts);
