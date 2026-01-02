@@ -22,6 +22,7 @@ interface ParsedClub {
   email?: string;
   number_of_courts?: number;
   address?: string;
+  contact_name?: string;
   tier?: 'enterprise' | 'multi_court' | 'boutique';
   priority?: 'high' | 'medium' | 'low';
   isDuplicate?: boolean;
@@ -147,6 +148,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
         email: item.email as string | undefined,
         number_of_courts: parseInt(String(item.number_of_courts || item.courts || item.numCourts || ''), 10) || undefined,
         address: item.address as string | undefined,
+        contact_name: (item.owner_or_manager_name || item.contact_name || item.owner || item.manager) as string | undefined,
       };
       
       club.tier = inferTier(club.number_of_courts);
