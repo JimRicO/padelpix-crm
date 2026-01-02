@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Instagram, Globe, Phone, Mail, MapPin, Trash2, Save, ExternalLink } from 'lucide-react';
+import { Instagram, Globe, Phone, Mail, MapPin, Trash2, Save, ExternalLink, Users } from 'lucide-react';
 
 interface ClubInfoTabProps {
   club: Club;
@@ -26,6 +26,7 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
     address: club.address || '',
     number_of_courts: club.number_of_courts || '',
     contact_name: club.contact_name || '',
+    ownership_group: club.ownership_group || '',
     pipeline_stage: club.pipeline_stage || 'not_contacted',
     tier: club.tier || '',
     priority: club.priority || 'medium',
@@ -71,6 +72,17 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
             onChange={(e) => setFormData(prev => ({ ...prev, contact_name: e.target.value }))}
           />
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label className="flex items-center gap-2">
+          <Users className="w-4 h-4" /> Ownership Group
+        </Label>
+        <Input 
+          value={formData.ownership_group}
+          onChange={(e) => setFormData(prev => ({ ...prev, ownership_group: e.target.value }))}
+          placeholder="e.g. Africa Padel"
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
