@@ -25,22 +25,25 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    const prompt = `Extract the city and country from each South African address. 
+    const prompt = `Extract the suburb, city, and country from each South African address.
 
-IMPORTANT RULES:
-1. Map suburbs to their parent city. For example:
-   - Randburg, Dunkeld, Sandton, Rosebank, Fourways, Bryanston, Midrand → Johannesburg
-   - Claremont, Constantia, Sea Point, Camps Bay, Green Point → Cape Town
-   - Umhlanga, Ballito, Durban North → Durban
-   - Centurion, Hatfield, Menlyn → Pretoria
-2. Default country to "South Africa" unless the address clearly indicates another country
-3. Return the major city, not the suburb name
+CRITICAL RULES:
+1. "city" MUST be the major metropolitan city, NEVER a suburb or province:
+   - Valid cities: Johannesburg, Cape Town, Durban, Pretoria, Port Elizabeth, Bloemfontein, East London, Polokwane, Nelspruit, Kimberley
+   - Gauteng, Western Cape, KwaZulu-Natal, etc. are PROVINCES, not cities - never return these as city
+   - Randburg, Sandton, Fourways, Dunkeld, Rosebank, Bryanston, Midrand are SUBURBS of Johannesburg
+   - Claremont, Constantia, Sea Point are SUBURBS of Cape Town
+   - Umhlanga, Ballito are SUBURBS of Durban
+   
+2. "suburb" should be the specific area/neighborhood from the address
+
+3. Default country to "South Africa"
 
 Addresses:
 ${addresses.map((addr: string, i: number) => `${i + 1}. ${addr}`).join('\n')}
 
-Return ONLY valid JSON array, no explanation. Example:
-[{"city": "Johannesburg", "country": "South Africa"}, {"city": "Cape Town", "country": "South Africa"}]`;
+Return ONLY valid JSON array with "suburb", "city", "country" fields. Example:
+[{"suburb": "Sandton", "city": "Johannesburg", "country": "South Africa"}]`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',

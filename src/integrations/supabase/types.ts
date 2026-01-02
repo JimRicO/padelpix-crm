@@ -87,6 +87,7 @@ export type Database = {
           pipeline_stage: Database["public"]["Enums"]["pipeline_stage"] | null
           priority: Database["public"]["Enums"]["priority_level"] | null
           response_time_hours: number | null
+          suburb: string | null
           tier: Database["public"]["Enums"]["club_tier"] | null
           total_comments: number | null
           total_content_pieces: number | null
@@ -121,6 +122,7 @@ export type Database = {
           pipeline_stage?: Database["public"]["Enums"]["pipeline_stage"] | null
           priority?: Database["public"]["Enums"]["priority_level"] | null
           response_time_hours?: number | null
+          suburb?: string | null
           tier?: Database["public"]["Enums"]["club_tier"] | null
           total_comments?: number | null
           total_content_pieces?: number | null
@@ -155,6 +157,7 @@ export type Database = {
           pipeline_stage?: Database["public"]["Enums"]["pipeline_stage"] | null
           priority?: Database["public"]["Enums"]["priority_level"] | null
           response_time_hours?: number | null
+          suburb?: string | null
           tier?: Database["public"]["Enums"]["club_tier"] | null
           total_comments?: number | null
           total_content_pieces?: number | null
