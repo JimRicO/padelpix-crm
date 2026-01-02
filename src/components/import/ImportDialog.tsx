@@ -17,6 +17,7 @@ interface ImportDialogProps {
 interface ParsedClub {
   club_name: string;
   instagram_handle?: string;
+  suburb?: string;
   city?: string;
   country?: string;
   website?: string;
@@ -218,6 +219,9 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
       
       addressesToExtract.forEach((item, i) => {
         if (locations[i]) {
+          if (!updatedClubs[item.index].suburb && locations[i].suburb) {
+            updatedClubs[item.index].suburb = locations[i].suburb;
+          }
           if (!updatedClubs[item.index].city && locations[i].city) {
             updatedClubs[item.index].city = locations[i].city;
           }
