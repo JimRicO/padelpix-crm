@@ -146,16 +146,39 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
         if (coaches.length === 0) coaches = undefined;
       }
 
+      const address = item.address as string | undefined;
+      
+      // Extract city and country from address if not provided
+      let city = item.city as string | undefined;
+      let country = item.country as string | undefined;
+      
+      if (address && (!city || !country)) {
+        const parts = address.split(',').map(p => p.trim());
+        if (parts.length >= 2) {
+          // Try to extract city from address parts (usually second-to-last or area name)
+          if (!city && parts.length >= 2) {
+            // Get the second-to-last part, or second part if only 2 parts
+            city = parts.length > 2 ? parts[parts.length - 2] : parts[1];
+            // Clean up postal codes or province names
+            city = city?.replace(/\d{4,}/, '').trim();
+          }
+        }
+        // Default to South Africa if no country specified
+        if (!country) {
+          country = 'South Africa';
+        }
+      }
+
       const club: ParsedClub = {
         club_name: (item.club_name || item.clubName || item.name || '') as string,
         instagram_handle: cleanInstagramHandle((item.instagram_handle || item.instagram || item.ig) as string | undefined),
-        city: item.city as string | undefined,
-        country: item.country as string | undefined,
+        city,
+        country,
         website: (item.website || item.url) as string | undefined,
         whatsapp: (item.whatsapp || item.whatsapp_number || item.phone) as string | undefined,
         email: item.email as string | undefined,
         number_of_courts: parseInt(String(item.number_of_courts || item.courts || item.numCourts || ''), 10) || undefined,
-        address: item.address as string | undefined,
+        address,
         contact_name: (item.owner_or_manager_name || item.contact_name || item.owner || item.manager) as string | undefined,
         coaches,
       };
