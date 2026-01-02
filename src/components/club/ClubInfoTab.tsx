@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import { Club, PIPELINE_STAGES, TIERS, PRIORITIES, PriorityLevel } from '@/types/database';
-import { useUpdateClub, useDeleteClub } from '@/hooks/useClubs';
+import { useUpdateClub, useDeleteClub, useOwnershipGroups } from '@/hooks/useClubs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Instagram, Globe, Phone, Mail, MapPin, Trash2, Save, ExternalLink, Users } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Instagram, Globe, Phone, Mail, MapPin, Trash2, Save, ExternalLink, Users, Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface ClubInfoTabProps {
   club: Club;
@@ -36,6 +39,8 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
 
   const updateClub = useUpdateClub();
   const deleteClub = useDeleteClub();
+  const { data: ownershipGroups = [] } = useOwnershipGroups();
+  const [ownershipOpen, setOwnershipOpen] = useState(false);
 
   const handleSave = () => {
     updateClub.mutate({
@@ -78,11 +83,55 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
         <Label className="flex items-center gap-2">
           <Users className="w-4 h-4" /> Ownership Group
         </Label>
-        <Input 
-          value={formData.ownership_group}
-          onChange={(e) => setFormData(prev => ({ ...prev, ownership_group: e.target.value }))}
-          placeholder="e.g. Africa Padel"
-        />
+        <Popover open={ownershipOpen} onOpenChange={setOwnershipOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={ownershipOpen}
+              className="w-full justify-between font-normal"
+            >
+              {formData.ownership_group || "Select or type ownership..."}
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-full p-0 bg-popover" align="start">
+            <Command>
+              <CommandInput 
+                placeholder="Search or add new..." 
+                value={formData.ownership_group}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, ownership_group: value }))}
+              />
+              <CommandList>
+                <CommandEmpty>
+                  <div className="p-2 text-sm text-muted-foreground">
+                    Press enter to use "{formData.ownership_group}"
+                  </div>
+                </CommandEmpty>
+                <CommandGroup>
+                  {ownershipGroups.map((group) => (
+                    <CommandItem
+                      key={group}
+                      value={group}
+                      onSelect={() => {
+                        setFormData(prev => ({ ...prev, ownership_group: group }));
+                        setOwnershipOpen(false);
+                      }}
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          formData.ownership_group === group ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      {group}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
