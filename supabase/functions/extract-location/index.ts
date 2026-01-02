@@ -25,12 +25,21 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    const prompt = `Extract the city and country from each address. Return a JSON array with objects containing "city" and "country" fields for each address. If you can't determine a field, use null.
+    const prompt = `Extract the city and country from each South African address. 
+
+IMPORTANT RULES:
+1. Map suburbs to their parent city. For example:
+   - Randburg, Dunkeld, Sandton, Rosebank, Fourways, Bryanston, Midrand → Johannesburg
+   - Claremont, Constantia, Sea Point, Camps Bay, Green Point → Cape Town
+   - Umhlanga, Ballito, Durban North → Durban
+   - Centurion, Hatfield, Menlyn → Pretoria
+2. Default country to "South Africa" unless the address clearly indicates another country
+3. Return the major city, not the suburb name
 
 Addresses:
 ${addresses.map((addr: string, i: number) => `${i + 1}. ${addr}`).join('\n')}
 
-Return ONLY valid JSON array, no explanation. Example format:
+Return ONLY valid JSON array, no explanation. Example:
 [{"city": "Johannesburg", "country": "South Africa"}, {"city": "Cape Town", "country": "South Africa"}]`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -42,7 +51,7 @@ Return ONLY valid JSON array, no explanation. Example format:
       body: JSON.stringify({
         model: 'google/gemini-3-pro-preview',
         messages: [
-          { role: 'system', content: 'You are a location extraction assistant. Extract city and country from addresses. Always respond with valid JSON only.' },
+          { role: 'system', content: 'You are a South African geography expert. Extract city and country from addresses, mapping suburbs to their parent cities. Always respond with valid JSON only.' },
           { role: 'user', content: prompt }
         ],
       }),
