@@ -4,8 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useBulkCreateClubs, useClubs } from '@/hooks/useClubs';
-import { Upload, FileJson, FileSpreadsheet, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Upload, FileJson, FileSpreadsheet, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface ImportDialogProps {
   open: boolean;
@@ -34,6 +36,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
   const [parsedClubs, setParsedClubs] = useState<ParsedClub[]>([]);
   const [parseError, setParseError] = useState<string | null>(null);
   const [step, setStep] = useState<'input' | 'preview'>('input');
+  const [isExtractingLocations, setIsExtractingLocations] = useState(false);
   
   const { data: existingClubs } = useClubs();
   const bulkCreate = useBulkCreateClubs();
@@ -190,14 +193,62 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
     }).filter(c => c.club_name);
   };
 
-  const handleParse = (format: 'csv' | 'json') => {
+  const extractLocationsWithAI = async (clubs: ParsedClub[]): Promise<ParsedClub[]> => {
+    // Get addresses that need location extraction
+    const addressesToExtract = clubs
+      .map((club, index) => ({ index, address: club.address }))
+      .filter(item => item.address && (!clubs[item.index].city || !clubs[item.index].country));
+    
+    if (addressesToExtract.length === 0) return clubs;
+    
+    try {
+      setIsExtractingLocations(true);
+      const { data, error } = await supabase.functions.invoke('extract-location', {
+        body: { addresses: addressesToExtract.map(a => a.address) }
+      });
+      
+      if (error) {
+        console.error('Location extraction error:', error);
+        toast.error('Could not extract locations automatically');
+        return clubs;
+      }
+      
+      const locations = data?.locations || [];
+      const updatedClubs = [...clubs];
+      
+      addressesToExtract.forEach((item, i) => {
+        if (locations[i]) {
+          if (!updatedClubs[item.index].city && locations[i].city) {
+            updatedClubs[item.index].city = locations[i].city;
+          }
+          if (!updatedClubs[item.index].country && locations[i].country) {
+            updatedClubs[item.index].country = locations[i].country;
+          }
+        }
+      });
+      
+      return updatedClubs;
+    } catch (err) {
+      console.error('AI extraction failed:', err);
+      toast.error('Location extraction failed');
+      return clubs;
+    } finally {
+      setIsExtractingLocations(false);
+    }
+  };
+
+  const handleParse = async (format: 'csv' | 'json') => {
     setParseError(null);
     try {
-      const clubs = format === 'csv' ? parseCSV(rawData) : parseJSON(rawData);
+      let clubs = format === 'csv' ? parseCSV(rawData) : parseJSON(rawData);
       if (clubs.length === 0) {
         setParseError('No valid clubs found in the data');
         return;
       }
+      
+      // Use AI to extract locations from addresses
+      clubs = await extractLocationsWithAI(clubs);
+      
       setParsedClubs(clubs);
       setStep('preview');
     } catch (error) {
@@ -273,8 +324,15 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
                   {parseError}
                 </div>
               )}
-              <Button onClick={() => handleParse('csv')} disabled={!rawData.trim()}>
-                Preview Import
+              <Button onClick={() => handleParse('csv')} disabled={!rawData.trim() || isExtractingLocations}>
+                {isExtractingLocations ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Extracting locations...
+                  </>
+                ) : (
+                  'Preview Import'
+                )}
               </Button>
             </TabsContent>
             
@@ -321,8 +379,15 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
                   {parseError}
                 </div>
               )}
-              <Button onClick={() => handleParse('json')} disabled={!rawData.trim()}>
-                Preview Import
+              <Button onClick={() => handleParse('json')} disabled={!rawData.trim() || isExtractingLocations}>
+                {isExtractingLocations ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Extracting locations...
+                  </>
+                ) : (
+                  'Preview Import'
+                )}
               </Button>
             </TabsContent>
           </Tabs>
