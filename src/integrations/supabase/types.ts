@@ -66,6 +66,7 @@ export type Database = {
           address: string | null
           city: string | null
           club_name: string
+          coaches: string[] | null
           contact_name: string | null
           content_created_date: string | null
           converted_date: string | null
@@ -99,6 +100,7 @@ export type Database = {
           address?: string | null
           city?: string | null
           club_name: string
+          coaches?: string[] | null
           contact_name?: string | null
           content_created_date?: string | null
           converted_date?: string | null
@@ -132,6 +134,7 @@ export type Database = {
           address?: string | null
           city?: string | null
           club_name?: string
+          coaches?: string[] | null
           contact_name?: string | null
           content_created_date?: string | null
           converted_date?: string | null
