@@ -26,39 +26,69 @@ serve(async (req) => {
     }
 
     const prompt = `GEOGRAPHIC HIERARCHY (you must follow):
-- Suburb/Neighborhood (Randburg, Fourways, Sandton) → CITY (Johannesburg) → Province (Gauteng)
-- Return BOTH suburb and city, never confuse them
+- Suburb/Neighborhood → CITY → Province
+- Return BOTH suburb and city levels
 
-CRITICAL MAPPING RULES:
+CRITICAL MAPPING RULES FOR JOHANNESBURG METRO:
+All these suburbs map to "Johannesburg" as the city:
 
-Johannesburg suburbs (Gauteng province):
-- Randburg, Dunkeld, Sandton, Rosebank, Fourways, Bryanston, Midrand, Benoni, Boksburg, Germiston, Kempton Park, Bedfordview, Edenvale
+Core Johannesburg suburbs:
+- Dunkeld, Sandton, Rosebank, Fourways, Bryanston, Midrand, Morningside, Greenside, Auckland Park, Honeydew, Illovo, Norwood, Rivonia, Houghton, Lower Houghton
+- Sandhurst, Magaliessig, Sunninghill, Bruma, Paulshof, Birnam, Birdhaven, Emmarentia, Lonehill, Linksfield, Ormonde, Modderfontein, Turfontein
+- Lenasia, Glenvista, Bordeaux, Tres Jolie AH, Randpark
 
-Cape Town suburbs (Western Cape province):
+East Rand suburbs (also Johannesburg):
+- Benoni, Rynfield, Boksburg, Germiston, Bedfordview, Avion Park, Kempton Park, Parkrand, Edenvale, Liefde en Vrede
+
+West Rand suburbs (also Johannesburg):
+- Randburg, Roodepoort, Ruimsig, Alberton, Randhart
+
+Specific estates/clubs (treat location name as suburb):
+- Thaba Eco Estate → Johannesburg
+- Steyn City → Johannesburg
+- Modderfontein Golf Club → Johannesburg (suburb: Modderfontein)
+
+Cape Town suburbs (Western Cape):
 - Claremont, Constantia, Sea Point, Camps Bay, Green Point, Stellenbosch, Paarl
 
-Durban suburbs (KwaZulu-Natal province):
+Durban suburbs (KwaZulu-Natal):
 - Umhlanga, Ballito, Durban North, Westville
 
-Pretoria/Tshwane suburbs (Gauteng province):
+Pretoria/Tshwane suburbs (Gauteng):
 - Centurion, Hatfield, Menlyn, Silverton
 
 EXTRACTION RULES:
-1. SUBURB: Extract the most specific neighborhood/suburb name from the address
-2. CITY: Map the suburb to its parent city using the rules above
-3. If multiple suburbs appear (e.g., "Dunkeld, Randburg"), choose the FIRST one as suburb
-4. IGNORE: Province names (Gauteng), postal codes (2056), descriptive terms ("German Country Club")
+1. SUBURB: Extract the most specific neighborhood/suburb/estate name
+   - If address has estate name (e.g., "Thaba Eco Estate"), use that as suburb
+   - If multiple suburbs listed (e.g., "Dunkeld, Randburg"), use the FIRST/most specific
+   - If only "Johannesburg, South Africa" → suburb is null
 
-DEFAULT: Country is "South Africa" unless clearly stated otherwise.
+2. CITY: Always map suburb to parent city using rules above
+   - Randburg, Roodepoort, Benoni, Boksburg, etc. → "Johannesburg" (NOT the suburb name)
+
+3. IGNORE completely:
+   - Province names: Gauteng, Western Cape, KwaZulu-Natal
+   - Postal codes: 2056, 2191, 2194, etc.
+   - Descriptive terms: "German Country Club", "Country Club", "Shopping Centre", "Golf Club"
+   - Street addresses: "131 Holkam Road", "49 Eastwood Rd"
+   - Directional terms: "North", "ext 2"
+
+4. DEFAULT: Country is always "South Africa"
+
+EXAMPLES:
+Input: "49 Eastwood Rd, Dunkeld, Randburg"
+Output: {"suburb": "Dunkeld", "city": "Johannesburg", "country": "South Africa"}
+
+Input: "131 Holkam Road, Fourways German Country Club, Gauteng, 2056"
+Output: {"suburb": "Fourways", "city": "Johannesburg", "country": "South Africa"}
+
+Input: "Thaba Eco Estate, Johannesburg, South Africa"
+Output: {"suburb": "Thaba Eco Estate", "city": "Johannesburg", "country": "South Africa"}
 
 Addresses:
 ${addresses.map((addr: string, i: number) => `${i + 1}. ${addr}`).join('\n')}
 
-Return ONLY valid JSON array:
-[
-  {"suburb": "Dunkeld", "city": "Johannesburg", "country": "South Africa"},
-  {"suburb": "Fourways", "city": "Johannesburg", "country": "South Africa"}
-]`;
+Return ONLY valid JSON array with no explanation.`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -69,7 +99,7 @@ Return ONLY valid JSON array:
       body: JSON.stringify({
         model: 'google/gemini-3-pro-preview',
         messages: [
-          { role: 'system', content: 'You are a South African geography expert. Extract the SUBURB and parent CITY from addresses. Return BOTH suburb and city, never confuse them. Always respond with valid JSON only.' },
+          { role: 'system', content: 'You are a South African geography expert. Extract the SUBURB and parent CITY from addresses. Return BOTH suburb and city levels. Always respond with valid JSON only.' },
           { role: 'user', content: prompt }
         ],
       }),
