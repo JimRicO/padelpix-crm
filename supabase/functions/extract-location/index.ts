@@ -40,7 +40,7 @@ Return ONLY valid JSON array, no explanation. Example format:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'google/gemini-3-pro-preview',
         messages: [
           { role: 'system', content: 'You are a location extraction assistant. Extract city and country from addresses. Always respond with valid JSON only.' },
           { role: 'user', content: prompt }
