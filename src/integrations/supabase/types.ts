@@ -84,6 +84,7 @@ export type Database = {
           next_action_date: string | null
           notes: string | null
           number_of_courts: number | null
+          ownership_group: string | null
           pipeline_stage: Database["public"]["Enums"]["pipeline_stage"] | null
           priority: Database["public"]["Enums"]["priority_level"] | null
           response_time_hours: number | null
@@ -119,6 +120,7 @@ export type Database = {
           next_action_date?: string | null
           notes?: string | null
           number_of_courts?: number | null
+          ownership_group?: string | null
           pipeline_stage?: Database["public"]["Enums"]["pipeline_stage"] | null
           priority?: Database["public"]["Enums"]["priority_level"] | null
           response_time_hours?: number | null
@@ -154,6 +156,7 @@ export type Database = {
           next_action_date?: string | null
           notes?: string | null
           number_of_courts?: number | null
+          ownership_group?: string | null
           pipeline_stage?: Database["public"]["Enums"]["pipeline_stage"] | null
           priority?: Database["public"]["Enums"]["priority_level"] | null
           response_time_hours?: number | null
