@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Activity } from '@/types/database';
 import { useToast } from '@/hooks/use-toast';
-import { Json } from '@/integrations/supabase/types';
+
 
 export function useActivities(clubId?: string) {
   return useQuery({
@@ -29,9 +29,9 @@ interface CreateActivityData {
   club_id: string;
   activity_type: string;
   title: string;
-  description?: string;
-  link?: string;
-  metadata?: Json;
+  description?: string | null;
+  link?: string | null;
+  metadata?: Record<string, unknown> | null;
 }
 
 export function useCreateActivity() {
@@ -50,9 +50,9 @@ export function useCreateActivity() {
           title: activity.title,
           description: activity.description,
           link: activity.link,
-          metadata: activity.metadata,
+          metadata: activity.metadata as Record<string, unknown> | null,
           created_by: user?.id,
-        }])
+        }] as any)
         .select()
         .single();
       

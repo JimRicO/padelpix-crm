@@ -1,14 +1,63 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from 'react';
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import { Header } from '@/components/layout/Header';
+import { PipelineBoard } from '@/components/pipeline/PipelineBoard';
+import { ClubDetailModal } from '@/components/club/ClubDetailModal';
+import { AddClubDialog } from '@/components/club/AddClubDialog';
+import { ImportDialog } from '@/components/import/ImportDialog';
+import { Club } from '@/types/database';
 
-const Index = () => {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+export default function Index() {
+  const { user, loading } = useAuth();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedClub, setSelectedClub] = useState<Club | null>(null);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-pulse text-muted-foreground">Loading...</div>
       </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      <Header 
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onAddClub={() => setShowAddDialog(true)}
+        onImport={() => setShowImportDialog(true)}
+      />
+      
+      <main className="flex-1 p-6 overflow-hidden">
+        <PipelineBoard 
+          onClubClick={setSelectedClub}
+          searchQuery={searchQuery}
+        />
+      </main>
+
+      <ClubDetailModal 
+        club={selectedClub}
+        open={!!selectedClub}
+        onOpenChange={(open) => !open && setSelectedClub(null)}
+      />
+
+      <AddClubDialog 
+        open={showAddDialog}
+        onOpenChange={setShowAddDialog}
+      />
+
+      <ImportDialog 
+        open={showImportDialog}
+        onOpenChange={setShowImportDialog}
+      />
     </div>
   );
-};
-
-export default Index;
+}

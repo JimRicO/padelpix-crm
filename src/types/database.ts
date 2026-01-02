@@ -114,17 +114,21 @@ export interface Profile {
   updated_at: string;
 }
 
-export const PIPELINE_STAGES: { value: PipelineStage; label: string; color: string }[] = [
-  { value: 'not_contacted', label: 'Not Contacted', color: 'stage-not-contacted' },
-  { value: 'followed', label: 'Followed', color: 'stage-followed' },
-  { value: 'engaged', label: 'Engaged', color: 'stage-engaged' },
-  { value: 'dm_sent', label: 'DM Sent', color: 'stage-dm-sent' },
-  { value: 'responded', label: 'Responded', color: 'stage-responded' },
-  { value: 'content_created', label: 'Content Created', color: 'stage-content-created' },
-  { value: 'trial', label: 'Trial', color: 'stage-trial' },
-  { value: 'customer', label: 'Customer', color: 'stage-customer' },
-  { value: 'dead', label: 'Dead', color: 'stage-dead' },
+export const PIPELINE_STAGES: PipelineStage[] = [
+  'not_contacted',
+  'followed',
+  'engaged',
+  'dm_sent',
+  'responded',
+  'content_created',
+  'trial',
+  'customer',
+  'dead',
 ];
+
+export const TIERS: ClubTier[] = ['enterprise', 'multi_court', 'boutique'];
+
+export const PRIORITIES: PriorityLevel[] = ['high', 'medium', 'low'];
 
 export const ACTIVITY_TYPES = [
   'followed',
