@@ -183,6 +183,7 @@ export function useDeleteClub() {
 interface BulkClubData {
   club_name: string;
   instagram_handle?: string;
+  suburb?: string;
   city?: string;
   country?: string;
   website?: string;
@@ -190,6 +191,8 @@ interface BulkClubData {
   email?: string;
   number_of_courts?: number;
   address?: string;
+  contact_name?: string;
+  coaches?: string[];
   tier?: 'enterprise' | 'multi_court' | 'boutique';
   priority?: 'high' | 'medium' | 'low';
 }
@@ -205,6 +208,7 @@ export function useBulkCreateClubs() {
       const clubsWithUser = clubs.map(club => ({
         club_name: club.club_name,
         instagram_handle: club.instagram_handle,
+        suburb: club.suburb,
         city: club.city,
         country: club.country,
         website: club.website,
@@ -212,6 +216,8 @@ export function useBulkCreateClubs() {
         email: club.email,
         number_of_courts: club.number_of_courts,
         address: club.address,
+        contact_name: club.contact_name,
+        coaches: club.coaches,
         tier: club.tier,
         priority: club.priority,
         created_by: user?.id,

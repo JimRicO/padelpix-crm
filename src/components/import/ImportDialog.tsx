@@ -151,27 +151,11 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
       }
 
       const address = item.address as string | undefined;
-      
-      // Extract city and country from address if not provided
-      let city = item.city as string | undefined;
-      let country = item.country as string | undefined;
-      
-      if (address && (!city || !country)) {
-        const parts = address.split(',').map(p => p.trim());
-        if (parts.length >= 2) {
-          // Try to extract city from address parts (usually second-to-last or area name)
-          if (!city && parts.length >= 2) {
-            // Get the second-to-last part, or second part if only 2 parts
-            city = parts.length > 2 ? parts[parts.length - 2] : parts[1];
-            // Clean up postal codes or province names
-            city = city?.replace(/\d{4,}/, '').trim();
-          }
-        }
-        // Default to South Africa if no country specified
-        if (!country) {
-          country = 'South Africa';
-        }
-      }
+
+      // Let the AI layer derive suburb/city/country from address when needed.
+      // If the JSON already includes city/country fields, we keep them.
+      const city = item.city as string | undefined;
+      const country = item.country as string | undefined;
 
       const club: ParsedClub = {
         club_name: (item.club_name || item.clubName || item.name || '') as string,
@@ -416,6 +400,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
                   <tr>
                     <th className="text-left p-2 font-medium">Club Name</th>
                     <th className="text-left p-2 font-medium">Instagram</th>
+                    <th className="text-left p-2 font-medium">Suburb</th>
                     <th className="text-left p-2 font-medium">City</th>
                     <th className="text-left p-2 font-medium">Courts</th>
                     <th className="text-left p-2 font-medium">Status</th>
@@ -432,6 +417,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
                     >
                       <td className="p-2">{club.club_name}</td>
                       <td className="p-2">{club.instagram_handle && `@${club.instagram_handle}`}</td>
+                      <td className="p-2">{club.suburb}</td>
                       <td className="p-2">{club.city}</td>
                       <td className="p-2">{club.number_of_courts}</td>
                       <td className="p-2">
