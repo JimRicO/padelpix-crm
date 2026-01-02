@@ -18,6 +18,25 @@ export function useClubs() {
   });
 }
 
+export function useOwnershipGroups() {
+  return useQuery({
+    queryKey: ['ownership-groups'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('clubs')
+        .select('ownership_group')
+        .not('ownership_group', 'is', null)
+        .order('ownership_group');
+      
+      if (error) throw error;
+      
+      // Get unique ownership groups
+      const groups = [...new Set(data.map(d => d.ownership_group).filter(Boolean))] as string[];
+      return groups;
+    },
+  });
+}
+
 export function useClub(id: string | null) {
   return useQuery({
     queryKey: ['club', id],
