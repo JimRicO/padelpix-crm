@@ -1,5 +1,5 @@
 import { Club } from '@/types/database';
-import { Instagram, MapPin, Building2, MessageSquare } from 'lucide-react';
+import { Instagram, MapPin, Building2, MessageSquare, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ClubCardProps {
@@ -63,6 +63,13 @@ export function ClubCard({ club, onClick, isDragging }: ClubCardProps) {
           </div>
         )}
       </div>
+
+      {club.ownership_group && (
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
+          <Users className="w-3 h-3" />
+          <span className="line-clamp-1">{club.ownership_group}</span>
+        </div>
+      )}
 
       <div className="flex items-center justify-between">
         {club.tier && (

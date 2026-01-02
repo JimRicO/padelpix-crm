@@ -45,6 +45,9 @@ export interface Club {
   created_at: string;
   updated_at: string;
   created_by: string | null;
+  suburb: string | null;
+  coaches: string[] | null;
+  ownership_group: string | null;
 }
 
 export interface Activity {
