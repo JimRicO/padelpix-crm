@@ -25,25 +25,40 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    const prompt = `Extract the suburb, city, and country from each South African address.
+    const prompt = `GEOGRAPHIC HIERARCHY (you must follow):
+- Suburb/Neighborhood (Randburg, Fourways, Sandton) → CITY (Johannesburg) → Province (Gauteng)
+- Return BOTH suburb and city, never confuse them
 
-CRITICAL RULES:
-1. "city" MUST be the major metropolitan city, NEVER a suburb or province:
-   - Valid cities: Johannesburg, Cape Town, Durban, Pretoria, Port Elizabeth, Bloemfontein, East London, Polokwane, Nelspruit, Kimberley
-   - Gauteng, Western Cape, KwaZulu-Natal, etc. are PROVINCES, not cities - never return these as city
-   - Randburg, Sandton, Fourways, Dunkeld, Rosebank, Bryanston, Midrand are SUBURBS of Johannesburg
-   - Claremont, Constantia, Sea Point are SUBURBS of Cape Town
-   - Umhlanga, Ballito are SUBURBS of Durban
-   
-2. "suburb" should be the specific area/neighborhood from the address
+CRITICAL MAPPING RULES:
 
-3. Default country to "South Africa"
+Johannesburg suburbs (Gauteng province):
+- Randburg, Dunkeld, Sandton, Rosebank, Fourways, Bryanston, Midrand, Benoni, Boksburg, Germiston, Kempton Park, Bedfordview, Edenvale
+
+Cape Town suburbs (Western Cape province):
+- Claremont, Constantia, Sea Point, Camps Bay, Green Point, Stellenbosch, Paarl
+
+Durban suburbs (KwaZulu-Natal province):
+- Umhlanga, Ballito, Durban North, Westville
+
+Pretoria/Tshwane suburbs (Gauteng province):
+- Centurion, Hatfield, Menlyn, Silverton
+
+EXTRACTION RULES:
+1. SUBURB: Extract the most specific neighborhood/suburb name from the address
+2. CITY: Map the suburb to its parent city using the rules above
+3. If multiple suburbs appear (e.g., "Dunkeld, Randburg"), choose the FIRST one as suburb
+4. IGNORE: Province names (Gauteng), postal codes (2056), descriptive terms ("German Country Club")
+
+DEFAULT: Country is "South Africa" unless clearly stated otherwise.
 
 Addresses:
 ${addresses.map((addr: string, i: number) => `${i + 1}. ${addr}`).join('\n')}
 
-Return ONLY valid JSON array with "suburb", "city", "country" fields. Example:
-[{"suburb": "Sandton", "city": "Johannesburg", "country": "South Africa"}]`;
+Return ONLY valid JSON array:
+[
+  {"suburb": "Dunkeld", "city": "Johannesburg", "country": "South Africa"},
+  {"suburb": "Fourways", "city": "Johannesburg", "country": "South Africa"}
+]`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -54,7 +69,7 @@ Return ONLY valid JSON array with "suburb", "city", "country" fields. Example:
       body: JSON.stringify({
         model: 'google/gemini-3-pro-preview',
         messages: [
-          { role: 'system', content: 'You are a South African geography expert. Extract city and country from addresses, mapping suburbs to their parent cities. Always respond with valid JSON only.' },
+          { role: 'system', content: 'You are a South African geography expert. Extract the SUBURB and parent CITY from addresses. Return BOTH suburb and city, never confuse them. Always respond with valid JSON only.' },
           { role: 'user', content: prompt }
         ],
       }),
