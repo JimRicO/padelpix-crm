@@ -23,6 +23,7 @@ interface ParsedClub {
   number_of_courts?: number;
   address?: string;
   contact_name?: string;
+  coaches?: string[];
   tier?: 'enterprise' | 'multi_court' | 'boutique';
   priority?: 'high' | 'medium' | 'low';
   isDuplicate?: boolean;
@@ -138,6 +139,13 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
     }
     
     return clubs.map((item: Record<string, unknown>) => {
+      // Parse coaches array
+      let coaches: string[] | undefined;
+      if (Array.isArray(item.coaches)) {
+        coaches = item.coaches.filter((c): c is string => typeof c === 'string' && c.trim() !== '');
+        if (coaches.length === 0) coaches = undefined;
+      }
+
       const club: ParsedClub = {
         club_name: (item.club_name || item.clubName || item.name || '') as string,
         instagram_handle: cleanInstagramHandle((item.instagram_handle || item.instagram || item.ig) as string | undefined),
@@ -149,6 +157,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
         number_of_courts: parseInt(String(item.number_of_courts || item.courts || item.numCourts || ''), 10) || undefined,
         address: item.address as string | undefined,
         contact_name: (item.owner_or_manager_name || item.contact_name || item.owner || item.manager) as string | undefined,
+        coaches,
       };
       
       club.tier = inferTier(club.number_of_courts);
