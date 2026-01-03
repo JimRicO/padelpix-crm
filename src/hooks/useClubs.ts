@@ -103,6 +103,11 @@ export function useUpdateClub() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string; [key: string]: unknown }) => {
+      // Auto-set tier to enterprise if ownership_group exists
+      if (updates.ownership_group && typeof updates.ownership_group === 'string' && updates.ownership_group.trim()) {
+        updates.tier = 'enterprise';
+      }
+      
       const { data, error } = await supabase
         .from('clubs')
         .update(updates)
@@ -214,6 +219,7 @@ interface BulkClubData {
   coaches?: string[];
   tier?: 'enterprise' | 'multi_court' | 'boutique';
   priority?: 'high' | 'medium' | 'low';
+  ownership_group?: string;
 }
 
 export function useBulkCreateClubs() {
@@ -237,8 +243,10 @@ export function useBulkCreateClubs() {
         address: club.address,
         contact_name: club.contact_name,
         coaches: club.coaches,
-        tier: club.tier,
+        // Auto-set tier to enterprise if ownership_group exists
+        tier: club.ownership_group?.trim() ? 'enterprise' : club.tier,
         priority: club.priority,
+        ownership_group: club.ownership_group,
         created_by: user?.id,
       }));
 
