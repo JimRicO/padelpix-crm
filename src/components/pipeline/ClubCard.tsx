@@ -1,5 +1,5 @@
 import { Club } from '@/types/database';
-import { Instagram, MapPin, Building2, MessageSquare, Users } from 'lucide-react';
+import { Instagram, MapPin, Building2, MessageSquare, Users, Crown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ClubCardProps {
@@ -27,18 +27,24 @@ export function ClubCard({ club, onClick, isDragging }: ClubCardProps) {
     }
   };
 
+  const isEnterprise = club.tier === 'enterprise' || club.ownership_group;
+
   return (
     <div 
       onClick={onClick}
       className={cn(
         'club-card',
-        isDragging && 'shadow-lg ring-2 ring-primary/30 rotate-2'
+        isDragging && 'shadow-lg ring-2 ring-primary/30 rotate-2',
+        isEnterprise && 'border-primary/30 bg-gradient-to-br from-primary/5 to-transparent'
       )}
     >
       <div className="flex items-start justify-between gap-2 mb-2">
-        <h4 className="font-semibold text-sm text-foreground line-clamp-1">
-          {club.club_name}
-        </h4>
+        <div className="flex items-center gap-1.5 min-w-0">
+          {isEnterprise && <Crown className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
+          <h4 className="font-semibold text-sm text-foreground line-clamp-1">
+            {club.club_name}
+          </h4>
+        </div>
         <div className={cn('priority-dot flex-shrink-0', getPriorityClass(club.priority))} />
       </div>
 
