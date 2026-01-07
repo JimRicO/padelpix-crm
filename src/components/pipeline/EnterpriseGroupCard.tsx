@@ -87,6 +87,7 @@ export function EnterpriseGroupCard({
         </div>
 
         <div className="flex items-center gap-2 flex-shrink-0">
+          <span className="tier-badge tier-group-owned">Group Owned</span>
           <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
             {clubsInStage.length} here
           </Badge>
