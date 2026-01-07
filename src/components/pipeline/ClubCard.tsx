@@ -2,6 +2,13 @@ import { Club } from '@/types/database';
 import { Instagram, MapPin, Building2, MessageSquare, Users, Crown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+const TIER_LABELS: Record<string, string> = {
+  group_owned: 'Group Owned',
+  large: 'Large',
+  multi_court: 'Multi Court',
+  boutique: 'Boutique',
+};
+
 interface ClubCardProps {
   club: Club;
   onClick: () => void;
@@ -81,7 +88,7 @@ export function ClubCard({ club, onClick, isDragging }: ClubCardProps) {
       <div className="flex items-center justify-between">
         {club.tier && (
           <span className={cn('tier-badge', getTierClass(club.tier))}>
-            {club.tier?.replace('_', ' ')}
+            {TIER_LABELS[club.tier] || club.tier}
           </span>
         )}
         {(club.total_dms || 0) > 0 && (
