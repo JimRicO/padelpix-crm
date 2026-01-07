@@ -28,7 +28,7 @@ interface ParsedClub {
   address?: string;
   contact_name?: string;
   coaches?: string[];
-  tier?: 'enterprise' | 'multi_court' | 'boutique';
+  tier?: 'group_owned' | 'large' | 'multi_court' | 'boutique';
   priority?: 'high' | 'medium' | 'low';
   isDuplicate?: boolean;
   detectedOwnership?: string | null;
@@ -49,9 +49,9 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
     return handle.replace(/^@/, '').trim().toLowerCase();
   };
 
-  const inferTier = (courts: number | undefined): 'enterprise' | 'multi_court' | 'boutique' | undefined => {
+  const inferTier = (courts: number | undefined): 'large' | 'multi_court' | 'boutique' | undefined => {
     if (!courts) return undefined;
-    if (courts >= 6) return 'enterprise';
+    if (courts >= 6) return 'large';
     if (courts >= 3) return 'multi_court';
     return 'boutique';
   };
@@ -121,7 +121,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
 
       club.instagram_handle = cleanInstagramHandle(club.instagram_handle);
       club.detectedOwnership = detectOwnershipGroup(club.club_name);
-      club.tier = club.detectedOwnership ? 'enterprise' : inferTier(club.number_of_courts);
+      club.tier = club.detectedOwnership ? 'group_owned' : inferTier(club.number_of_courts);
       club.isDuplicate = checkDuplicate(club.instagram_handle);
       
       return club;
@@ -175,7 +175,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
       };
       
       club.detectedOwnership = detectOwnershipGroup(club.club_name);
-      club.tier = club.detectedOwnership ? 'enterprise' : inferTier(club.number_of_courts);
+      club.tier = club.detectedOwnership ? 'group_owned' : inferTier(club.number_of_courts);
       club.isDuplicate = checkDuplicate(club.instagram_handle);
       
       return club;
