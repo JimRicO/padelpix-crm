@@ -4,10 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useBulkCreateClubs, useClubs } from '@/hooks/useClubs';
-import { Upload, FileJson, FileSpreadsheet, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
+import { Upload, FileJson, FileSpreadsheet, AlertTriangle, CheckCircle, Loader2, Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { detectOwnershipGroup } from '@/utils/ownershipPatterns';
 
 interface ImportDialogProps {
   open: boolean;
@@ -30,6 +31,7 @@ interface ParsedClub {
   tier?: 'enterprise' | 'multi_court' | 'boutique';
   priority?: 'high' | 'medium' | 'low';
   isDuplicate?: boolean;
+  detectedOwnership?: string | null;
 }
 
 export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
@@ -118,7 +120,8 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
       });
 
       club.instagram_handle = cleanInstagramHandle(club.instagram_handle);
-      club.tier = inferTier(club.number_of_courts);
+      club.detectedOwnership = detectOwnershipGroup(club.club_name);
+      club.tier = club.detectedOwnership ? 'enterprise' : inferTier(club.number_of_courts);
       club.isDuplicate = checkDuplicate(club.instagram_handle);
       
       return club;
@@ -171,7 +174,8 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
         coaches,
       };
       
-      club.tier = inferTier(club.number_of_courts);
+      club.detectedOwnership = detectOwnershipGroup(club.club_name);
+      club.tier = club.detectedOwnership ? 'enterprise' : inferTier(club.number_of_courts);
       club.isDuplicate = checkDuplicate(club.instagram_handle);
       
       return club;
@@ -400,7 +404,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
                   <tr>
                     <th className="text-left p-2 font-medium">Club Name</th>
                     <th className="text-left p-2 font-medium">Instagram</th>
-                    <th className="text-left p-2 font-medium">Suburb</th>
+                    <th className="text-left p-2 font-medium">Ownership</th>
                     <th className="text-left p-2 font-medium">City</th>
                     <th className="text-left p-2 font-medium">Courts</th>
                     <th className="text-left p-2 font-medium">Status</th>
@@ -417,7 +421,14 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
                     >
                       <td className="p-2">{club.club_name}</td>
                       <td className="p-2">{club.instagram_handle && `@${club.instagram_handle}`}</td>
-                      <td className="p-2">{club.suburb}</td>
+                      <td className="p-2">
+                        {club.detectedOwnership && (
+                          <span className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                            <Building2 className="w-3 h-3" />
+                            {club.detectedOwnership}
+                          </span>
+                        )}
+                      </td>
                       <td className="p-2">{club.city}</td>
                       <td className="p-2">{club.number_of_courts}</td>
                       <td className="p-2">
