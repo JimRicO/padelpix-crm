@@ -131,6 +131,7 @@ export const PIPELINE_STAGES: PipelineStage[] = [
   'dead',
 ];
 
+// Tier options for clubs - group_owned is for clubs with ownership groups
 export const TIERS: ClubTier[] = ['group_owned', 'large', 'multi_court', 'boutique'];
 
 export const PRIORITIES: PriorityLevel[] = ['high', 'medium', 'low'];
