@@ -53,49 +53,55 @@ export function EnterpriseGroupCard({
       {/* Header - Always visible */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full p-3 flex items-start justify-between gap-2 hover:bg-primary/5 transition-colors text-left"
+        className="w-full p-3 flex flex-col gap-2 hover:bg-primary/5 transition-colors text-left"
       >
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <Crown className="w-4 h-4 text-primary flex-shrink-0" />
-            <h4 className="font-semibold text-sm text-foreground truncate">
-              {groupName}
-            </h4>
-          </div>
-          
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            <span>{clubs.length} clubs</span>
-            {totalCourts > 0 && (
-              <div className="flex items-center gap-1">
-                <Building2 className="w-3 h-3" />
-                <span>{totalCourts}</span>
-              </div>
-            )}
-            {totalDms > 0 && (
-              <div className="flex items-center gap-1">
-                <MessageSquare className="w-3 h-3" />
-                <span>{totalDms}</span>
-              </div>
+        <div className="flex items-start justify-between gap-2 w-full">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <Crown className="w-4 h-4 text-primary flex-shrink-0" />
+              <h4 className="font-semibold text-sm text-foreground truncate">
+                {groupName}
+              </h4>
+            </div>
+            
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <span>{clubs.length} clubs</span>
+              {totalCourts > 0 && (
+                <div className="flex items-center gap-1">
+                  <Building2 className="w-3 h-3" />
+                  <span>{totalCourts}</span>
+                </div>
+              )}
+              {totalDms > 0 && (
+                <div className="flex items-center gap-1">
+                  <MessageSquare className="w-3 h-3" />
+                  <span>{totalDms}</span>
+                </div>
+              )}
+            </div>
+
+            {!isExpanded && stagesWithClubs.length > 0 && (
+              <p className="text-xs text-muted-foreground mt-1 truncate">
+                {stagesWithClubs.join(', ')}
+              </p>
             )}
           </div>
 
-          {!isExpanded && stagesWithClubs.length > 0 && (
-            <p className="text-xs text-muted-foreground mt-1 truncate">
-              {stagesWithClubs.join(', ')}
-            </p>
-          )}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
+              {clubsInStage.length} here
+            </Badge>
+            {isExpanded ? (
+              <ChevronUp className="w-4 h-4 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            )}
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 flex-shrink-0">
+        {/* Tier badge at bottom like other cards */}
+        <div className="flex items-center gap-2 mt-1">
           <span className="tier-badge tier-group-owned">Group Owned</span>
-          <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
-            {clubsInStage.length} here
-          </Badge>
-          {isExpanded ? (
-            <ChevronUp className="w-4 h-4 text-muted-foreground" />
-          ) : (
-            <ChevronDown className="w-4 h-4 text-muted-foreground" />
-          )}
         </div>
       </button>
 
