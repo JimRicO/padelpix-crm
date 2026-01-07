@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 const STAGE_CONFIG: Record<PipelineStage, { label: string; colorClass: string }> = {
   not_contacted: { label: 'Not Contacted', colorClass: 'bg-[hsl(var(--stage-not-contacted))]' },
   followed: { label: 'Followed', colorClass: 'bg-[hsl(var(--stage-followed))]' },
-  engaged: { label: 'Engaged', colorClass: 'bg-[hsl(var(--stage-engaged))]' },
+  engaged: { label: 'Engaged (likes/comments)', colorClass: 'bg-[hsl(var(--stage-engaged))]' },
   dm_sent: { label: 'DM Sent', colorClass: 'bg-[hsl(var(--stage-dm-sent))]' },
   responded: { label: 'Responded', colorClass: 'bg-[hsl(var(--stage-responded))]' },
   content_created: { label: 'Content Created', colorClass: 'bg-[hsl(var(--stage-content-created))]' },
