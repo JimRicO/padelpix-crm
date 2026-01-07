@@ -5,15 +5,19 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Calendar } from 'lucide-react';
+import { Plus, Calendar, Check, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Club } from '@/types/database';
+import { getTaskAutoStatus, getTasksSummary, TaskAutoStatus } from '@/utils/taskAutoCheck';
+import { Progress } from '@/components/ui/progress';
 
 interface ClubTasksTabProps {
   clubId: string;
+  club: Club;
 }
 
-export function ClubTasksTab({ clubId }: ClubTasksTabProps) {
+export function ClubTasksTab({ clubId, club }: ClubTasksTabProps) {
   const { data: tasks, isLoading } = useTasks(clubId);
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
@@ -50,12 +54,27 @@ export function ClubTasksTab({ clubId }: ClubTasksTabProps) {
   const pendingTasks = tasks?.filter(t => t.status !== 'completed') || [];
   const completedTasks = tasks?.filter(t => t.status === 'completed') || [];
 
+  // Calculate summary
+  const summary = tasks ? getTasksSummary(tasks, club) : null;
+  const progressPercent = summary ? (summary.completed / summary.total) * 100 : 0;
+
   if (isLoading) {
     return <div className="text-center py-8 text-muted-foreground">Loading tasks...</div>;
   }
 
   return (
     <div className="space-y-4">
+      {/* Progress Summary */}
+      {summary && summary.total > 0 && (
+        <div className="bg-muted/30 rounded-lg p-3 space-y-2">
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-muted-foreground">Progress</span>
+            <span className="font-medium">{summary.completed}/{summary.total} complete</span>
+          </div>
+          <Progress value={progressPercent} className="h-2" />
+        </div>
+      )}
+
       <div className="flex justify-between items-center">
         <h3 className="font-semibold">Tasks</h3>
         <Button size="sm" onClick={() => setShowForm(!showForm)}>
@@ -121,6 +140,7 @@ export function ClubTasksTab({ clubId }: ClubTasksTabProps) {
                 <TaskItem 
                   key={task.id} 
                   task={task} 
+                  club={club}
                   onToggle={() => toggleComplete(task.id, task.status || 'pending')}
                 />
               ))}
@@ -136,6 +156,7 @@ export function ClubTasksTab({ clubId }: ClubTasksTabProps) {
                 <TaskItem 
                   key={task.id} 
                   task={task} 
+                  club={club}
                   onToggle={() => toggleComplete(task.id, task.status || 'pending')}
                 />
               ))}
@@ -156,30 +177,82 @@ interface TaskItemProps {
     status?: string | null;
     due_date?: string | null;
   };
+  club: Club;
   onToggle: () => void;
 }
 
-function TaskItem({ task, onToggle }: TaskItemProps) {
-  const isCompleted = task.status === 'completed';
-  const isOverdue = task.due_date && new Date(task.due_date) < new Date() && !isCompleted;
+function TaskItem({ task, club, onToggle }: TaskItemProps) {
+  const [showMissing, setShowMissing] = useState(false);
+  const isManuallyCompleted = task.status === 'completed';
+  const autoStatus = getTaskAutoStatus(task.title, club);
+  const isComplete = isManuallyCompleted || autoStatus.isAutoComplete;
+  const isOverdue = task.due_date && new Date(task.due_date) < new Date() && !isComplete;
 
   return (
     <div className={cn(
       'flex items-start gap-3 p-3 bg-card rounded-lg border',
-      isCompleted && 'opacity-60'
+      isComplete && 'opacity-60'
     )}>
       <Checkbox 
-        checked={isCompleted}
+        checked={isComplete}
         onCheckedChange={onToggle}
         className="mt-0.5"
       />
       <div className="flex-1 min-w-0">
-        <p className={cn('text-sm font-medium', isCompleted && 'line-through')}>
-          {task.title}
-        </p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className={cn('text-sm font-medium', isComplete && 'line-through')}>
+            {task.title}
+          </p>
+          {autoStatus.isAutoComplete && (
+            <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded bg-success/10 text-success">
+              <Check className="w-3 h-3" />
+              Auto
+            </span>
+          )}
+          {!isComplete && autoStatus.missingFields && (
+            <button
+              onClick={() => setShowMissing(!showMissing)}
+              className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded bg-warning/10 text-warning hover:bg-warning/20 transition-colors"
+            >
+              <AlertCircle className="w-3 h-3" />
+              Missing
+              {showMissing ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+            </button>
+          )}
+        </div>
+        
         {task.description && (
           <p className="text-xs text-muted-foreground mt-0.5">{task.description}</p>
         )}
+
+        {/* Show missing fields when expanded */}
+        {showMissing && autoStatus.missingFields && (
+          <div className="mt-2 p-2 bg-warning/5 rounded border border-warning/20">
+            <p className="text-xs font-medium text-warning mb-1">Missing fields:</p>
+            <ul className="text-xs text-muted-foreground space-y-0.5">
+              {autoStatus.missingFields.map((field, i) => (
+                <li key={i} className="flex items-center gap-1">
+                  <span className="w-1 h-1 rounded-full bg-warning" />
+                  {field}
+                </li>
+              ))}
+            </ul>
+            {autoStatus.completedFields && autoStatus.completedFields.length > 0 && (
+              <>
+                <p className="text-xs font-medium text-success mt-2 mb-1">Completed:</p>
+                <ul className="text-xs text-muted-foreground space-y-0.5">
+                  {autoStatus.completedFields.map((field, i) => (
+                    <li key={i} className="flex items-center gap-1">
+                      <Check className="w-3 h-3 text-success" />
+                      {field}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
+        )}
+
         <div className="flex items-center gap-3 mt-2">
           {task.priority && (
             <span className={cn(
