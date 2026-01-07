@@ -162,8 +162,12 @@
     @apply px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wide;
   }
 
-  .tier-enterprise {
+  .tier-group-owned {
     @apply bg-primary/10 text-primary;
+  }
+
+  .tier-large {
+    @apply bg-amber-500/10 text-amber-600;
   }
 
   .tier-multi-court {

@@ -11,7 +11,8 @@ interface ClubCardProps {
 export function ClubCard({ club, onClick, isDragging }: ClubCardProps) {
   const getTierClass = (tier: string | null | undefined) => {
     switch (tier) {
-      case 'enterprise': return 'tier-enterprise';
+      case 'group_owned': return 'tier-group-owned';
+      case 'large': return 'tier-large';
       case 'multi_court': return 'tier-multi-court';
       case 'boutique': return 'tier-boutique';
       default: return 'tier-boutique';
@@ -27,7 +28,7 @@ export function ClubCard({ club, onClick, isDragging }: ClubCardProps) {
     }
   };
 
-  const isEnterprise = club.tier === 'enterprise' || club.ownership_group;
+  const isGroupOwned = club.tier === 'group_owned' || club.ownership_group;
 
   return (
     <div 
@@ -35,12 +36,12 @@ export function ClubCard({ club, onClick, isDragging }: ClubCardProps) {
       className={cn(
         'club-card',
         isDragging && 'shadow-lg ring-2 ring-primary/30 rotate-2',
-        isEnterprise && 'border-primary/30 bg-gradient-to-br from-primary/5 to-transparent'
+        isGroupOwned && 'border-primary/30 bg-gradient-to-br from-primary/5 to-transparent'
       )}
     >
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex items-center gap-1.5 min-w-0">
-          {isEnterprise && <Crown className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
+          {isGroupOwned && <Crown className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
           <h4 className="font-semibold text-sm text-foreground line-clamp-1">
             {club.club_name}
           </h4>

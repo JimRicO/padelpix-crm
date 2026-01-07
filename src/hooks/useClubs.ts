@@ -68,8 +68,8 @@ export function useCreateClub() {
       const detectedOwnership = detectOwnershipGroup(club.club_name);
       const ownershipGroup = (club.ownership_group as string) || detectedOwnership || undefined;
       
-      // Auto-set tier to enterprise if ownership_group exists
-      const tier = ownershipGroup ? 'enterprise' : (club.tier as 'enterprise' | 'multi_court' | 'boutique' | undefined);
+      // Auto-set tier to group_owned if ownership_group exists
+      const tier = ownershipGroup ? 'group_owned' : (club.tier as 'group_owned' | 'large' | 'multi_court' | 'boutique' | undefined);
       
       const { data, error } = await supabase
         .from('clubs')
@@ -112,9 +112,9 @@ export function useUpdateClub() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string; [key: string]: unknown }) => {
-      // Auto-set tier to enterprise if ownership_group exists
+      // Auto-set tier to group_owned if ownership_group exists
       if (updates.ownership_group && typeof updates.ownership_group === 'string' && updates.ownership_group.trim()) {
-        updates.tier = 'enterprise';
+        updates.tier = 'group_owned';
       }
       
       const { data, error } = await supabase
@@ -226,7 +226,7 @@ interface BulkClubData {
   address?: string;
   contact_name?: string;
   coaches?: string[];
-  tier?: 'enterprise' | 'multi_court' | 'boutique';
+  tier?: 'group_owned' | 'large' | 'multi_court' | 'boutique';
   priority?: 'high' | 'medium' | 'low';
   ownership_group?: string;
 }
@@ -257,8 +257,8 @@ export function useBulkCreateClubs() {
           address: club.address,
           contact_name: club.contact_name,
           coaches: club.coaches,
-          // Auto-set tier to enterprise if ownership_group exists
-          tier: ownershipGroup ? 'enterprise' : club.tier,
+          // Auto-set tier to group_owned if ownership_group exists
+          tier: ownershipGroup ? 'group_owned' : club.tier,
           priority: club.priority,
           ownership_group: ownershipGroup,
           created_by: user?.id,

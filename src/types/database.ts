@@ -11,7 +11,7 @@ export type PipelineStage =
 
 export type PriorityLevel = 'high' | 'medium' | 'low';
 
-export type ClubTier = 'enterprise' | 'multi_court' | 'boutique';
+export type ClubTier = 'group_owned' | 'large' | 'multi_court' | 'boutique';
 
 export interface Club {
   id: string;
@@ -131,7 +131,7 @@ export const PIPELINE_STAGES: PipelineStage[] = [
   'dead',
 ];
 
-export const TIERS: ClubTier[] = ['enterprise', 'multi_court', 'boutique'];
+export const TIERS: ClubTier[] = ['group_owned', 'large', 'multi_court', 'boutique'];
 
 export const PRIORITIES: PriorityLevel[] = ['high', 'medium', 'low'];
 
