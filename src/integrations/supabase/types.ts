@@ -389,7 +389,12 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
-      club_tier: "enterprise" | "multi_court" | "boutique"
+      club_tier:
+        | "enterprise"
+        | "multi_court"
+        | "boutique"
+        | "group_owned"
+        | "large"
       pipeline_stage:
         | "not_contacted"
         | "followed"
@@ -529,7 +534,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
-      club_tier: ["enterprise", "multi_court", "boutique"],
+      club_tier: [
+        "enterprise",
+        "multi_court",
+        "boutique",
+        "group_owned",
+        "large",
+      ],
       pipeline_stage: [
         "not_contacted",
         "followed",
