@@ -57,7 +57,7 @@ export function ClubDetailModal({ club, open, onOpenChange }: ClubDetailModalPro
               <ClubActivitiesTab clubId={club.id} />
             </TabsContent>
             <TabsContent value="tasks" className="mt-0 h-full">
-              <ClubTasksTab clubId={club.id} />
+              <ClubTasksTab clubId={club.id} club={club} />
             </TabsContent>
             <TabsContent value="content" className="mt-0 h-full">
               <ClubContentTab clubId={club.id} />
