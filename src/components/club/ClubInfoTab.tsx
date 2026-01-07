@@ -9,7 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Instagram, Globe, Phone, Mail, MapPin, Trash2, Save, ExternalLink, Users, Check, ChevronsUpDown } from 'lucide-react';
+import { Instagram, Globe, Phone, Mail, MapPin, Trash2, Save, ExternalLink, Users, Check, ChevronsUpDown, Linkedin, Upload, X } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 
 interface ClubInfoTabProps {
@@ -21,6 +23,8 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
   const [formData, setFormData] = useState({
     club_name: club.club_name,
     instagram_handle: club.instagram_handle || '',
+    linkedin: club.linkedin || '',
+    logo: club.logo || '',
     website: club.website || '',
     whatsapp: club.whatsapp || '',
     email: club.email || '',
@@ -36,11 +40,44 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
     notes: club.notes || '',
     next_action: club.next_action || '',
   });
+  const [uploading, setUploading] = useState(false);
 
   const updateClub = useUpdateClub();
   const deleteClub = useDeleteClub();
   const { data: ownershipGroups = [] } = useOwnershipGroups();
   const [ownershipOpen, setOwnershipOpen] = useState(false);
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${club.id}-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('club-logos')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('club-logos')
+        .getPublicUrl(filePath);
+
+      setFormData(prev => ({ ...prev, logo: publicUrl }));
+    } catch (error) {
+      console.error('Error uploading logo:', error);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    setFormData(prev => ({ ...prev, logo: '' }));
+  };
 
   const handleSave = () => {
     updateClub.mutate({
@@ -62,6 +99,40 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
 
   return (
     <div className="space-y-6">
+      {/* Logo Section */}
+      <div className="flex items-center gap-4">
+        <Avatar className="w-20 h-20">
+          <AvatarImage src={formData.logo} alt={formData.club_name} />
+          <AvatarFallback className="text-xl">
+            {formData.club_name.substring(0, 2).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+        <div className="space-y-2">
+          <Label>Club Logo</Label>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" asChild disabled={uploading}>
+              <label className="cursor-pointer">
+                <Upload className="w-4 h-4 mr-2" />
+                {uploading ? 'Uploading...' : 'Upload'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleLogoUpload}
+                  disabled={uploading}
+                />
+              </label>
+            </Button>
+            {formData.logo && (
+              <Button variant="ghost" size="sm" onClick={handleRemoveLogo}>
+                <X className="w-4 h-4 mr-2" />
+                Remove
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label>Club Name</Label>
@@ -156,6 +227,28 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
         </div>
         <div className="space-y-2">
           <Label className="flex items-center gap-2">
+            <Linkedin className="w-4 h-4" /> LinkedIn
+          </Label>
+          <div className="flex gap-2">
+            <Input 
+              value={formData.linkedin}
+              onChange={(e) => setFormData(prev => ({ ...prev, linkedin: e.target.value }))}
+              placeholder="https://linkedin.com/company/..."
+            />
+            {formData.linkedin && (
+              <Button variant="outline" size="icon" asChild>
+                <a href={formData.linkedin} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label className="flex items-center gap-2">
             <Globe className="w-4 h-4" /> Website
           </Label>
           <Input 
@@ -164,9 +257,6 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
             placeholder="https://"
           />
         </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label className="flex items-center gap-2">
             <Phone className="w-4 h-4" /> WhatsApp

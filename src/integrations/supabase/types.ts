@@ -80,6 +80,8 @@ export type Database = {
           followed_date: string | null
           id: string
           instagram_handle: string | null
+          linkedin: string | null
+          logo: string | null
           next_action: string | null
           next_action_date: string | null
           notes: string | null
@@ -116,6 +118,8 @@ export type Database = {
           followed_date?: string | null
           id?: string
           instagram_handle?: string | null
+          linkedin?: string | null
+          logo?: string | null
           next_action?: string | null
           next_action_date?: string | null
           notes?: string | null
@@ -152,6 +156,8 @@ export type Database = {
           followed_date?: string | null
           id?: string
           instagram_handle?: string | null
+          linkedin?: string | null
+          logo?: string | null
           next_action?: string | null
           next_action_date?: string | null
           notes?: string | null
