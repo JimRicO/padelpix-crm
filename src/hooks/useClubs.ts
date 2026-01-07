@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Club, PipelineStage } from '@/types/database';
 import { useToast } from '@/hooks/use-toast';
+import { detectOwnershipGroup } from '@/utils/ownershipPatterns';
 
 export function useClubs() {
   return useQuery({
@@ -63,6 +64,13 @@ export function useCreateClub() {
     mutationFn: async (club: { club_name: string; [key: string]: unknown }) => {
       const { data: { user } } = await supabase.auth.getUser();
       
+      // Auto-detect ownership group from club name
+      const detectedOwnership = detectOwnershipGroup(club.club_name);
+      const ownershipGroup = (club.ownership_group as string) || detectedOwnership || undefined;
+      
+      // Auto-set tier to enterprise if ownership_group exists
+      const tier = ownershipGroup ? 'enterprise' : (club.tier as 'enterprise' | 'multi_court' | 'boutique' | undefined);
+      
       const { data, error } = await supabase
         .from('clubs')
         .insert({
@@ -75,10 +83,11 @@ export function useCreateClub() {
           email: club.email as string | undefined,
           number_of_courts: club.number_of_courts as number | undefined,
           address: club.address as string | undefined,
-          tier: club.tier as 'enterprise' | 'multi_court' | 'boutique' | undefined,
+          tier,
           priority: club.priority as 'high' | 'medium' | 'low' | undefined,
           notes: club.notes as string | undefined,
           contact_name: club.contact_name as string | undefined,
+          ownership_group: ownershipGroup,
           created_by: user?.id,
         })
         .select()
@@ -230,25 +239,31 @@ export function useBulkCreateClubs() {
     mutationFn: async (clubs: BulkClubData[]) => {
       const { data: { user } } = await supabase.auth.getUser();
       
-      const clubsWithUser = clubs.map(club => ({
-        club_name: club.club_name,
-        instagram_handle: club.instagram_handle,
-        suburb: club.suburb,
-        city: club.city,
-        country: club.country,
-        website: club.website,
-        whatsapp: club.whatsapp,
-        email: club.email,
-        number_of_courts: club.number_of_courts,
-        address: club.address,
-        contact_name: club.contact_name,
-        coaches: club.coaches,
-        // Auto-set tier to enterprise if ownership_group exists
-        tier: club.ownership_group?.trim() ? 'enterprise' : club.tier,
-        priority: club.priority,
-        ownership_group: club.ownership_group,
-        created_by: user?.id,
-      }));
+      const clubsWithUser = clubs.map(club => {
+        // Auto-detect ownership group from club name if not provided
+        const detectedOwnership = detectOwnershipGroup(club.club_name);
+        const ownershipGroup = club.ownership_group?.trim() || detectedOwnership || undefined;
+        
+        return {
+          club_name: club.club_name,
+          instagram_handle: club.instagram_handle,
+          suburb: club.suburb,
+          city: club.city,
+          country: club.country,
+          website: club.website,
+          whatsapp: club.whatsapp,
+          email: club.email,
+          number_of_courts: club.number_of_courts,
+          address: club.address,
+          contact_name: club.contact_name,
+          coaches: club.coaches,
+          // Auto-set tier to enterprise if ownership_group exists
+          tier: ownershipGroup ? 'enterprise' : club.tier,
+          priority: club.priority,
+          ownership_group: ownershipGroup,
+          created_by: user?.id,
+        };
+      });
 
       const { data, error } = await supabase
         .from('clubs')
