@@ -17,6 +17,8 @@ export interface Club {
   id: string;
   club_name: string;
   instagram_handle: string | null;
+  linkedin: string | null;
+  logo: string | null;
   city: string | null;
   country: string | null;
   website: string | null;
