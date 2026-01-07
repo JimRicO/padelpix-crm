@@ -2,10 +2,23 @@ import { Club } from '@/types/database';
 
 // Define known ownership patterns
 export const OWNERSHIP_PATTERNS = [
-  { pattern: /virgin/i, group: 'Virgin Active' },  // Catches "Virgin" and "Virgin Active"
-  { pattern: /africa\s*padel/i, group: 'Africa Padel' },  // Catches "AfricaPadel" and "Africa Padel"
+  // Existing patterns
+  { pattern: /virgin/i, group: 'Virgin Active' },
+  { pattern: /africa\s*padel/i, group: 'Africa Padel' },
   { pattern: /balwin/i, group: 'Balwin' },
-  { pattern: /proactive/i, group: 'Proactive Padel' },  // Catches "proactive" variations
+  { pattern: /proactive/i, group: 'Proactive Padel' },
+  
+  // New patterns
+  { pattern: /ten\s*by\s*twenty|10\s*by\s*20|10x20/i, group: 'Ten By Twenty' },
+  { pattern: /techno\s*padel/i, group: 'Techno Padel' },
+  { pattern: /club\s*padel/i, group: 'Club Padel' },
+  { pattern: /padel\s*nation/i, group: 'Padel Nation' },
+  { pattern: /propadel|pro\s*padel/i, group: 'ProPadel' },
+  { pattern: /gayle\s*padel/i, group: 'Gayle Padel' },
+  { pattern: /liv\s*padel|livpadel/i, group: 'Liv Padel' },
+  { pattern: /net\s*set/i, group: 'Net Set Padel' },
+  { pattern: /padel\s*&\s*social/i, group: 'Padel & Social Club' },
+  { pattern: /padel\s*lab/i, group: 'Padel Lab' },
 ];
 
 export function detectOwnershipGroup(clubName: string): string | null {
