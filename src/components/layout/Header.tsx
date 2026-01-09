@@ -1,10 +1,11 @@
-import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useClubs } from '@/hooks/useClubs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Search, Plus, Upload, LogOut, User } from 'lucide-react';
+import { Search, Plus, Upload, Download, LogOut, User } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface HeaderProps {
   searchQuery: string;
@@ -15,10 +16,67 @@ interface HeaderProps {
 
 export function Header({ searchQuery, onSearchChange, onAddClub, onImport }: HeaderProps) {
   const { user, signOut } = useAuth();
+  const { data: clubs = [] } = useClubs();
 
   const getUserInitials = () => {
     const email = user?.email || '';
     return email.slice(0, 2).toUpperCase();
+  };
+
+  const handleExport = () => {
+    if (clubs.length === 0) {
+      toast.error('No clubs to export');
+      return;
+    }
+
+    const headers = [
+      'club_name',
+      'instagram_handle',
+      'email',
+      'whatsapp',
+      'website',
+      'linkedin',
+      'city',
+      'country',
+      'address',
+      'number_of_courts',
+      'contact_name',
+      'ownership_group',
+      'pipeline_stage',
+      'tier',
+      'priority',
+      'next_action',
+      'notes',
+    ];
+
+    const escapeCSV = (value: string | number | null | undefined): string => {
+      if (value === null || value === undefined) return '';
+      const str = String(value);
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
+    const csvRows = [
+      headers.join(','),
+      ...clubs.map(club => 
+        headers.map(header => escapeCSV(club[header as keyof typeof club] as string | number | null)).join(',')
+      ),
+    ];
+
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `clubs-export-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast.success(`Exported ${clubs.length} clubs`);
   };
 
   return (
@@ -41,6 +99,10 @@ export function Header({ searchQuery, onSearchChange, onAddClub, onImport }: Hea
       </div>
 
       <div className="flex items-center gap-2">
+        <Button variant="outline" size="sm" onClick={handleExport}>
+          <Download className="w-4 h-4 mr-2" />
+          Export
+        </Button>
         <Button variant="outline" size="sm" onClick={onImport}>
           <Upload className="w-4 h-4 mr-2" />
           Import
