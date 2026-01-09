@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Club, PipelineStage } from '@/types/database';
-import { ChevronDown, ChevronUp, Building2, MessageSquare, Crown } from 'lucide-react';
+import { ChevronDown, ChevronUp, Building2, MessageSquare, Crown, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 
@@ -12,6 +12,7 @@ interface EnterpriseGroupCardProps {
   stageBreakdown: Record<string, number>;
   onClubClick: (club: Club) => void;
   currentStage: PipelineStage;
+  onGroupClick?: (groupName: string) => void;
 }
 
 const STAGE_LABELS: Record<string, string> = {
@@ -34,8 +35,14 @@ export function EnterpriseGroupCard({
   stageBreakdown,
   onClubClick,
   currentStage,
+  onGroupClick,
 }: EnterpriseGroupCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+
+  const handleHeaderClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onGroupClick?.(groupName);
+  };
 
   // Only show clubs that match this column's stage
   const clubsInStage = clubs.filter(c => (c.pipeline_stage || 'not_contacted') === currentStage);
@@ -57,12 +64,16 @@ export function EnterpriseGroupCard({
       >
         <div className="flex items-start justify-between gap-2 w-full">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
+            <button
+              onClick={handleHeaderClick}
+              className="flex items-center gap-2 mb-1 hover:text-primary transition-colors group"
+            >
               <Crown className="w-4 h-4 text-primary flex-shrink-0" />
-              <h4 className="font-semibold text-sm text-foreground truncate">
+              <h4 className="font-semibold text-sm text-foreground truncate group-hover:text-primary">
                 {groupName}
               </h4>
-            </div>
+              <Settings className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+            </button>
             
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
               <span>{clubs.length} clubs</span>

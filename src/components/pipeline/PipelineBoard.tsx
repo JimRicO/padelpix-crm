@@ -4,6 +4,7 @@ import { useClubs, useUpdateClubStage } from '@/hooks/useClubs';
 import { Club, PipelineStage, PIPELINE_STAGES } from '@/types/database';
 import { ClubCard } from './ClubCard';
 import { EnterpriseGroupCard } from './EnterpriseGroupCard';
+import { OwnershipGroupModal } from '@/components/group/OwnershipGroupModal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -31,6 +32,11 @@ export function PipelineBoard({ onClubClick, searchQuery }: PipelineBoardProps) 
   const { data: clubs, isLoading } = useClubs();
   const updateStage = useUpdateClubStage();
   const [viewMode, setViewMode] = useState<'individual' | 'grouped'>('grouped');
+  const [selectedGroupName, setSelectedGroupName] = useState<string | null>(null);
+
+  const handleGroupClick = (groupName: string) => {
+    setSelectedGroupName(groupName);
+  };
 
   const filteredClubs = useMemo(() => {
     if (!clubs) return [];
@@ -48,6 +54,11 @@ export function PipelineBoard({ onClubClick, searchQuery }: PipelineBoardProps) 
   const { groups: ownershipGroups, ungrouped: ungroupedClubs } = useMemo(() => {
     return groupClubsByOwnership(filteredClubs);
   }, [filteredClubs]);
+
+  const selectedGroup = useMemo(() => {
+    if (!selectedGroupName) return null;
+    return ownershipGroups.find(g => g.name === selectedGroupName) || null;
+  }, [selectedGroupName, ownershipGroups]);
 
   const clubsByStage = useMemo(() => {
     const grouped: Record<PipelineStage, { clubs: Club[]; groups: typeof ownershipGroups }> = {
@@ -166,6 +177,7 @@ export function PipelineBoard({ onClubClick, searchQuery }: PipelineBoardProps) 
                         stageBreakdown={group.stageBreakdown}
                         onClubClick={onClubClick}
                         currentStage={stage}
+                        onGroupClick={handleGroupClick}
                       />
                     ))}
 
@@ -195,6 +207,15 @@ export function PipelineBoard({ onClubClick, searchQuery }: PipelineBoardProps) 
           ))}
         </div>
       </DragDropContext>
+
+      {/* Ownership Group Modal */}
+      <OwnershipGroupModal
+        groupName={selectedGroupName}
+        isOpen={!!selectedGroupName}
+        onClose={() => setSelectedGroupName(null)}
+        clubCount={selectedGroup?.clubs.length || 0}
+        totalCourts={selectedGroup?.totalCourts || 0}
+      />
     </div>
   );
 }
