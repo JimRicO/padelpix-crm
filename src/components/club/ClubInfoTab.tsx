@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Instagram, Globe, Phone, Mail, MapPin, Trash2, Save, ExternalLink, Users, Check, ChevronsUpDown, Linkedin, Upload, X } from 'lucide-react';
+import { Instagram, Globe, Phone, Mail, MapPin, Trash2, Save, ExternalLink, Users, Check, ChevronsUpDown, Linkedin, Upload, X, Link } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
@@ -41,6 +41,8 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
     next_action: club.next_action || '',
   });
   const [uploading, setUploading] = useState(false);
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [logoUrl, setLogoUrl] = useState('');
 
   const updateClub = useUpdateClub();
   const deleteClub = useDeleteClub();
@@ -77,6 +79,15 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
 
   const handleRemoveLogo = () => {
     setFormData(prev => ({ ...prev, logo: '' }));
+    setLogoUrl('');
+    setShowUrlInput(false);
+  };
+
+  const handleUrlSubmit = () => {
+    if (logoUrl.trim()) {
+      setFormData(prev => ({ ...prev, logo: logoUrl.trim() }));
+      setShowUrlInput(false);
+    }
   };
 
   const handleSave = () => {
@@ -109,25 +120,48 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
         </Avatar>
         <div className="space-y-2">
           <Label>Club Logo</Label>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" asChild disabled={uploading}>
-              <label className="cursor-pointer">
-                <Upload className="w-4 h-4 mr-2" />
-                {uploading ? 'Uploading...' : 'Upload'}
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleLogoUpload}
-                  disabled={uploading}
-                />
-              </label>
-            </Button>
-            {formData.logo && (
-              <Button variant="ghost" size="sm" onClick={handleRemoveLogo}>
-                <X className="w-4 h-4 mr-2" />
-                Remove
+          <div className="flex flex-col gap-2">
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" asChild disabled={uploading}>
+                <label className="cursor-pointer">
+                  <Upload className="w-4 h-4 mr-2" />
+                  {uploading ? 'Uploading...' : 'Upload'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleLogoUpload}
+                    disabled={uploading}
+                  />
+                </label>
               </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setShowUrlInput(!showUrlInput)}
+              >
+                <Link className="w-4 h-4 mr-2" />
+                URL
+              </Button>
+              {formData.logo && (
+                <Button variant="ghost" size="sm" onClick={handleRemoveLogo}>
+                  <X className="w-4 h-4 mr-2" />
+                  Remove
+                </Button>
+              )}
+            </div>
+            {showUrlInput && (
+              <div className="flex gap-2">
+                <Input
+                  placeholder="https://example.com/logo.png"
+                  value={logoUrl}
+                  onChange={(e) => setLogoUrl(e.target.value)}
+                  className="flex-1"
+                />
+                <Button size="sm" onClick={handleUrlSubmit} disabled={!logoUrl.trim()}>
+                  <Check className="w-4 h-4" />
+                </Button>
+              </div>
             )}
           </div>
         </div>
