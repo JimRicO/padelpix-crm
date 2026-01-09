@@ -276,6 +276,54 @@ export type Database = {
         }
         Relationships: []
       }
+      ownership_groups: {
+        Row: {
+          brand_color: string | null
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          notes: string | null
+          relationship_status: string | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          brand_color?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          notes?: string | null
+          relationship_status?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          brand_color?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          notes?: string | null
+          relationship_status?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
