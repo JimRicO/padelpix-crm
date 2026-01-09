@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useOwnershipGroupByName, useUpsertOwnershipGroup, OwnershipGroup } from '@/hooks/useOwnershipGroups';
-import { Crown, Building2, Mail, Phone, Globe, Palette, Loader2 } from 'lucide-react';
+import { Crown, Building2, Mail, Phone, Globe, Palette, Loader2, Upload, Link, X, Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -49,6 +49,8 @@ export function OwnershipGroupModal({
     relationship_status: 'active',
   });
   const [isUploading, setIsUploading] = useState(false);
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [logoUrl, setLogoUrl] = useState('');
 
   useEffect(() => {
     if (existingGroup) {
@@ -102,6 +104,20 @@ export function OwnershipGroupModal({
     } finally {
       setIsUploading(false);
     }
+  };
+
+  const handleUrlSubmit = () => {
+    if (logoUrl.trim()) {
+      setFormData(prev => ({ ...prev, logo_url: logoUrl.trim() }));
+      setShowUrlInput(false);
+      setLogoUrl('');
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    setFormData(prev => ({ ...prev, logo_url: '' }));
+    setLogoUrl('');
+    setShowUrlInput(false);
   };
 
   const handleSave = async () => {
@@ -161,15 +177,48 @@ export function OwnershipGroupModal({
                       <Crown className="w-6 h-6 text-muted-foreground" />
                     </div>
                   )}
-                  <div>
-                    <Input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleLogoUpload}
-                      disabled={isUploading}
-                      className="w-full"
-                    />
-                    {isUploading && <span className="text-xs text-muted-foreground">Uploading...</span>}
+                  <div className="flex flex-col gap-2">
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" asChild disabled={isUploading}>
+                        <label className="cursor-pointer">
+                          <Upload className="w-4 h-4 mr-2" />
+                          {isUploading ? 'Uploading...' : 'Upload'}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleLogoUpload}
+                            disabled={isUploading}
+                          />
+                        </label>
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => setShowUrlInput(!showUrlInput)}
+                      >
+                        <Link className="w-4 h-4 mr-2" />
+                        URL
+                      </Button>
+                      {formData.logo_url && (
+                        <Button variant="ghost" size="sm" onClick={handleRemoveLogo}>
+                          <X className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                    {showUrlInput && (
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="https://example.com/logo.png"
+                          value={logoUrl}
+                          onChange={(e) => setLogoUrl(e.target.value)}
+                          className="flex-1"
+                        />
+                        <Button size="sm" onClick={handleUrlSubmit} disabled={!logoUrl.trim()}>
+                          <Check className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
