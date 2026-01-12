@@ -13,6 +13,7 @@ export interface OwnershipGroup {
   brand_color: string | null;
   website: string | null;
   relationship_status: string | null;
+  total_clubs: number | null;
   created_at: string | null;
   updated_at: string | null;
   created_by: string | null;

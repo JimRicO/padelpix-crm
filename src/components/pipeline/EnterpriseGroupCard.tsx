@@ -13,6 +13,7 @@ interface EnterpriseGroupCardProps {
   onClubClick: (club: Club) => void;
   currentStage: PipelineStage;
   onGroupClick?: (groupName: string) => void;
+  totalClubsOverride?: number | null;
 }
 
 const STAGE_LABELS: Record<string, string> = {
@@ -36,6 +37,7 @@ export function EnterpriseGroupCard({
   onClubClick,
   currentStage,
   onGroupClick,
+  totalClubsOverride,
 }: EnterpriseGroupCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -76,7 +78,11 @@ export function EnterpriseGroupCard({
             </button>
             
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <span>{clubs.length} clubs</span>
+              <span>
+                {totalClubsOverride 
+                  ? `${clubs.length} of ${totalClubsOverride} clubs`
+                  : `${clubs.length} clubs`}
+              </span>
               {totalCourts > 0 && (
                 <div className="flex items-center gap-1">
                   <Building2 className="w-3 h-3" />

@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { useClubs, useUpdateClubStage } from '@/hooks/useClubs';
+import { useOwnershipGroupsList } from '@/hooks/useOwnershipGroups';
 import { Club, PipelineStage, PIPELINE_STAGES } from '@/types/database';
 import { ClubCard } from './ClubCard';
 import { EnterpriseGroupCard } from './EnterpriseGroupCard';
@@ -30,9 +31,19 @@ interface PipelineBoardProps {
 
 export function PipelineBoard({ onClubClick, searchQuery }: PipelineBoardProps) {
   const { data: clubs, isLoading } = useClubs();
+  const { data: ownershipGroupsData } = useOwnershipGroupsList();
   const updateStage = useUpdateClubStage();
   const [viewMode, setViewMode] = useState<'individual' | 'grouped'>('grouped');
   const [selectedGroupName, setSelectedGroupName] = useState<string | null>(null);
+
+  // Create a map of ownership group data for quick lookup
+  const ownershipGroupDataMap = useMemo(() => {
+    const map = new Map<string, { total_clubs: number | null }>();
+    ownershipGroupsData?.forEach(group => {
+      map.set(group.name, { total_clubs: group.total_clubs });
+    });
+    return map;
+  }, [ownershipGroupsData]);
 
   const handleGroupClick = (groupName: string) => {
     setSelectedGroupName(groupName);
@@ -178,6 +189,7 @@ export function PipelineBoard({ onClubClick, searchQuery }: PipelineBoardProps) 
                         onClubClick={onClubClick}
                         currentStage={stage}
                         onGroupClick={handleGroupClick}
+                        totalClubsOverride={ownershipGroupDataMap.get(group.name)?.total_clubs}
                       />
                     ))}
 
