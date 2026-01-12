@@ -47,6 +47,7 @@ export function OwnershipGroupModal({
     brand_color: '#6366f1',
     website: '',
     relationship_status: 'active',
+    total_clubs: null as number | null,
   });
   const [isUploading, setIsUploading] = useState(false);
   const [showUrlInput, setShowUrlInput] = useState(false);
@@ -63,6 +64,7 @@ export function OwnershipGroupModal({
         brand_color: existingGroup.brand_color || '#6366f1',
         website: existingGroup.website || '',
         relationship_status: existingGroup.relationship_status || 'active',
+        total_clubs: existingGroup.total_clubs,
       });
     } else {
       setFormData({
@@ -74,6 +76,7 @@ export function OwnershipGroupModal({
         brand_color: '#6366f1',
         website: '',
         relationship_status: 'active',
+        total_clubs: null,
       });
     }
   }, [existingGroup, groupName]);
@@ -152,13 +155,35 @@ export function OwnershipGroupModal({
             <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
               <div className="flex items-center gap-2">
                 <Building2 className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm font-medium">{clubCount} clubs</span>
+                <span className="text-sm font-medium">
+                  {formData.total_clubs 
+                    ? `${clubCount} of ${formData.total_clubs} clubs imported`
+                    : `${clubCount} clubs`}
+                </span>
               </div>
               {totalCourts > 0 && (
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-muted-foreground">{totalCourts} total courts</span>
                 </div>
               )}
+            </div>
+
+            {/* Total Clubs */}
+            <div className="space-y-2">
+              <Label>Total Clubs Owned</Label>
+              <Input
+                type="number"
+                min="0"
+                value={formData.total_clubs ?? ''}
+                onChange={(e) => setFormData(prev => ({ 
+                  ...prev, 
+                  total_clubs: e.target.value ? parseInt(e.target.value, 10) : null 
+                }))}
+                placeholder={`${clubCount} (auto-calculated from imported clubs)`}
+              />
+              <p className="text-xs text-muted-foreground">
+                Leave blank to use the count of imported clubs, or enter the total if you know the group owns more.
+              </p>
             </div>
 
             {/* Logo & Branding */}

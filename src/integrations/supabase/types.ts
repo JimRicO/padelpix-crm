@@ -289,6 +289,7 @@ export type Database = {
           name: string
           notes: string | null
           relationship_status: string | null
+          total_clubs: number | null
           updated_at: string
           website: string | null
         }
@@ -304,6 +305,7 @@ export type Database = {
           name: string
           notes?: string | null
           relationship_status?: string | null
+          total_clubs?: number | null
           updated_at?: string
           website?: string | null
         }
@@ -319,6 +321,7 @@ export type Database = {
           name?: string
           notes?: string | null
           relationship_status?: string | null
+          total_clubs?: number | null
           updated_at?: string
           website?: string | null
         }
