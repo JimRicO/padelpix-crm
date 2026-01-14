@@ -49,36 +49,40 @@ export function OwnershipGroupModal({
     relationship_status: 'active',
     total_clubs: null as number | null,
   });
+  const [initialFormData, setInitialFormData] = useState(formData);
   const [isUploading, setIsUploading] = useState(false);
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [logoUrl, setLogoUrl] = useState('');
 
+  // Check if form has unsaved changes
+  const hasChanges = JSON.stringify(formData) !== JSON.stringify(initialFormData);
+
   useEffect(() => {
-    if (existingGroup) {
-      setFormData({
-        contact_name: existingGroup.contact_name || '',
-        contact_email: existingGroup.contact_email || '',
-        contact_phone: existingGroup.contact_phone || '',
-        notes: existingGroup.notes || '',
-        logo_url: existingGroup.logo_url || '',
-        brand_color: existingGroup.brand_color || '#6366f1',
-        website: existingGroup.website || '',
-        relationship_status: existingGroup.relationship_status || 'active',
-        total_clubs: existingGroup.total_clubs,
-      });
-    } else {
-      setFormData({
-        contact_name: '',
-        contact_email: '',
-        contact_phone: '',
-        notes: '',
-        logo_url: '',
-        brand_color: '#6366f1',
-        website: '',
-        relationship_status: 'active',
-        total_clubs: null,
-      });
-    }
+    const newFormData = existingGroup
+      ? {
+          contact_name: existingGroup.contact_name || '',
+          contact_email: existingGroup.contact_email || '',
+          contact_phone: existingGroup.contact_phone || '',
+          notes: existingGroup.notes || '',
+          logo_url: existingGroup.logo_url || '',
+          brand_color: existingGroup.brand_color || '#6366f1',
+          website: existingGroup.website || '',
+          relationship_status: existingGroup.relationship_status || 'active',
+          total_clubs: existingGroup.total_clubs,
+        }
+      : {
+          contact_name: '',
+          contact_email: '',
+          contact_phone: '',
+          notes: '',
+          logo_url: '',
+          brand_color: '#6366f1',
+          website: '',
+          relationship_status: 'active',
+          total_clubs: null,
+        };
+    setFormData(newFormData);
+    setInitialFormData(newFormData);
   }, [existingGroup, groupName]);
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -358,7 +362,12 @@ export function OwnershipGroupModal({
               <Button variant="outline" onClick={onClose}>
                 Cancel
               </Button>
-              <Button onClick={handleSave} disabled={upsertMutation.isPending}>
+              <Button 
+                onClick={handleSave} 
+                disabled={upsertMutation.isPending || !hasChanges}
+                className={hasChanges && !upsertMutation.isPending ? 'bg-primary hover:bg-primary/90' : ''}
+                variant={hasChanges && !upsertMutation.isPending ? 'default' : 'secondary'}
+              >
                 {upsertMutation.isPending ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
