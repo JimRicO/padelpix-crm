@@ -134,6 +134,7 @@ export function OwnershipGroupModal({
       name: groupName,
       ...formData,
     });
+    setInitialFormData(formData); // Reset dirty state after successful save
     onClose();
   };
 

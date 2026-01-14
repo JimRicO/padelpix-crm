@@ -42,7 +42,7 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
   });
 
   const [formData, setFormData] = useState(getInitialFormData);
-  const [initialFormData] = useState(getInitialFormData);
+  const [initialFormData, setInitialFormData] = useState(getInitialFormData);
   const [uploading, setUploading] = useState(false);
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [logoUrl, setLogoUrl] = useState('');
@@ -102,6 +102,10 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
       ...formData,
       number_of_courts: formData.number_of_courts ? Number(formData.number_of_courts) : null,
       tier: formData.tier || null,
+    }, {
+      onSuccess: () => {
+        setInitialFormData(formData); // Reset dirty state after successful save
+      }
     });
   };
 
