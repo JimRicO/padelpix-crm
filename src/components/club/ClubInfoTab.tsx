@@ -20,7 +20,7 @@ interface ClubInfoTabProps {
 }
 
 export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
-  const [formData, setFormData] = useState({
+  const getInitialFormData = () => ({
     club_name: club.club_name,
     instagram_handle: club.instagram_handle || '',
     linkedin: club.linkedin || '',
@@ -40,6 +40,9 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
     notes: club.notes || '',
     next_action: club.next_action || '',
   });
+
+  const [formData, setFormData] = useState(getInitialFormData);
+  const [initialFormData] = useState(getInitialFormData);
   const [uploading, setUploading] = useState(false);
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [logoUrl, setLogoUrl] = useState('');
@@ -48,6 +51,9 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
   const deleteClub = useDeleteClub();
   const { data: ownershipGroups = [] } = useOwnershipGroups();
   const [ownershipOpen, setOwnershipOpen] = useState(false);
+
+  // Check if form has unsaved changes
+  const hasChanges = JSON.stringify(formData) !== JSON.stringify(initialFormData);
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -445,7 +451,12 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
           </AlertDialogContent>
         </AlertDialog>
 
-        <Button onClick={handleSave} disabled={updateClub.isPending}>
+        <Button 
+          onClick={handleSave} 
+          disabled={updateClub.isPending || !hasChanges}
+          className={hasChanges && !updateClub.isPending ? 'bg-primary hover:bg-primary/90' : ''}
+          variant={hasChanges && !updateClub.isPending ? 'default' : 'secondary'}
+        >
           <Save className="w-4 h-4 mr-2" />
           {updateClub.isPending ? 'Saving...' : 'Save Changes'}
         </Button>
