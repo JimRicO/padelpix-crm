@@ -327,6 +327,162 @@ export type Database = {
         }
         Relationships: []
       }
+      people: {
+        Row: {
+          contact_date: string | null
+          contact_method: string | null
+          contact_method_other: string | null
+          country: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          full_name: string
+          id: string
+          instagram_handle: string | null
+          linkedin: string | null
+          notes: string | null
+          phone: string | null
+          profile_image: string | null
+          role: string | null
+          updated_at: string
+        }
+        Insert: {
+          contact_date?: string | null
+          contact_method?: string | null
+          contact_method_other?: string | null
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          full_name: string
+          id?: string
+          instagram_handle?: string | null
+          linkedin?: string | null
+          notes?: string | null
+          phone?: string | null
+          profile_image?: string | null
+          role?: string | null
+          updated_at?: string
+        }
+        Update: {
+          contact_date?: string | null
+          contact_method?: string | null
+          contact_method_other?: string | null
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          full_name?: string
+          id?: string
+          instagram_handle?: string | null
+          linkedin?: string | null
+          notes?: string | null
+          phone?: string | null
+          profile_image?: string | null
+          role?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      person_link_suggestions: {
+        Row: {
+          club_id: string | null
+          created_at: string
+          id: string
+          link_type: string
+          match_reason: string | null
+          ownership_group_name: string | null
+          person_id: string
+          status: string | null
+        }
+        Insert: {
+          club_id?: string | null
+          created_at?: string
+          id?: string
+          link_type: string
+          match_reason?: string | null
+          ownership_group_name?: string | null
+          person_id: string
+          status?: string | null
+        }
+        Update: {
+          club_id?: string | null
+          created_at?: string
+          id?: string
+          link_type?: string
+          match_reason?: string | null
+          ownership_group_name?: string | null
+          person_id?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "person_link_suggestions_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "person_link_suggestions_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      person_links: {
+        Row: {
+          club_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_primary: boolean | null
+          link_type: string
+          ownership_group_name: string | null
+          person_id: string
+          role_at_entity: string | null
+        }
+        Insert: {
+          club_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_primary?: boolean | null
+          link_type: string
+          ownership_group_name?: string | null
+          person_id: string
+          role_at_entity?: string | null
+        }
+        Update: {
+          club_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_primary?: boolean | null
+          link_type?: string
+          ownership_group_name?: string | null
+          person_id?: string
+          role_at_entity?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "person_links_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "person_links_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null

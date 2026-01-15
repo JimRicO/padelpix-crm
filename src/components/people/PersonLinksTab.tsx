@@ -1,0 +1,226 @@
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Trash2, Building2, Users, Star } from 'lucide-react';
+import { usePersonLinks, useCreatePersonLink, useDeletePersonLink } from '@/hooks/usePersonLinks';
+import { useClubs } from '@/hooks/useClubs';
+import { useOwnershipGroupsList } from '@/hooks/useOwnershipGroups';
+
+import type { Person } from '@/types/people';
+
+interface PersonLinksTabProps {
+  person: Person;
+}
+
+export function PersonLinksTab({ person }: PersonLinksTabProps) {
+  const { data: links = [], isLoading } = usePersonLinks(person.id);
+  const { data: clubs = [] } = useClubs();
+  const { data: ownershipGroups = [] } = useOwnershipGroupsList();
+  const createLink = useCreatePersonLink();
+  const deleteLink = useDeletePersonLink();
+
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [linkType, setLinkType] = useState<'club' | 'ownership_group'>('club');
+  const [selectedClubId, setSelectedClubId] = useState('');
+  const [selectedGroupName, setSelectedGroupName] = useState('');
+  const [roleAtEntity, setRoleAtEntity] = useState('');
+  const [isPrimary, setIsPrimary] = useState(false);
+
+  const handleAddLink = async () => {
+    if (linkType === 'club' && !selectedClubId) return;
+    if (linkType === 'ownership_group' && !selectedGroupName) return;
+
+    await createLink.mutateAsync({
+      person_id: person.id,
+      link_type: linkType,
+      club_id: linkType === 'club' ? selectedClubId : null,
+      ownership_group_name: linkType === 'ownership_group' ? selectedGroupName : null,
+      role_at_entity: roleAtEntity || null,
+      is_primary: isPrimary,
+    });
+
+    setShowAddDialog(false);
+    setSelectedClubId('');
+    setSelectedGroupName('');
+    setRoleAtEntity('');
+    setIsPrimary(false);
+  };
+
+  const handleRemoveLink = async (linkId: string) => {
+    await deleteLink.mutateAsync({ id: linkId, personId: person.id });
+  };
+
+  const getClubName = (clubId: string | null) => {
+    if (!clubId) return 'Unknown Club';
+    const club = clubs.find((c) => c.id === clubId);
+    return club?.club_name || 'Unknown Club';
+  };
+
+  if (isLoading) {
+    return <div className="text-center py-8 text-muted-foreground">Loading links...</div>;
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="text-sm font-medium">Linked Organizations</h3>
+        <Button size="sm" onClick={() => setShowAddDialog(true)}>
+          <Plus className="w-4 h-4 mr-2" />
+          Add Link
+        </Button>
+      </div>
+
+      {links.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground">
+          No linked organizations yet. Add a link to connect this person to a club or ownership group.
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {links.map((link) => (
+            <div
+              key={link.id}
+              className="flex items-center justify-between p-3 rounded-lg border bg-card"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-muted">
+                  {link.link_type === 'club' ? (
+                    <Building2 className="w-4 h-4" />
+                  ) : (
+                    <Users className="w-4 h-4" />
+                  )}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">
+                      {link.link_type === 'club'
+                        ? getClubName(link.club_id)
+                        : link.ownership_group_name}
+                    </span>
+                    {link.is_primary && (
+                      <Badge variant="secondary" className="text-xs">
+                        <Star className="w-3 h-3 mr-1" />
+                        Primary
+                      </Badge>
+                    )}
+                  </div>
+                  {link.role_at_entity && (
+                    <span className="text-sm text-muted-foreground">
+                      {link.role_at_entity}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleRemoveLink(link.id)}
+              >
+                <Trash2 className="w-4 h-4 text-destructive" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Add Link Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Organization Link</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Link Type</Label>
+              <Select value={linkType} onValueChange={(v) => setLinkType(v as 'club' | 'ownership_group')}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="club">Club</SelectItem>
+                  <SelectItem value="ownership_group">Ownership Group</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {linkType === 'club' ? (
+              <div className="space-y-2">
+                <Label>Select Club</Label>
+                <Select value={selectedClubId} onValueChange={setSelectedClubId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a club" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clubs.map((club) => (
+                      <SelectItem key={club.id} value={club.id}>
+                        {club.club_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label>Select Ownership Group</Label>
+                <Select value={selectedGroupName} onValueChange={setSelectedGroupName}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose an ownership group" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ownershipGroups.map((group) => (
+                      <SelectItem key={group.id} value={group.name}>
+                        {group.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label>Role at Organization</Label>
+              <Input
+                value={roleAtEntity}
+                onChange={(e) => setRoleAtEntity(e.target.value)}
+                placeholder="e.g., Owner, Manager, Coach"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="isPrimary"
+                checked={isPrimary}
+                onChange={(e) => setIsPrimary(e.target.checked)}
+                className="rounded"
+              />
+              <Label htmlFor="isPrimary" className="font-normal">
+                This is the primary affiliation
+              </Label>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setShowAddDialog(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleAddLink}
+                disabled={
+                  createLink.isPending ||
+                  (linkType === 'club' && !selectedClubId) ||
+                  (linkType === 'ownership_group' && !selectedGroupName)
+                }
+              >
+                {createLink.isPending ? 'Adding...' : 'Add Link'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
