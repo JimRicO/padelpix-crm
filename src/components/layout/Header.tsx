@@ -84,6 +84,12 @@ export function Header({ searchQuery, onSearchChange, onAddClub, onImport }: Hea
       <div className="flex items-center gap-3">
         <h1 className="text-xl font-bold text-primary">PadelPix</h1>
         <span className="text-sm text-muted-foreground">CRM</span>
+        <div className="ml-4 flex gap-2">
+          <Button variant="secondary" size="sm">Clubs</Button>
+          <Button variant="ghost" size="sm" asChild>
+            <a href="/people">People</a>
+          </Button>
+        </div>
       </div>
 
       <div className="flex-1 max-w-md">
