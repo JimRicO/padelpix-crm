@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Club, PipelineStage } from '@/types/database';
-import { ChevronDown, ChevronUp, Building2, MessageSquare, Crown, Settings } from 'lucide-react';
+import { ChevronDown, ChevronUp, Building2, MessageSquare, Crown, Settings, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 
@@ -14,6 +14,7 @@ interface EnterpriseGroupCardProps {
   currentStage: PipelineStage;
   onGroupClick?: (groupName: string) => void;
   totalClubsOverride?: number | null;
+  isCompact?: boolean;
 }
 
 const STAGE_LABELS: Record<string, string> = {
@@ -38,6 +39,7 @@ export function EnterpriseGroupCard({
   currentStage,
   onGroupClick,
   totalClubsOverride,
+  isCompact = false,
 }: EnterpriseGroupCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -56,6 +58,25 @@ export function EnterpriseGroupCard({
     .filter(([_, count]) => count > 0)
     .map(([stage, count]) => `${count} ${STAGE_LABELS[stage] || stage}`)
     .slice(0, 2);
+
+  // Compact view for non-first columns
+  if (isCompact) {
+    return (
+      <div 
+        onClick={() => onGroupClick?.(groupName)}
+        className="flex items-center gap-2.5 rounded-md bg-primary/5 px-3 py-1.5 border border-primary/20 hover:bg-primary/10 transition-colors cursor-pointer"
+      >
+        <div className="w-4 h-4 rounded-full bg-success/20 flex items-center justify-center flex-shrink-0">
+          <Check className="w-3 h-3 text-success" />
+        </div>
+        <Crown className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+        <span className="font-medium text-sm truncate flex-1">{groupName}</span>
+        <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
+          {clubsInStage.length}
+        </Badge>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-lg bg-gradient-to-br from-primary/5 to-primary/10 border-2 border-primary/20 overflow-hidden">
