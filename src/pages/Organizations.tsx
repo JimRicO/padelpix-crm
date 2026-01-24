@@ -22,7 +22,7 @@ export default function Organizations() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<'name' | 'clubs' | 'courts'>('name');
+  const [sortBy, setSortBy] = useState<'name' | 'clubs' | 'country'>('name');
   
   const syncMutation = useSyncMissingOrganizations();
 
@@ -90,8 +90,8 @@ export default function Organizations() {
           return a.name.localeCompare(b.name);
         case 'clubs':
           return (clubCountByGroup[b.name] || 0) - (clubCountByGroup[a.name] || 0);
-        case 'courts':
-          return (courtsCountByGroup[b.name] || 0) - (courtsCountByGroup[a.name] || 0);
+        case 'country':
+          return (a.name || '').localeCompare(b.name || '');
         default:
           return 0;
       }
@@ -200,14 +200,14 @@ export default function Organizations() {
           <div className="flex items-center gap-2 mb-4">
             <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">Sort by:</span>
-            <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'name' | 'clubs' | 'courts')}>
+            <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'name' | 'clubs' | 'country')}>
               <SelectTrigger className="w-[160px] h-8">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="name">Name (A-Z)</SelectItem>
                 <SelectItem value="clubs">Most Clubs</SelectItem>
-                <SelectItem value="courts">Most Courts</SelectItem>
+                <SelectItem value="country">Country</SelectItem>
               </SelectContent>
             </Select>
           </div>
