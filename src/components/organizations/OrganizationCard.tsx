@@ -29,29 +29,28 @@ const STATUS_LABELS: Record<string, string> = {
 
 export function OrganizationCard({ group, clubCount, onClick }: OrganizationCardProps) {
   const status = group.relationship_status || 'active';
-  const totalClubs = group.total_clubs || clubCount;
 
   return (
     <Card 
-      className="cursor-pointer hover:shadow-md transition-shadow border-l-4"
+      className="cursor-pointer border-l-4"
       style={{ borderLeftColor: group.brand_color || 'hsl(var(--primary))' }}
       onClick={onClick}
     >
-      <CardContent className="p-4">
-        <div className="flex items-start gap-3">
+      <CardContent className="p-3">
+        <div className="flex items-start gap-2">
           {group.logo_url ? (
             <img 
               src={group.logo_url} 
               alt={group.name} 
-              className="w-12 h-12 object-contain rounded-lg border bg-white"
+              className="card-avatar object-contain border bg-white"
             />
           ) : (
             <div 
-              className="w-12 h-12 rounded-lg flex items-center justify-center"
+              className="card-avatar flex items-center justify-center"
               style={{ backgroundColor: `${group.brand_color || 'hsl(var(--primary))'}20` }}
             >
               <Crown 
-                className="w-6 h-6" 
+                className="w-5 h-5" 
                 style={{ color: group.brand_color || 'hsl(var(--primary))' }}
               />
             </div>
@@ -59,41 +58,41 @@ export function OrganizationCard({ group, clubCount, onClick }: OrganizationCard
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-semibold truncate">{group.name}</h3>
+              <h3 className="card-title">{group.name}</h3>
               <Badge variant="outline" className={STATUS_COLORS[status]}>
                 {STATUS_LABELS[status]}
               </Badge>
             </div>
 
-            <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
-              <div className="flex items-center gap-2">
-                <Building2 className="w-4 h-4" />
+            <div className="card-meta-row">
+              <div className="card-meta">
+                <Building2 className="card-icon-sm" />
                 <span>
                   {group.total_clubs 
                     ? `${clubCount} of ${group.total_clubs} clubs`
                     : `${clubCount} clubs`}
                 </span>
               </div>
-              <div className="flex items-center gap-1">
-                <MapPin className="w-4 h-4" />
+              <div className="card-meta">
+                <MapPin className="card-icon-sm" />
                 <span>{group.country || 'South Africa'}</span>
               </div>
             </div>
 
             {(group.contact_name || group.contact_email || group.website) && (
-              <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+              <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
                 {group.contact_name && (
                   <span>{group.contact_name}</span>
                 )}
                 {group.contact_email && (
-                  <span className="flex items-center gap-1">
-                    <Mail className="w-3 h-3" />
+                  <span className="card-meta">
+                    <Mail className="card-icon-sm" />
                     {group.contact_email}
                   </span>
                 )}
                 {group.website && (
-                  <span className="flex items-center gap-1">
-                    <Globe className="w-3 h-3" />
+                  <span className="card-meta">
+                    <Globe className="card-icon-sm" />
                     {new URL(group.website).hostname}
                   </span>
                 )}

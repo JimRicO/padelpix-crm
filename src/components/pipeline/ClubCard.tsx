@@ -46,10 +46,10 @@ export function ClubCard({ club, onClick, isDragging }: ClubCardProps) {
         isGroupOwned && 'border-primary/30 bg-gradient-to-br from-primary/5 to-transparent'
       )}
     >
-      <div className="flex items-start justify-between gap-2 mb-2">
-        <div className="flex items-center gap-1.5 min-w-0">
-          {isGroupOwned && <Crown className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
-          <h4 className="font-semibold text-sm text-foreground line-clamp-1">
+      <div className="card-header">
+        <div className="flex items-center gap-1 min-w-0">
+          {isGroupOwned && <Crown className="card-icon-sm text-primary" />}
+          <h4 className="card-title line-clamp-1">
             {club.club_name}
           </h4>
         </div>
@@ -57,50 +57,50 @@ export function ClubCard({ club, onClick, isDragging }: ClubCardProps) {
       </div>
 
       {club.instagram_handle && (
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1.5">
-          <Instagram className="w-3 h-3" />
+        <div className="card-meta mb-1">
+          <Instagram className="card-icon-sm" />
           <span className="line-clamp-1">@{club.instagram_handle.replace('@', '')}</span>
         </div>
       )}
 
-      <div className="flex items-center gap-3 text-xs text-muted-foreground mb-2">
+      <div className="card-meta-row">
         {(club.city || club.country) && (
-          <div className="flex items-center gap-1">
-            <MapPin className="w-3 h-3" />
+          <div className="card-meta">
+            <MapPin className="card-icon-sm" />
             <span>{club.city ? `${club.city}, ${club.country || 'South Africa'}` : (club.country || 'South Africa')}</span>
           </div>
         )}
         {club.number_of_courts && (
-          <div className="flex items-center gap-1">
-            <Building2 className="w-3 h-3" />
+          <div className="card-meta">
+            <Building2 className="card-icon-sm" />
             <span>{club.number_of_courts} courts</span>
           </div>
         )}
       </div>
 
       {club.ownership_group && (
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
-          <Users className="w-3 h-3" />
+        <div className="card-meta mb-1.5">
+          <Users className="card-icon-sm" />
           <span className="line-clamp-1">{club.ownership_group}</span>
         </div>
       )}
 
-      <div className="flex items-center justify-between">
+      <div className="card-footer">
         {club.tier && (
           <span className={cn('tier-badge', getTierClass(club.tier))}>
             {TIER_LABELS[club.tier] || club.tier}
           </span>
         )}
         {(club.total_dms || 0) > 0 && (
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <MessageSquare className="w-3 h-3" />
+          <div className="card-meta">
+            <MessageSquare className="card-icon-sm" />
             <span>{club.total_dms}</span>
           </div>
         )}
       </div>
 
       {club.next_action && (
-        <div className="mt-2 pt-2 border-t border-border">
+        <div className="card-divider">
           <p className="text-xs text-muted-foreground line-clamp-1">
             → {club.next_action}
           </p>

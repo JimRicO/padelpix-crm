@@ -15,15 +15,15 @@ export function ClubCardCompact({ club, onClick, isDragging }: ClubCardCompactPr
     <div 
       onClick={onClick}
       className={cn(
-        'club-card-row',
+        'card-compact',
         isDragging && 'shadow-md ring-2 ring-primary/30'
       )}
     >
-      <div className="w-4 h-4 rounded-full bg-success/20 flex items-center justify-center flex-shrink-0">
-        <Check className="w-3 h-3 text-success" />
+      <div className="w-3.5 h-3.5 rounded-full bg-success/20 flex items-center justify-center flex-shrink-0">
+        <Check className="w-2.5 h-2.5 text-success" />
       </div>
-      <span className="font-medium truncate flex-1">{club.club_name}</span>
-      {isGroupOwned && <Crown className="w-3 h-3 text-primary flex-shrink-0" />}
+      <span className="card-title flex-1">{club.club_name}</span>
+      {isGroupOwned && <Crown className="card-icon-sm text-primary" />}
     </div>
   );
 }

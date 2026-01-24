@@ -195,19 +195,58 @@
       inset -1px -1px 3px hsl(var(--shadow-light) / 0.15);
   }
 
-  .club-card {
-    @apply rounded-2xl p-4 cursor-pointer transition-all duration-200;
-    background: hsl(var(--background));
+  /* ===========================================
+     UNIFIED CARD DESIGN SYSTEM
+     =========================================== */
+
+  /* Card Base - shared neumorphic shadow */
+  .card-base {
+    @apply rounded-2xl bg-background cursor-pointer transition-all duration-200;
     box-shadow: 
       5px 5px 10px hsl(var(--shadow-dark) / 0.5),
       -2px -2px 5px hsl(var(--shadow-light) / 0.2);
   }
-
-  .club-card:hover {
+  .card-base:hover {
+    transform: translateY(-1px);
     box-shadow: 
       6px 6px 12px hsl(var(--shadow-dark) / 0.55),
       -2px -2px 6px hsl(var(--shadow-light) / 0.25);
-    transform: translateY(-2px);
+  }
+
+  /* Card Compact - row style (ClubCardCompact, compact EnterpriseGroup) */
+  .card-compact {
+    @apply card-base px-2.5 py-1.5 flex items-center gap-2 text-sm;
+  }
+
+  /* Card Standard - pipeline cards (ClubCard, EnterpriseGroupCard) */
+  .card-standard {
+    @apply card-base p-3;
+  }
+
+  /* Standardized internal spacing utilities */
+  .card-header { @apply flex items-start justify-between gap-2 mb-1.5; }
+  .card-title { @apply font-semibold text-sm text-foreground truncate; }
+  .card-subtitle { @apply text-xs text-muted-foreground; }
+  .card-meta { @apply flex items-center gap-1 text-xs text-muted-foreground; }
+  .card-meta-row { @apply flex items-center gap-3 text-xs text-muted-foreground mb-1.5; }
+  .card-footer { @apply flex items-center justify-between mt-1.5; }
+  .card-divider { @apply mt-1.5 pt-1.5 border-t border-border; }
+
+  /* Standardized icon sizes */
+  .card-icon-sm { @apply w-3 h-3 flex-shrink-0; }
+  .card-icon { @apply w-3.5 h-3.5 flex-shrink-0; }
+  .card-avatar { @apply w-10 h-10 rounded-lg flex-shrink-0; }
+
+  /* Legacy club-card - now uses standard tokens */
+  .club-card {
+    @apply card-standard;
+  }
+
+  .club-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 
+      6px 6px 12px hsl(var(--shadow-dark) / 0.55),
+      -2px -2px 6px hsl(var(--shadow-light) / 0.25);
   }
 
   .priority-dot {
@@ -229,13 +268,13 @@
   }
 
   .stage-badge {
-    @apply px-3 py-1.5 rounded-xl text-xs font-medium;
+    @apply px-2 py-1 rounded-xl text-xs font-medium;
     box-shadow: 
       inset 1px 1px 2px hsl(var(--shadow-dark) / 0.15);
   }
 
   .tier-badge {
-    @apply px-3 py-1 rounded-xl text-xs font-semibold uppercase tracking-wide;
+    @apply px-2 py-0.5 rounded-xl text-xs font-semibold uppercase tracking-wide;
     box-shadow: 
       2px 2px 4px hsl(var(--shadow-dark) / 0.2);
   }
@@ -256,13 +295,9 @@
     @apply bg-muted text-muted-foreground;
   }
 
+  /* Legacy club-card-row - now uses compact tokens */
   .club-card-row {
-    @apply flex items-center gap-2.5 rounded-xl px-3 py-2 
-           transition-all duration-200 cursor-pointer text-sm;
-    background: hsl(var(--background));
-    box-shadow: 
-      3px 3px 6px hsl(var(--shadow-dark) / 0.35),
-      -1px -1px 3px hsl(var(--shadow-light) / 0.15);
+    @apply card-compact;
   }
 
   .club-card-row:hover {
@@ -282,7 +317,7 @@
 
   /* Neumorphic card - subtle */
   .neu-card {
-    @apply rounded-2xl p-5;
+    @apply rounded-2xl p-3;
     background: hsl(var(--background));
     box-shadow: 
       6px 6px 12px hsl(var(--shadow-dark) / 0.5),
