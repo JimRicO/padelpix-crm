@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Search, Plus, LogOut, User, Building2, RefreshCw } from 'lucide-react';
+import { Search, Plus, LogOut, User, Building2, RefreshCw, ArrowUpDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { OrganizationCard } from '@/components/organizations/OrganizationCard';
 import { AddOrganizationDialog } from '@/components/organizations/AddOrganizationDialog';
 import { OwnershipGroupModal } from '@/components/group/OwnershipGroupModal';
@@ -21,6 +22,7 @@ export default function Organizations() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<'name' | 'clubs' | 'courts'>('name');
   
   const syncMutation = useSyncMissingOrganizations();
 
@@ -69,14 +71,32 @@ export default function Organizations() {
 
   // Filter groups by search
   const filteredGroups = useMemo(() => {
-    if (!searchQuery.trim()) return groups;
-    const query = searchQuery.toLowerCase();
-    return groups.filter(group => 
-      group.name.toLowerCase().includes(query) ||
-      group.contact_name?.toLowerCase().includes(query) ||
-      group.contact_email?.toLowerCase().includes(query)
-    );
-  }, [groups, searchQuery]);
+    let result = groups;
+    
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(group => 
+        group.name.toLowerCase().includes(query) ||
+        group.contact_name?.toLowerCase().includes(query) ||
+        group.contact_email?.toLowerCase().includes(query)
+      );
+    }
+    
+    // Apply sorting
+    return [...result].sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'clubs':
+          return (clubCountByGroup[b.name] || 0) - (clubCountByGroup[a.name] || 0);
+        case 'courts':
+          return (courtsCountByGroup[b.name] || 0) - (courtsCountByGroup[a.name] || 0);
+        default:
+          return 0;
+      }
+    });
+  }, [groups, searchQuery, sortBy, clubCountByGroup, courtsCountByGroup]);
 
   const getUserInitials = () => {
     const email = user?.email || '';
@@ -175,6 +195,23 @@ export default function Organizations() {
 
       {/* Content */}
       <main className="p-6">
+        {/* Sort controls */}
+        {!groupsLoading && filteredGroups.length > 0 && (
+          <div className="flex items-center gap-2 mb-4">
+            <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Sort by:</span>
+            <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'name' | 'clubs' | 'courts')}>
+              <SelectTrigger className="w-[160px] h-8">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name">Name (A-Z)</SelectItem>
+                <SelectItem value="clubs">Most Clubs</SelectItem>
+                <SelectItem value="courts">Most Courts</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
         {groupsLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
