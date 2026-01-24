@@ -1,97 +1,72 @@
 
-# Auto-Sync Missing Organizations
+# Add Country Field to All Cards
 
 ## Overview
-Implement automatic synchronization that creates `ownership_groups` records for any ownership group names found in the clubs table that don't already have a matching organization entry.
+Update all card components across the system to display the country field. Since most data defaults to "South Africa", cards will show this value consistently.
 
-## Current State
-- **14 unique ownership groups** exist in clubs data
-- **Only 4 organization records** exist in the `ownership_groups` table
-- **10 organizations are missing**: Africa Padel, Balwin, Club Padel, Net Set Padel, Padel & Social Club, Padel Lab, Padel Nation, Proactive Padel, ProPadel, Techno Padel, Ten By Twenty
+## Cards to Update
 
-## Implementation Approach
+### 1. ClubCard (src/components/pipeline/ClubCard.tsx)
+**Current state:** Shows city with MapPin icon but no country
+**Change:** Add country display alongside or below city
 
-### Option A: One-Time Sync Button (Recommended)
-Add a "Sync Missing" button on the Organizations page that:
-1. Compares ownership group names from clubs vs existing organization records
-2. Creates new organization records for any missing ones
-3. Shows a toast with results (e.g., "Created 10 missing organizations")
-
-### Option B: Automatic Background Sync
-Automatically sync when the Organizations page loads or when clubs data changes.
-
-**I recommend Option A** because it gives you control and visibility into when syncing happens.
-
----
-
-## Implementation Steps
-
-### 1. Create New Hook: `useSyncMissingOrganizations`
-**File:** `src/hooks/useOwnershipGroups.ts`
-
-Add a new mutation hook that:
-- Gets all unique ownership group names from clubs
-- Gets all existing organization names
-- Identifies missing ones
-- Bulk inserts the missing organizations with default values
-
-```text
-Logic flow:
-Clubs Data → Extract unique ownership_group names
-                        ↓
-Ownership Groups → Extract existing names
-                        ↓
-Compare → Find missing names
-                        ↓
-Bulk Insert → Create records for missing names
+Display format:
+```
+📍 Johannesburg, South Africa
 ```
 
-### 2. Update Organizations Page
-**File:** `src/pages/Organizations.tsx`
+### 2. ClubCardCompact (src/components/pipeline/ClubCardCompact.tsx)
+**Current state:** Minimal view with just club name and crown icon
+**Change:** This is intentionally compact for converted clubs - no country needed here
 
-Add:
-- Import the new sync hook
-- Add a "Sync Missing" button in the header (only visible when missing orgs exist)
-- Show badge with count of missing organizations
-- Call sync mutation on button click
+### 3. EnterpriseGroupCard (src/components/pipeline/EnterpriseGroupCard.tsx)
+**Current state:** Shows group name, club count, courts, DMs
+**Change:** Add country indicator in the stats row
 
-### 3. UI/UX Details
-- Button placement: Next to "Add Organization" button
-- Button style: Secondary/outline to differentiate from primary action
-- Badge: Show count of missing organizations (e.g., "Sync 10 Missing")
-- Loading state: Show spinner while syncing
-- Success toast: "Successfully created X organizations"
-
----
-
-## Technical Details
-
-### New Hook Implementation
-```typescript
-export function useSyncMissingOrganizations() {
-  // Mutation that:
-  // 1. Fetches distinct ownership_group from clubs
-  // 2. Fetches existing organization names  
-  // 3. Filters to find missing
-  // 4. Bulk inserts missing with: name, relationship_status='active'
-}
+Display format:
+```
+3 clubs | 🏗️ 12 | 📍 South Africa
 ```
 
-### Files to Modify
-1. `src/hooks/useOwnershipGroups.ts` - Add sync mutation hook
-2. `src/pages/Organizations.tsx` - Add sync button and logic
+### 4. OrganizationCard (src/components/organizations/OrganizationCard.tsx)
+**Current state:** Shows logo, name, status, club count, contact info
+**Change:** Add country display with MapPin icon in the info section
 
-### Data Created for Missing Organizations
-Each new organization record will have:
-- `name`: The ownership group name from clubs
-- `relationship_status`: 'active' (default)
-- `created_by`: Current user ID
-- All other fields: null (can be filled in later via the modal)
+Display format:
+```
+📍 South Africa
+```
+
+### 5. PersonCard (src/components/people/PersonCard.tsx)
+**Current state:** Already displays country with MapPin icon
+**No changes needed**
 
 ---
 
-## Expected Outcome
-After clicking "Sync Missing":
-- Organizations page will show all 14 organizations (plus RESERVE = 15 total)
-- Each organization card will show the correct club count from clubs data
-- Users can click any organization to add contact details, logo, etc.
+## Implementation Details
+
+### ClubCard Changes
+- Modify the location display (around line 67-72)
+- Show format: `{city}, {country || 'South Africa'}`
+- If no city, just show country
+
+### EnterpriseGroupCard Changes
+- Add country to the stats row (around line 101-119)
+- Use MapPin icon with "South Africa" text
+- Only show in expanded view (not compact)
+
+### OrganizationCard Changes
+- Add country display after the club count section
+- Use MapPin icon consistent with other cards
+- Default to "South Africa" if country is null
+
+---
+
+## Files to Modify
+1. `src/components/pipeline/ClubCard.tsx` - Add country to location display
+2. `src/components/pipeline/EnterpriseGroupCard.tsx` - Add country to stats
+3. `src/components/organizations/OrganizationCard.tsx` - Add country field display
+
+## No Changes Needed
+- `src/components/pipeline/ClubCardCompact.tsx` - Intentionally minimal
+- `src/components/people/PersonCard.tsx` - Already shows country
