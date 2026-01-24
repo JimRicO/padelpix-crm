@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useOwnershipGroupByName, useUpsertOwnershipGroup, OwnershipGroup } from '@/hooks/useOwnershipGroups';
-import { Crown, Building2, Mail, Phone, Globe, Palette, Loader2, Upload, Link, X, Check } from 'lucide-react';
+import { Crown, Building2, Mail, Phone, Globe, Palette, Loader2, Upload, Link, X, Check, MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -48,6 +48,7 @@ export function OwnershipGroupModal({
     website: '',
     relationship_status: 'active',
     total_clubs: null as number | null,
+    country: 'South Africa',
   });
   const [initialFormData, setInitialFormData] = useState(formData);
   const [isUploading, setIsUploading] = useState(false);
@@ -69,6 +70,7 @@ export function OwnershipGroupModal({
           website: existingGroup.website || '',
           relationship_status: existingGroup.relationship_status || 'active',
           total_clubs: existingGroup.total_clubs,
+          country: existingGroup.country || 'South Africa',
         }
       : {
           contact_name: '',
@@ -80,6 +82,7 @@ export function OwnershipGroupModal({
           website: '',
           relationship_status: 'active',
           total_clubs: null,
+          country: 'South Africa',
         };
     setFormData(newFormData);
     setInitialFormData(newFormData);
@@ -322,6 +325,17 @@ export function OwnershipGroupModal({
                     value={formData.website}
                     onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))}
                     placeholder="https://example.com"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4" />
+                    Country
+                  </Label>
+                  <Input
+                    value={formData.country}
+                    onChange={(e) => setFormData(prev => ({ ...prev, country: e.target.value }))}
+                    placeholder="South Africa"
                   />
                 </div>
               </div>
