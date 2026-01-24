@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, Building2, Users, Star } from 'lucide-react';
 import { usePersonLinks, useCreatePersonLink, useDeletePersonLink } from '@/hooks/usePersonLinks';
 import { useClubs } from '@/hooks/useClubs';
-import { useOwnershipGroupsList } from '@/hooks/useOwnershipGroups';
+import { useOwnershipGroupsList, useCreateOwnershipGroup } from '@/hooks/useOwnershipGroups';
 
 import type { Person } from '@/types/people';
 
@@ -22,6 +22,7 @@ export function PersonLinksTab({ person }: PersonLinksTabProps) {
   const { data: ownershipGroups = [] } = useOwnershipGroupsList();
   const createLink = useCreatePersonLink();
   const deleteLink = useDeletePersonLink();
+  const createOwnershipGroup = useCreateOwnershipGroup();
 
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [linkType, setLinkType] = useState<'club' | 'ownership_group'>('club');
@@ -29,25 +30,52 @@ export function PersonLinksTab({ person }: PersonLinksTabProps) {
   const [selectedGroupName, setSelectedGroupName] = useState('');
   const [roleAtEntity, setRoleAtEntity] = useState('');
   const [isPrimary, setIsPrimary] = useState(false);
+  const [isCreatingNew, setIsCreatingNew] = useState(false);
+  const [newGroupName, setNewGroupName] = useState('');
 
   const handleAddLink = async () => {
     if (linkType === 'club' && !selectedClubId) return;
-    if (linkType === 'ownership_group' && !selectedGroupName) return;
+    if (linkType === 'ownership_group' && !isCreatingNew && !selectedGroupName) return;
+    if (linkType === 'ownership_group' && isCreatingNew && !newGroupName.trim()) return;
+
+    let groupName = selectedGroupName;
+
+    // Create new ownership group if needed
+    if (linkType === 'ownership_group' && isCreatingNew) {
+      const newGroup = await createOwnershipGroup.mutateAsync({ name: newGroupName.trim() });
+      groupName = newGroup.name;
+    }
 
     await createLink.mutateAsync({
       person_id: person.id,
       link_type: linkType,
       club_id: linkType === 'club' ? selectedClubId : null,
-      ownership_group_name: linkType === 'ownership_group' ? selectedGroupName : null,
+      ownership_group_name: linkType === 'ownership_group' ? groupName : null,
       role_at_entity: roleAtEntity || null,
       is_primary: isPrimary,
     });
 
+    resetDialogState();
+  };
+
+  const resetDialogState = () => {
     setShowAddDialog(false);
     setSelectedClubId('');
     setSelectedGroupName('');
     setRoleAtEntity('');
     setIsPrimary(false);
+    setIsCreatingNew(false);
+    setNewGroupName('');
+  };
+
+  const handleGroupSelectionChange = (value: string) => {
+    if (value === '__create_new__') {
+      setIsCreatingNew(true);
+      setSelectedGroupName('');
+    } else {
+      setIsCreatingNew(false);
+      setSelectedGroupName(value);
+    }
   };
 
   const handleRemoveLink = async (linkId: string) => {
@@ -127,7 +155,10 @@ export function PersonLinksTab({ person }: PersonLinksTabProps) {
       )}
 
       {/* Add Link Dialog */}
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+      <Dialog open={showAddDialog} onOpenChange={(open) => {
+        if (!open) resetDialogState();
+        else setShowAddDialog(true);
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add Organization Link</DialogTitle>
@@ -163,10 +194,30 @@ export function PersonLinksTab({ person }: PersonLinksTabProps) {
                   </SelectContent>
                 </Select>
               </div>
+            ) : isCreatingNew ? (
+              <div className="space-y-2">
+                <Label>New Group Name</Label>
+                <Input
+                  value={newGroupName}
+                  onChange={(e) => setNewGroupName(e.target.value)}
+                  placeholder="Enter new group name"
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setIsCreatingNew(false);
+                    setNewGroupName('');
+                  }}
+                  className="text-muted-foreground"
+                >
+                  ← Back to select existing
+                </Button>
+              </div>
             ) : (
               <div className="space-y-2">
                 <Label>Select Ownership Group</Label>
-                <Select value={selectedGroupName} onValueChange={setSelectedGroupName}>
+                <Select value={selectedGroupName} onValueChange={handleGroupSelectionChange}>
                   <SelectTrigger>
                     <SelectValue placeholder="Choose an ownership group" />
                   </SelectTrigger>
@@ -176,6 +227,13 @@ export function PersonLinksTab({ person }: PersonLinksTabProps) {
                         {group.name}
                       </SelectItem>
                     ))}
+                    <SelectSeparator />
+                    <SelectItem value="__create_new__">
+                      <span className="flex items-center gap-2 text-primary">
+                        <Plus className="w-4 h-4" />
+                        Create New Group
+                      </span>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -204,18 +262,20 @@ export function PersonLinksTab({ person }: PersonLinksTabProps) {
             </div>
 
             <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={() => setShowAddDialog(false)}>
+              <Button variant="outline" onClick={resetDialogState}>
                 Cancel
               </Button>
               <Button
                 onClick={handleAddLink}
                 disabled={
                   createLink.isPending ||
+                  createOwnershipGroup.isPending ||
                   (linkType === 'club' && !selectedClubId) ||
-                  (linkType === 'ownership_group' && !selectedGroupName)
+                  (linkType === 'ownership_group' && !isCreatingNew && !selectedGroupName) ||
+                  (linkType === 'ownership_group' && isCreatingNew && !newGroupName.trim())
                 }
               >
-                {createLink.isPending ? 'Adding...' : 'Add Link'}
+                {createLink.isPending || createOwnershipGroup.isPending ? 'Adding...' : 'Add Link'}
               </Button>
             </div>
           </div>
