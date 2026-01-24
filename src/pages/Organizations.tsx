@@ -91,7 +91,7 @@ export default function Organizations() {
         case 'clubs':
           return (clubCountByGroup[b.name] || 0) - (clubCountByGroup[a.name] || 0);
         case 'country':
-          return (a.name || '').localeCompare(b.name || '');
+          return (a.country || 'South Africa').localeCompare(b.country || 'South Africa');
         default:
           return 0;
       }
