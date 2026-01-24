@@ -2,119 +2,131 @@
 @tailwind components;
 @tailwind utilities;
 
-/* PadelPix CRM Design System - Sporty, energetic orange brand */
+/* PadelPix CRM Design System - Neumorphic Style */
 
 @layer base {
   :root {
-    --background: 0 0% 98%;
-    --foreground: 210 29% 17%;
+    /* Neumorphic base - soft gray surface */
+    --background: 220 15% 91%;
+    --foreground: 220 20% 20%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 210 29% 17%;
+    /* Cards blend with background for neumorphic effect */
+    --card: 220 15% 91%;
+    --card-foreground: 220 20% 20%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 210 29% 17%;
+    --popover: 220 15% 93%;
+    --popover-foreground: 220 20% 20%;
 
-    /* Primary: Vibrant Orange */
+    /* Primary: Vibrant Orange (kept for brand identity) */
     --primary: 18 95% 50%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary: Dark Slate */
-    --secondary: 210 29% 24%;
-    --secondary-foreground: 0 0% 100%;
+    /* Secondary: Muted slate */
+    --secondary: 220 15% 75%;
+    --secondary-foreground: 220 20% 25%;
 
-    --muted: 210 20% 95%;
-    --muted-foreground: 210 15% 45%;
+    --muted: 220 15% 85%;
+    --muted-foreground: 220 15% 45%;
 
     --accent: 18 100% 95%;
     --accent-foreground: 18 95% 40%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 70% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Success: Green */
-    --success: 160 84% 39%;
+    /* Success: Soft Green */
+    --success: 160 60% 45%;
     --success-foreground: 0 0% 100%;
 
-    /* Warning: Yellow */
-    --warning: 38 92% 50%;
+    /* Warning: Soft Yellow-Orange */
+    --warning: 38 80% 50%;
     --warning-foreground: 0 0% 100%;
 
-    --border: 210 20% 90%;
-    --input: 210 20% 90%;
+    --border: 220 15% 82%;
+    --input: 220 15% 88%;
     --ring: 18 95% 50%;
 
-    --radius: 0.625rem;
+    --radius: 1rem;
 
-    --sidebar-background: 210 29% 17%;
-    --sidebar-foreground: 210 20% 90%;
+    /* Sidebar - darker for contrast */
+    --sidebar-background: 220 20% 18%;
+    --sidebar-foreground: 220 15% 90%;
     --sidebar-primary: 18 95% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 29% 24%;
-    --sidebar-accent-foreground: 210 20% 90%;
-    --sidebar-border: 210 29% 24%;
+    --sidebar-accent: 220 20% 25%;
+    --sidebar-accent-foreground: 220 15% 90%;
+    --sidebar-border: 220 20% 25%;
     --sidebar-ring: 18 95% 50%;
 
-    /* Pipeline stage colors */
-    --stage-not-contacted: 210 20% 85%;
-    --stage-followed: 199 89% 48%;
-    --stage-engaged: 262 83% 58%;
-    --stage-dm-sent: 330 81% 60%;
-    --stage-responded: 38 92% 50%;
-    --stage-content-created: 18 95% 50%;
-    --stage-trial: 160 84% 39%;
-    --stage-customer: 142 71% 45%;
-    --stage-dead: 0 0% 60%;
+    /* Neumorphic shadow colors */
+    --shadow-light: 0 0% 100%;
+    --shadow-dark: 220 20% 70%;
 
-    /* Priority colors */
-    --priority-high: 0 84% 60%;
-    --priority-medium: 38 92% 50%;
-    --priority-low: 160 84% 39%;
+    /* Pipeline stage colors - softer for neumorphic */
+    --stage-not-contacted: 220 15% 80%;
+    --stage-followed: 199 70% 55%;
+    --stage-engaged: 262 60% 60%;
+    --stage-dm-sent: 330 60% 60%;
+    --stage-responded: 38 70% 55%;
+    --stage-content-created: 18 85% 55%;
+    --stage-trial: 160 60% 45%;
+    --stage-customer: 142 55% 50%;
+    --stage-dead: 0 0% 55%;
+
+    /* Priority colors - softer */
+    --priority-high: 0 65% 55%;
+    --priority-medium: 38 70% 55%;
+    --priority-low: 160 55% 45%;
   }
 
   .dark {
-    --background: 210 29% 10%;
-    --foreground: 210 20% 95%;
+    /* Dark neumorphic - deep slate surface */
+    --background: 220 20% 14%;
+    --foreground: 220 15% 90%;
 
-    --card: 210 29% 14%;
-    --card-foreground: 210 20% 95%;
+    --card: 220 20% 14%;
+    --card-foreground: 220 15% 90%;
 
-    --popover: 210 29% 14%;
-    --popover-foreground: 210 20% 95%;
+    --popover: 220 20% 16%;
+    --popover-foreground: 220 15% 90%;
 
     --primary: 18 95% 55%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 29% 30%;
-    --secondary-foreground: 210 20% 95%;
+    --secondary: 220 20% 25%;
+    --secondary-foreground: 220 15% 85%;
 
-    --muted: 210 29% 20%;
-    --muted-foreground: 210 20% 65%;
+    --muted: 220 20% 20%;
+    --muted-foreground: 220 15% 55%;
 
-    --accent: 18 100% 20%;
+    --accent: 18 80% 20%;
     --accent-foreground: 18 95% 70%;
 
-    --destructive: 0 62% 30%;
-    --destructive-foreground: 210 20% 95%;
+    --destructive: 0 55% 40%;
+    --destructive-foreground: 0 0% 95%;
 
-    --success: 160 84% 30%;
-    --success-foreground: 160 84% 85%;
+    --success: 160 50% 35%;
+    --success-foreground: 160 50% 90%;
 
-    --warning: 38 92% 40%;
-    --warning-foreground: 38 92% 95%;
+    --warning: 38 70% 45%;
+    --warning-foreground: 38 70% 95%;
 
-    --border: 210 29% 20%;
-    --input: 210 29% 20%;
+    --border: 220 20% 20%;
+    --input: 220 20% 18%;
     --ring: 18 95% 55%;
 
-    --sidebar-background: 210 29% 10%;
-    --sidebar-foreground: 210 20% 90%;
+    --sidebar-background: 220 20% 10%;
+    --sidebar-foreground: 220 15% 85%;
     --sidebar-primary: 18 95% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 29% 20%;
-    --sidebar-accent-foreground: 210 20% 90%;
-    --sidebar-border: 210 29% 20%;
+    --sidebar-accent: 220 20% 18%;
+    --sidebar-accent-foreground: 220 15% 85%;
+    --sidebar-border: 220 20% 18%;
     --sidebar-ring: 18 95% 55%;
+
+    /* Dark neumorphic shadows */
+    --shadow-light: 220 20% 20%;
+    --shadow-dark: 220 25% 8%;
   }
 }
 
@@ -130,16 +142,81 @@
 }
 
 @layer components {
+  /* Neumorphic raised effect */
+  .neu-raised {
+    background: hsl(var(--background));
+    box-shadow: 
+      6px 6px 12px hsl(var(--shadow-dark)),
+      -6px -6px 12px hsl(var(--shadow-light));
+  }
+
+  /* Neumorphic pressed/inset effect */
+  .neu-pressed {
+    background: hsl(var(--background));
+    box-shadow: 
+      inset 4px 4px 8px hsl(var(--shadow-dark)),
+      inset -4px -4px 8px hsl(var(--shadow-light));
+  }
+
+  /* Neumorphic flat with subtle shadow */
+  .neu-flat {
+    background: hsl(var(--background));
+    box-shadow: 
+      3px 3px 6px hsl(var(--shadow-dark)),
+      -3px -3px 6px hsl(var(--shadow-light));
+  }
+
+  /* Neumorphic button style */
+  .neu-button {
+    background: linear-gradient(145deg, 
+      hsl(var(--background)) 0%, 
+      hsl(var(--muted)) 100%);
+    box-shadow: 
+      4px 4px 8px hsl(var(--shadow-dark)),
+      -4px -4px 8px hsl(var(--shadow-light));
+    transition: all 0.2s ease;
+  }
+
+  .neu-button:hover {
+    box-shadow: 
+      2px 2px 4px hsl(var(--shadow-dark)),
+      -2px -2px 4px hsl(var(--shadow-light));
+  }
+
+  .neu-button:active {
+    box-shadow: 
+      inset 2px 2px 4px hsl(var(--shadow-dark)),
+      inset -2px -2px 4px hsl(var(--shadow-light));
+  }
+
   .pipeline-column {
-    @apply min-h-[calc(100vh-200px)] rounded-lg bg-muted/50 p-3;
+    @apply min-h-[calc(100vh-200px)] rounded-2xl p-3;
+    background: hsl(var(--background));
+    box-shadow: 
+      inset 4px 4px 8px hsl(var(--shadow-dark) / 0.5),
+      inset -4px -4px 8px hsl(var(--shadow-light) / 0.7);
   }
 
   .club-card {
-    @apply rounded-lg bg-card p-4 shadow-sm border border-border hover:shadow-md transition-shadow cursor-pointer;
+    @apply rounded-2xl p-4 cursor-pointer transition-all duration-200;
+    background: hsl(var(--background));
+    box-shadow: 
+      6px 6px 12px hsl(var(--shadow-dark)),
+      -6px -6px 12px hsl(var(--shadow-light));
+  }
+
+  .club-card:hover {
+    box-shadow: 
+      8px 8px 16px hsl(var(--shadow-dark)),
+      -8px -8px 16px hsl(var(--shadow-light));
+    transform: translateY(-2px);
   }
 
   .priority-dot {
     @apply w-2.5 h-2.5 rounded-full;
+    box-shadow: 
+      2px 2px 4px hsl(var(--shadow-dark) / 0.3),
+      -1px -1px 2px hsl(var(--shadow-light) / 0.5);
   }
 
   .priority-dot-high {
@@ -155,23 +232,29 @@
   }
 
   .stage-badge {
-    @apply px-2 py-1 rounded-full text-xs font-medium;
+    @apply px-3 py-1.5 rounded-xl text-xs font-medium;
+    box-shadow: 
+      inset 2px 2px 4px hsl(var(--shadow-dark) / 0.2),
+      inset -2px -2px 4px hsl(var(--shadow-light) / 0.5);
   }
 
   .tier-badge {
-    @apply px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wide;
+    @apply px-3 py-1 rounded-xl text-xs font-semibold uppercase tracking-wide;
+    box-shadow: 
+      2px 2px 4px hsl(var(--shadow-dark) / 0.3),
+      -2px -2px 4px hsl(var(--shadow-light) / 0.5);
   }
 
   .tier-group-owned {
-    @apply bg-primary/10 text-primary;
+    @apply bg-primary/15 text-primary;
   }
 
   .tier-large {
-    @apply bg-amber-500/10 text-amber-600;
+    @apply bg-amber-500/15 text-amber-600;
   }
 
   .tier-multi-court {
-    @apply bg-secondary/10 text-secondary;
+    @apply bg-secondary/30 text-secondary-foreground;
   }
 
   .tier-boutique {
@@ -179,29 +262,67 @@
   }
 
   .club-card-row {
-    @apply flex items-center gap-2.5 rounded-md bg-card/50 px-3 py-1.5 
-           border border-border/50 hover:bg-accent/50 
-           transition-colors cursor-pointer text-sm;
+    @apply flex items-center gap-2.5 rounded-xl px-3 py-2 
+           transition-all duration-200 cursor-pointer text-sm;
+    background: hsl(var(--background));
+    box-shadow: 
+      3px 3px 6px hsl(var(--shadow-dark) / 0.5),
+      -3px -3px 6px hsl(var(--shadow-light) / 0.7);
+  }
+
+  .club-card-row:hover {
+    box-shadow: 
+      4px 4px 8px hsl(var(--shadow-dark) / 0.6),
+      -4px -4px 8px hsl(var(--shadow-light) / 0.8);
+  }
+
+  /* Neumorphic input styling */
+  .neu-input {
+    @apply rounded-xl px-4 py-2;
+    background: hsl(var(--background));
+    box-shadow: 
+      inset 3px 3px 6px hsl(var(--shadow-dark) / 0.4),
+      inset -3px -3px 6px hsl(var(--shadow-light) / 0.6);
+  }
+
+  /* Neumorphic card */
+  .neu-card {
+    @apply rounded-2xl p-5;
+    background: hsl(var(--background));
+    box-shadow: 
+      8px 8px 16px hsl(var(--shadow-dark)),
+      -8px -8px 16px hsl(var(--shadow-light));
   }
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar - neumorphic style */
 @layer utilities {
   .scrollbar-thin::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
   }
 
   .scrollbar-thin::-webkit-scrollbar-track {
-    background: transparent;
+    background: hsl(var(--background));
+    border-radius: 4px;
+    box-shadow: 
+      inset 2px 2px 4px hsl(var(--shadow-dark) / 0.3),
+      inset -2px -2px 4px hsl(var(--shadow-light) / 0.5);
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: hsl(var(--border));
-    border-radius: 3px;
+    background: linear-gradient(145deg, 
+      hsl(var(--muted)) 0%, 
+      hsl(var(--border)) 100%);
+    border-radius: 4px;
+    box-shadow: 
+      2px 2px 4px hsl(var(--shadow-dark) / 0.3),
+      -2px -2px 4px hsl(var(--shadow-light) / 0.5);
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--muted-foreground) / 0.5);
+    background: linear-gradient(145deg, 
+      hsl(var(--muted-foreground) / 0.4) 0%, 
+      hsl(var(--muted-foreground) / 0.3) 100%);
   }
 }
