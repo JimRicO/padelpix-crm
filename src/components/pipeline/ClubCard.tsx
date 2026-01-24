@@ -64,10 +64,10 @@ export function ClubCard({ club, onClick, isDragging }: ClubCardProps) {
       )}
 
       <div className="flex items-center gap-3 text-xs text-muted-foreground mb-2">
-        {club.city && (
+        {(club.city || club.country) && (
           <div className="flex items-center gap-1">
             <MapPin className="w-3 h-3" />
-            <span>{club.city}</span>
+            <span>{club.city ? `${club.city}, ${club.country || 'South Africa'}` : (club.country || 'South Africa')}</span>
           </div>
         )}
         {club.number_of_courts && (

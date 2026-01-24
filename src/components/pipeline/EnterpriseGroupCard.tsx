@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Club, PipelineStage } from '@/types/database';
-import { ChevronDown, ChevronUp, Building2, MessageSquare, Crown, Settings, Check } from 'lucide-react';
+import { ChevronDown, ChevronUp, Building2, MessageSquare, Crown, Settings, Check, MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 
@@ -116,6 +116,10 @@ export function EnterpriseGroupCard({
                   <span>{totalDms}</span>
                 </div>
               )}
+              <div className="flex items-center gap-1">
+                <MapPin className="w-3 h-3" />
+                <span>South Africa</span>
+              </div>
             </div>
 
             {!isExpanded && stagesWithClubs.length > 0 && (
