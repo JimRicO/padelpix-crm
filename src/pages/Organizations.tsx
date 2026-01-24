@@ -1,13 +1,14 @@
 import { useState, useMemo } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useOwnershipGroupsList } from '@/hooks/useOwnershipGroups';
+import { useOwnershipGroupsList, useSyncMissingOrganizations } from '@/hooks/useOwnershipGroups';
 import { useClubs } from '@/hooks/useClubs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Search, Plus, LogOut, User, Building2 } from 'lucide-react';
+import { Search, Plus, LogOut, User, Building2, RefreshCw } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { OrganizationCard } from '@/components/organizations/OrganizationCard';
 import { AddOrganizationDialog } from '@/components/organizations/AddOrganizationDialog';
 import { OwnershipGroupModal } from '@/components/group/OwnershipGroupModal';
@@ -20,6 +21,29 @@ export default function Organizations() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  
+  const syncMutation = useSyncMissingOrganizations();
+
+  // Get unique ownership group names from clubs
+  const uniqueClubGroups = useMemo(() => {
+    const groupSet = new Set<string>();
+    clubs.forEach(club => {
+      if (club.ownership_group && club.ownership_group.trim()) {
+        groupSet.add(club.ownership_group);
+      }
+    });
+    return Array.from(groupSet);
+  }, [clubs]);
+
+  // Find missing organizations
+  const missingOrgs = useMemo(() => {
+    const existingNames = groups.map(g => g.name);
+    return uniqueClubGroups.filter(name => !existingNames.includes(name));
+  }, [uniqueClubGroups, groups]);
+
+  const handleSync = () => {
+    syncMutation.mutate(missingOrgs);
+  };
 
   // Calculate club counts per group
   const clubCountByGroup = useMemo(() => {
@@ -102,6 +126,24 @@ export default function Organizations() {
         </div>
 
         <div className="flex items-center gap-2">
+          {missingOrgs.length > 0 && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleSync}
+              disabled={syncMutation.isPending}
+            >
+              {syncMutation.isPending ? (
+                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4 mr-2" />
+              )}
+              Sync Missing
+              <Badge variant="secondary" className="ml-2">
+                {missingOrgs.length}
+              </Badge>
+            </Button>
+          )}
           <Button size="sm" onClick={() => setShowAddDialog(true)}>
             <Plus className="w-4 h-4 mr-2" />
             Add Organization
