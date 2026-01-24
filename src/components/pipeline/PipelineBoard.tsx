@@ -191,6 +191,7 @@ export function PipelineBoard({ onClubClick, searchQuery }: PipelineBoardProps) 
                         currentStage={stage}
                         onGroupClick={handleGroupClick}
                         totalClubsOverride={ownershipGroupDataMap.get(group.name)?.total_clubs}
+                        isCompact={stage !== 'not_contacted'}
                       />
                     ))}
 
