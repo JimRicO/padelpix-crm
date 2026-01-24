@@ -18,7 +18,7 @@ const SelectTrigger = React.forwardRef<
     ref={ref}
     className={cn(
       "flex h-10 w-full items-center justify-between rounded-xl border-0 bg-background px-4 py-2 text-sm ring-offset-background",
-      "shadow-[inset_3px_3px_6px_hsl(var(--shadow-dark)_/_0.4),_inset_-3px_-3px_6px_hsl(var(--shadow-light)_/_0.6)]",
+      "shadow-[inset_2px_2px_4px_hsl(var(--shadow-dark)_/_0.3),_inset_-1px_-1px_2px_hsl(var(--shadow-light)_/_0.1)]",
       "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-0",
       "disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
       "transition-shadow duration-200",
@@ -71,7 +71,7 @@ const SelectContent = React.forwardRef<
       ref={ref}
       className={cn(
         "relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-xl border-0 bg-background text-popover-foreground",
-        "shadow-[8px_8px_16px_hsl(var(--shadow-dark)),_-8px_-8px_16px_hsl(var(--shadow-light))]",
+        "shadow-[6px_6px_12px_hsl(var(--shadow-dark)_/_0.5),_-2px_-2px_6px_hsl(var(--shadow-light)_/_0.15)]",
         "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
         position === "popper" &&
           "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
@@ -114,7 +114,6 @@ const SelectItem = React.forwardRef<
       "relative flex w-full cursor-default select-none items-center rounded-lg py-2 pl-8 pr-3 text-sm outline-none transition-all duration-150",
       "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       "focus:bg-accent/50 focus:text-accent-foreground",
-      "hover:shadow-[inset_2px_2px_4px_hsl(var(--shadow-dark)_/_0.2),_inset_-2px_-2px_4px_hsl(var(--shadow-light)_/_0.4)]",
       className,
     )}
     {...props}

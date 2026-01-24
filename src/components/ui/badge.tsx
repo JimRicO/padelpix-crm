@@ -10,19 +10,19 @@ const badgeVariants = cva(
       variant: {
         default: [
           "bg-primary text-primary-foreground",
-          "shadow-[2px_2px_4px_hsl(var(--shadow-dark)_/_0.3),_-2px_-2px_4px_hsl(var(--shadow-light)_/_0.5)]",
+          "shadow-[2px_2px_4px_hsl(var(--shadow-dark)_/_0.25)]",
         ].join(" "),
         secondary: [
           "bg-secondary/50 text-secondary-foreground",
-          "shadow-[2px_2px_4px_hsl(var(--shadow-dark)_/_0.3),_-2px_-2px_4px_hsl(var(--shadow-light)_/_0.5)]",
+          "shadow-[2px_2px_4px_hsl(var(--shadow-dark)_/_0.25)]",
         ].join(" "),
         destructive: [
           "bg-destructive text-destructive-foreground",
-          "shadow-[2px_2px_4px_hsl(var(--shadow-dark)_/_0.3),_-2px_-2px_4px_hsl(var(--shadow-light)_/_0.5)]",
+          "shadow-[2px_2px_4px_hsl(var(--shadow-dark)_/_0.25)]",
         ].join(" "),
         outline: [
           "bg-background text-foreground",
-          "shadow-[inset_2px_2px_4px_hsl(var(--shadow-dark)_/_0.2),_inset_-2px_-2px_4px_hsl(var(--shadow-light)_/_0.5)]",
+          "shadow-[inset_1px_1px_2px_hsl(var(--shadow-dark)_/_0.15)]",
         ].join(" "),
       },
     },

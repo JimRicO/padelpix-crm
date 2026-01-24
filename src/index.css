@@ -58,9 +58,9 @@
     --sidebar-border: 220 20% 25%;
     --sidebar-ring: 18 95% 50%;
 
-    /* Neumorphic shadow colors */
-    --shadow-light: 0 0% 100%;
-    --shadow-dark: 220 20% 70%;
+    /* Neumorphic shadow colors - subtle, no bright highlights */
+    --shadow-light: 220 15% 95%;
+    --shadow-dark: 220 20% 75%;
 
     /* Pipeline stage colors - softer for neumorphic */
     --stage-not-contacted: 220 15% 80%;
@@ -124,9 +124,9 @@
     --sidebar-border: 220 20% 18%;
     --sidebar-ring: 18 95% 55%;
 
-    /* Dark neumorphic shadows */
-    --shadow-light: 220 20% 20%;
-    --shadow-dark: 220 25% 8%;
+    /* Dark neumorphic shadows - subtle */
+    --shadow-light: 220 20% 18%;
+    --shadow-dark: 220 25% 6%;
   }
 }
 
@@ -142,81 +142,78 @@
 }
 
 @layer components {
-  /* Neumorphic raised effect */
+  /* Neumorphic raised effect - subtle, no bright highlight */
   .neu-raised {
     background: hsl(var(--background));
     box-shadow: 
-      6px 6px 12px hsl(var(--shadow-dark)),
-      -6px -6px 12px hsl(var(--shadow-light));
+      6px 6px 12px hsl(var(--shadow-dark) / 0.5),
+      -2px -2px 6px hsl(var(--shadow-light) / 0.3);
   }
 
-  /* Neumorphic pressed/inset effect */
+  /* Neumorphic pressed/inset effect - subtle */
   .neu-pressed {
     background: hsl(var(--background));
     box-shadow: 
-      inset 4px 4px 8px hsl(var(--shadow-dark)),
-      inset -4px -4px 8px hsl(var(--shadow-light));
+      inset 4px 4px 8px hsl(var(--shadow-dark) / 0.4),
+      inset -2px -2px 4px hsl(var(--shadow-light) / 0.2);
   }
 
   /* Neumorphic flat with subtle shadow */
   .neu-flat {
     background: hsl(var(--background));
     box-shadow: 
-      3px 3px 6px hsl(var(--shadow-dark)),
-      -3px -3px 6px hsl(var(--shadow-light));
+      3px 3px 6px hsl(var(--shadow-dark) / 0.4),
+      -1px -1px 3px hsl(var(--shadow-light) / 0.2);
   }
 
-  /* Neumorphic button style */
+  /* Neumorphic button style - subtle */
   .neu-button {
-    background: linear-gradient(145deg, 
-      hsl(var(--background)) 0%, 
-      hsl(var(--muted)) 100%);
+    background: hsl(var(--background));
     box-shadow: 
-      4px 4px 8px hsl(var(--shadow-dark)),
-      -4px -4px 8px hsl(var(--shadow-light));
+      4px 4px 8px hsl(var(--shadow-dark) / 0.4),
+      -2px -2px 4px hsl(var(--shadow-light) / 0.2);
     transition: all 0.2s ease;
   }
 
   .neu-button:hover {
     box-shadow: 
-      2px 2px 4px hsl(var(--shadow-dark)),
-      -2px -2px 4px hsl(var(--shadow-light));
+      2px 2px 4px hsl(var(--shadow-dark) / 0.3),
+      -1px -1px 2px hsl(var(--shadow-light) / 0.15);
   }
 
   .neu-button:active {
     box-shadow: 
-      inset 2px 2px 4px hsl(var(--shadow-dark)),
-      inset -2px -2px 4px hsl(var(--shadow-light));
+      inset 2px 2px 4px hsl(var(--shadow-dark) / 0.3),
+      inset -1px -1px 2px hsl(var(--shadow-light) / 0.1);
   }
 
   .pipeline-column {
     @apply min-h-[calc(100vh-200px)] rounded-2xl p-3;
     background: hsl(var(--background));
     box-shadow: 
-      inset 4px 4px 8px hsl(var(--shadow-dark) / 0.5),
-      inset -4px -4px 8px hsl(var(--shadow-light) / 0.7);
+      inset 3px 3px 6px hsl(var(--shadow-dark) / 0.3),
+      inset -1px -1px 3px hsl(var(--shadow-light) / 0.15);
   }
 
   .club-card {
     @apply rounded-2xl p-4 cursor-pointer transition-all duration-200;
     background: hsl(var(--background));
     box-shadow: 
-      6px 6px 12px hsl(var(--shadow-dark)),
-      -6px -6px 12px hsl(var(--shadow-light));
+      5px 5px 10px hsl(var(--shadow-dark) / 0.5),
+      -2px -2px 5px hsl(var(--shadow-light) / 0.2);
   }
 
   .club-card:hover {
     box-shadow: 
-      8px 8px 16px hsl(var(--shadow-dark)),
-      -8px -8px 16px hsl(var(--shadow-light));
+      6px 6px 12px hsl(var(--shadow-dark) / 0.55),
+      -2px -2px 6px hsl(var(--shadow-light) / 0.25);
     transform: translateY(-2px);
   }
 
   .priority-dot {
     @apply w-2.5 h-2.5 rounded-full;
     box-shadow: 
-      2px 2px 4px hsl(var(--shadow-dark) / 0.3),
-      -1px -1px 2px hsl(var(--shadow-light) / 0.5);
+      1px 1px 2px hsl(var(--shadow-dark) / 0.25);
   }
 
   .priority-dot-high {
@@ -234,15 +231,13 @@
   .stage-badge {
     @apply px-3 py-1.5 rounded-xl text-xs font-medium;
     box-shadow: 
-      inset 2px 2px 4px hsl(var(--shadow-dark) / 0.2),
-      inset -2px -2px 4px hsl(var(--shadow-light) / 0.5);
+      inset 1px 1px 2px hsl(var(--shadow-dark) / 0.15);
   }
 
   .tier-badge {
     @apply px-3 py-1 rounded-xl text-xs font-semibold uppercase tracking-wide;
     box-shadow: 
-      2px 2px 4px hsl(var(--shadow-dark) / 0.3),
-      -2px -2px 4px hsl(var(--shadow-light) / 0.5);
+      2px 2px 4px hsl(var(--shadow-dark) / 0.2);
   }
 
   .tier-group-owned {
@@ -266,32 +261,32 @@
            transition-all duration-200 cursor-pointer text-sm;
     background: hsl(var(--background));
     box-shadow: 
-      3px 3px 6px hsl(var(--shadow-dark) / 0.5),
-      -3px -3px 6px hsl(var(--shadow-light) / 0.7);
+      3px 3px 6px hsl(var(--shadow-dark) / 0.35),
+      -1px -1px 3px hsl(var(--shadow-light) / 0.15);
   }
 
   .club-card-row:hover {
     box-shadow: 
-      4px 4px 8px hsl(var(--shadow-dark) / 0.6),
-      -4px -4px 8px hsl(var(--shadow-light) / 0.8);
+      4px 4px 8px hsl(var(--shadow-dark) / 0.4),
+      -1px -1px 4px hsl(var(--shadow-light) / 0.2);
   }
 
-  /* Neumorphic input styling */
+  /* Neumorphic input styling - subtle */
   .neu-input {
     @apply rounded-xl px-4 py-2;
     background: hsl(var(--background));
     box-shadow: 
-      inset 3px 3px 6px hsl(var(--shadow-dark) / 0.4),
-      inset -3px -3px 6px hsl(var(--shadow-light) / 0.6);
+      inset 2px 2px 4px hsl(var(--shadow-dark) / 0.3),
+      inset -1px -1px 2px hsl(var(--shadow-light) / 0.1);
   }
 
-  /* Neumorphic card */
+  /* Neumorphic card - subtle */
   .neu-card {
     @apply rounded-2xl p-5;
     background: hsl(var(--background));
     box-shadow: 
-      8px 8px 16px hsl(var(--shadow-dark)),
-      -8px -8px 16px hsl(var(--shadow-light));
+      6px 6px 12px hsl(var(--shadow-dark) / 0.5),
+      -2px -2px 6px hsl(var(--shadow-light) / 0.2);
   }
 }
 
