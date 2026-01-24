@@ -177,6 +177,12 @@
   .tier-boutique {
     @apply bg-muted text-muted-foreground;
   }
+
+  .club-card-row {
+    @apply flex items-center gap-2 rounded-md bg-card px-3 py-2 
+           border border-border hover:bg-accent/50 
+           transition-colors cursor-pointer;
+  }
 }
 
 /* Custom scrollbar */

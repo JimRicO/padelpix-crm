@@ -4,6 +4,7 @@ import { useClubs, useUpdateClubStage } from '@/hooks/useClubs';
 import { useOwnershipGroupsList } from '@/hooks/useOwnershipGroups';
 import { Club, PipelineStage, PIPELINE_STAGES } from '@/types/database';
 import { ClubCard } from './ClubCard';
+import { ClubCardCompact } from './ClubCardCompact';
 import { EnterpriseGroupCard } from './EnterpriseGroupCard';
 import { OwnershipGroupModal } from '@/components/group/OwnershipGroupModal';
 import { Badge } from '@/components/ui/badge';
@@ -202,11 +203,19 @@ export function PipelineBoard({ onClubClick, searchQuery }: PipelineBoardProps) 
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
                           >
-                            <ClubCard 
-                              club={club} 
-                              onClick={() => onClubClick(club)}
-                              isDragging={snapshot.isDragging}
-                            />
+                            {stage === 'not_contacted' ? (
+                              <ClubCard 
+                                club={club} 
+                                onClick={() => onClubClick(club)}
+                                isDragging={snapshot.isDragging}
+                              />
+                            ) : (
+                              <ClubCardCompact 
+                                club={club} 
+                                onClick={() => onClubClick(club)}
+                                isDragging={snapshot.isDragging}
+                              />
+                            )}
                           </div>
                         )}
                       </Draggable>
