@@ -1,119 +1,97 @@
 
+# Auto-Sync Missing Organizations
 
-## Pipeline Card Redesign: Full Card vs. Checkbox Row
+## Overview
+Implement automatic synchronization that creates `ownership_groups` records for any ownership group names found in the clubs table that don't already have a matching organization entry.
 
-### Concept
+## Current State
+- **14 unique ownership groups** exist in clubs data
+- **Only 4 organization records** exist in the `ownership_groups` table
+- **10 organizations are missing**: Africa Padel, Balwin, Club Padel, Net Set Padel, Padel & Social Club, Padel Lab, Padel Nation, Proactive Padel, ProPadel, Techno Padel, Ten By Twenty
 
-Create two distinct card layouts based on pipeline position:
+## Implementation Approach
 
-1. **First Column ("Not Contacted")** - Full detail card with all current information
-2. **Subsequent Columns** - Minimal checkbox row showing just name + checkmark to indicate progression
+### Option A: One-Time Sync Button (Recommended)
+Add a "Sync Missing" button on the Organizations page that:
+1. Compares ownership group names from clubs vs existing organization records
+2. Creates new organization records for any missing ones
+3. Shows a toast with results (e.g., "Created 10 missing organizations")
 
-This creates a visual flow where clubs start with full details, then become compact checkmarks as they progress through the pipeline.
+### Option B: Automatic Background Sync
+Automatically sync when the Organizations page loads or when clubs data changes.
+
+**I recommend Option A** because it gives you control and visibility into when syncing happens.
 
 ---
 
-### Visual Design
+## Implementation Steps
 
-**First Column (Not Contacted) - Full Card:**
+### 1. Create New Hook: `useSyncMissingOrganizations`
+**File:** `src/hooks/useOwnershipGroups.ts`
+
+Add a new mutation hook that:
+- Gets all unique ownership group names from clubs
+- Gets all existing organization names
+- Identifies missing ones
+- Bulk inserts the missing organizations with default values
+
 ```text
-┌─────────────────────────────┐
-│ 👑 Virgin Active Sandton  ● │  ← Name + priority dot
-│ @virginactive_sa            │  ← Instagram
-│ 📍 Johannesburg  🏢 8 courts │  ← Location + courts
-│ 👥 Virgin Active            │  ← Ownership group
-│ [GROUP OWNED]         💬 3  │  ← Tier + DM count
-├─────────────────────────────┤
-│ → Schedule demo call        │  ← Next action
-└─────────────────────────────┘
+Logic flow:
+Clubs Data → Extract unique ownership_group names
+                        ↓
+Ownership Groups → Extract existing names
+                        ↓
+Compare → Find missing names
+                        ↓
+Bulk Insert → Create records for missing names
 ```
 
-**Subsequent Columns - Checkbox Row:**
-```text
-┌─────────────────────────────┐
-│ ☑ Virgin Active Sandton    │
-└─────────────────────────────┘
-```
+### 2. Update Organizations Page
+**File:** `src/pages/Organizations.tsx`
 
-The checkbox indicates "this stage is complete" - showing the club has progressed through the pipeline.
+Add:
+- Import the new sync hook
+- Add a "Sync Missing" button in the header (only visible when missing orgs exist)
+- Show badge with count of missing organizations
+- Call sync mutation on button click
+
+### 3. UI/UX Details
+- Button placement: Next to "Add Organization" button
+- Button style: Secondary/outline to differentiate from primary action
+- Badge: Show count of missing organizations (e.g., "Sync 10 Missing")
+- Loading state: Show spinner while syncing
+- Success toast: "Successfully created X organizations"
 
 ---
 
-### Technical Implementation
+## Technical Details
 
-| File | Change |
-|------|--------|
-| `src/components/pipeline/ClubCard.tsx` | Add `isFirstColumn` prop, conditionally render full or compact layout |
-| `src/components/pipeline/ClubCardCompact.tsx` | New component for the checkbox row variant |
-| `src/components/pipeline/PipelineBoard.tsx` | Pass stage info to ClubCard to determine which layout to use |
-| `src/index.css` | Add `.club-card-row` class for compact checkbox layout |
-
----
-
-### Component Structure
-
-**New ClubCardCompact.tsx:**
-```tsx
-interface ClubCardCompactProps {
-  club: Club;
-  onClick: () => void;
-  isDragging?: boolean;
-}
-
-export function ClubCardCompact({ club, onClick, isDragging }: ClubCardCompactProps) {
-  return (
-    <div onClick={onClick} className="club-card-row">
-      <Checkbox checked disabled className="pointer-events-none" />
-      <span className="font-medium text-sm truncate">{club.club_name}</span>
-      {club.tier === 'group_owned' && <Crown className="w-3 h-3 text-primary" />}
-    </div>
-  );
+### New Hook Implementation
+```typescript
+export function useSyncMissingOrganizations() {
+  // Mutation that:
+  // 1. Fetches distinct ownership_group from clubs
+  // 2. Fetches existing organization names  
+  // 3. Filters to find missing
+  // 4. Bulk inserts missing with: name, relationship_status='active'
 }
 ```
 
-**Updated PipelineBoard.tsx rendering logic:**
-```tsx
-{stage === 'not_contacted' ? (
-  <ClubCard club={club} onClick={() => onClubClick(club)} isDragging={snapshot.isDragging} />
-) : (
-  <ClubCardCompact club={club} onClick={() => onClubClick(club)} isDragging={snapshot.isDragging} />
-)}
-```
+### Files to Modify
+1. `src/hooks/useOwnershipGroups.ts` - Add sync mutation hook
+2. `src/pages/Organizations.tsx` - Add sync button and logic
+
+### Data Created for Missing Organizations
+Each new organization record will have:
+- `name`: The ownership group name from clubs
+- `relationship_status`: 'active' (default)
+- `created_by`: Current user ID
+- All other fields: null (can be filled in later via the modal)
 
 ---
 
-### CSS Styling
-
-```css
-.club-card-row {
-  @apply flex items-center gap-2 rounded-md bg-card px-3 py-2 
-         border border-border hover:bg-accent/50 
-         transition-colors cursor-pointer;
-}
-```
-
----
-
-### Behavior Details
-
-- **Checkbox is visual only** - shows the club has "passed" this stage (always checked)
-- **Clicking the row** opens the full club detail modal (same as current behavior)
-- **Drag and drop** still works on compact rows
-- **Priority indicator** can optionally show as a subtle left border color on compact rows
-- **Crown icon** still appears for group-owned clubs in compact view
-
----
-
-### Summary
-
-| Column | Layout | Height | Info Shown |
-|--------|--------|--------|------------|
-| Not Contacted | Full card | ~120px | All details |
-| All others | Checkbox row | ~36px | Checkbox + name + crown icon |
-
-This approach:
-- Reduces visual clutter by 70%+ on most columns
-- Makes the "Not Contacted" column the focus for prospecting
-- Creates a clear visual progression as clubs move right
-- Maintains full details on click via the modal
-
+## Expected Outcome
+After clicking "Sync Missing":
+- Organizations page will show all 14 organizations (plus RESERVE = 15 total)
+- Each organization card will show the correct club count from clubs data
+- Users can click any organization to add contact details, logo, etc.
