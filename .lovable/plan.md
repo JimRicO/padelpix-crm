@@ -1,87 +1,119 @@
 
 
-## Add "Create New Ownership Group" in Person Links Tab
+## Pipeline Card Redesign: Full Card vs. Checkbox Row
 
-### Overview
-Allow users to create a new ownership group directly from the "Add Organization Link" dialog in the Person Links tab, rather than only selecting from existing groups.
+### Concept
 
----
+Create two distinct card layouts based on pipeline position:
 
-### Current Behavior
-When a user selects "Ownership Group" as the link type, they see a dropdown with only existing ownership groups. If the group they want doesn't exist, they have to leave the dialog, create the group elsewhere, and then come back.
+1. **First Column ("Not Contacted")** - Full detail card with all current information
+2. **Subsequent Columns** - Minimal checkbox row showing just name + checkmark to indicate progression
 
-### Proposed Behavior
-When "Ownership Group" is selected:
-1. Show the existing dropdown of ownership groups
-2. Add a "+ Create New Group" option at the bottom of the dropdown
-3. When clicked, show inline fields to enter the new group name
-4. The new group is created and automatically selected when the user confirms the link
+This creates a visual flow where clubs start with full details, then become compact checkmarks as they progress through the pipeline.
 
 ---
 
-### UI Design
+### Visual Design
 
-**Option: Inline "Create New" mode**
-
+**First Column (Not Contacted) - Full Card:**
+```text
+┌─────────────────────────────┐
+│ 👑 Virgin Active Sandton  ● │  ← Name + priority dot
+│ @virginactive_sa            │  ← Instagram
+│ 📍 Johannesburg  🏢 8 courts │  ← Location + courts
+│ 👥 Virgin Active            │  ← Ownership group
+│ [GROUP OWNED]         💬 3  │  ← Tier + DM count
+├─────────────────────────────┤
+│ → Schedule demo call        │  ← Next action
+└─────────────────────────────┘
 ```
-Link Type: [Ownership Group v]
 
-Select Ownership Group:
-[ Choose an ownership group  v]
-  - Virgin Active
-  - Africa Padel
-  - Balwin
-  ─────────────────────────────
-  + Create New Group
-
-[When "Create New Group" is selected:]
-
-New Group Name:
-[______________________]
-
-Role at Organization:
-[e.g., Owner, Manager    ]
-
-[ ] This is the primary affiliation
-
-        [Cancel]  [Add Link]
+**Subsequent Columns - Checkbox Row:**
+```text
+┌─────────────────────────────┐
+│ ☑ Virgin Active Sandton    │
+└─────────────────────────────┘
 ```
+
+The checkbox indicates "this stage is complete" - showing the club has progressed through the pipeline.
 
 ---
 
 ### Technical Implementation
 
-**File to modify:** `src/components/people/PersonLinksTab.tsx`
+| File | Change |
+|------|--------|
+| `src/components/pipeline/ClubCard.tsx` | Add `isFirstColumn` prop, conditionally render full or compact layout |
+| `src/components/pipeline/ClubCardCompact.tsx` | New component for the checkbox row variant |
+| `src/components/pipeline/PipelineBoard.tsx` | Pass stage info to ClubCard to determine which layout to use |
+| `src/index.css` | Add `.club-card-row` class for compact checkbox layout |
 
-**Changes:**
-1. Add state for "create new" mode: `const [isCreatingNew, setIsCreatingNew] = useState(false)`
-2. Add state for new group name: `const [newGroupName, setNewGroupName] = useState('')`
-3. Import `useCreateOwnershipGroup` hook from `@/hooks/useOwnershipGroups`
-4. Update the ownership group selection UI:
-   - Add a special "create_new" option in the Select dropdown
-   - When selected, switch to showing an Input field for the new group name
-5. Update `handleAddLink` function:
-   - If creating new, first call `createOwnershipGroup.mutateAsync({ name: newGroupName })`
-   - Then create the person link with the new group name
-6. Reset the create new state when dialog closes
+---
 
-**Code flow:**
+### Component Structure
+
+**New ClubCardCompact.tsx:**
+```tsx
+interface ClubCardCompactProps {
+  club: Club;
+  onClick: () => void;
+  isDragging?: boolean;
+}
+
+export function ClubCardCompact({ club, onClick, isDragging }: ClubCardCompactProps) {
+  return (
+    <div onClick={onClick} className="club-card-row">
+      <Checkbox checked disabled className="pointer-events-none" />
+      <span className="font-medium text-sm truncate">{club.club_name}</span>
+      {club.tier === 'group_owned' && <Crown className="w-3 h-3 text-primary" />}
+    </div>
+  );
+}
 ```
-User clicks "Create New Group" in dropdown
-  -> setIsCreatingNew(true)
-  -> Show Input field for new group name
-  
-User fills in name and clicks "Add Link"
-  -> Create ownership group via useCreateOwnershipGroup
-  -> Create person link with the new group name
-  -> Close dialog and reset state
+
+**Updated PipelineBoard.tsx rendering logic:**
+```tsx
+{stage === 'not_contacted' ? (
+  <ClubCard club={club} onClick={() => onClubClick(club)} isDragging={snapshot.isDragging} />
+) : (
+  <ClubCardCompact club={club} onClick={() => onClubClick(club)} isDragging={snapshot.isDragging} />
+)}
 ```
 
 ---
 
-### Summary of Changes
+### CSS Styling
 
-| File | Change |
-|------|--------|
-| `src/components/people/PersonLinksTab.tsx` | Add create new ownership group functionality inline in the Add Link dialog |
+```css
+.club-card-row {
+  @apply flex items-center gap-2 rounded-md bg-card px-3 py-2 
+         border border-border hover:bg-accent/50 
+         transition-colors cursor-pointer;
+}
+```
+
+---
+
+### Behavior Details
+
+- **Checkbox is visual only** - shows the club has "passed" this stage (always checked)
+- **Clicking the row** opens the full club detail modal (same as current behavior)
+- **Drag and drop** still works on compact rows
+- **Priority indicator** can optionally show as a subtle left border color on compact rows
+- **Crown icon** still appears for group-owned clubs in compact view
+
+---
+
+### Summary
+
+| Column | Layout | Height | Info Shown |
+|--------|--------|--------|------------|
+| Not Contacted | Full card | ~120px | All details |
+| All others | Checkbox row | ~36px | Checkbox + name + crown icon |
+
+This approach:
+- Reduces visual clutter by 70%+ on most columns
+- Makes the "Not Contacted" column the focus for prospecting
+- Creates a clear visual progression as clubs move right
+- Maintains full details on click via the modal
 
