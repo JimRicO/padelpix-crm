@@ -89,6 +89,9 @@ export function Header({ searchQuery, onSearchChange, onAddClub, onImport }: Hea
           <Button variant="ghost" size="sm" asChild>
             <a href="/people">People</a>
           </Button>
+          <Button variant="ghost" size="sm" asChild>
+            <a href="/organizations">Organizations</a>
+          </Button>
         </div>
       </div>
 
