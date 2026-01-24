@@ -14,6 +14,7 @@ export interface OwnershipGroup {
   website: string | null;
   relationship_status: string | null;
   total_clubs: number | null;
+  country: string | null;
   created_at: string | null;
   updated_at: string | null;
   created_by: string | null;
