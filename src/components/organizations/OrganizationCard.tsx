@@ -1,6 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Crown, Building2, Globe, Mail, Phone } from 'lucide-react';
+import { Crown, Building2, Globe, Mail, MapPin } from 'lucide-react';
 import type { OwnershipGroup } from '@/hooks/useOwnershipGroups';
 
 interface OrganizationCardProps {
@@ -65,13 +65,19 @@ export function OrganizationCard({ group, clubCount, onClick }: OrganizationCard
               </Badge>
             </div>
 
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-              <Building2 className="w-4 h-4" />
-              <span>
-                {group.total_clubs 
-                  ? `${clubCount} of ${group.total_clubs} clubs`
-                  : `${clubCount} clubs`}
-              </span>
+            <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
+              <div className="flex items-center gap-2">
+                <Building2 className="w-4 h-4" />
+                <span>
+                  {group.total_clubs 
+                    ? `${clubCount} of ${group.total_clubs} clubs`
+                    : `${clubCount} clubs`}
+                </span>
+              </div>
+              <div className="flex items-center gap-1">
+                <MapPin className="w-4 h-4" />
+                <span>{group.country || 'South Africa'}</span>
+              </div>
             </div>
 
             {(group.contact_name || group.contact_email || group.website) && (
