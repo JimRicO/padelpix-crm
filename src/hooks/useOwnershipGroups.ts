@@ -157,3 +157,48 @@ export function useUpsertOwnershipGroup() {
     },
   });
 }
+
+export function useMissingOrganizations(clubOwnershipGroups: string[], existingOrgNames: string[]) {
+  return clubOwnershipGroups.filter(
+    name => name && name.trim() && !existingOrgNames.includes(name)
+  );
+}
+
+export function useSyncMissingOrganizations() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (missingNames: string[]) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      if (missingNames.length === 0) {
+        return { created: 0 };
+      }
+
+      const recordsToInsert = missingNames.map(name => ({
+        name,
+        relationship_status: 'active',
+        created_by: user.id,
+      }));
+
+      const { error } = await supabase
+        .from('ownership_groups')
+        .insert(recordsToInsert);
+
+      if (error) throw error;
+      return { created: missingNames.length };
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['ownership-groups'] });
+      toast({ 
+        title: 'Organizations synced', 
+        description: `Created ${result.created} missing organization${result.created !== 1 ? 's' : ''}` 
+      });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Failed to sync organizations', description: error.message, variant: 'destructive' });
+    },
+  });
+}
