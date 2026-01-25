@@ -108,13 +108,11 @@ export function Header({ searchQuery, onSearchChange, onAddClub, onImport }: Hea
       </div>
 
       <div className="flex items-center gap-2">
-        <Button variant="outline" size="sm" onClick={handleExport}>
-          <Upload className="w-4 h-4 mr-2" />
-          Export
+        <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleExport}>
+          <Upload className="w-4 h-4" />
         </Button>
-        <Button variant="outline" size="sm" onClick={onImport}>
-          <Download className="w-4 h-4 mr-2" />
-          Import
+        <Button variant="outline" size="icon" className="h-8 w-8" onClick={onImport}>
+          <Download className="w-4 h-4" />
         </Button>
         <Button size="sm" onClick={onAddClub}>
           <Plus className="w-4 h-4 mr-2" />
