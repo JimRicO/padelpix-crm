@@ -1,158 +1,150 @@
 
-# Unified Card Design System
+# Add Gamification: Completion Percentages per Pipeline Stage
 
-## Problem Analysis
+## Overview
+Add a visual completion percentage indicator at the top of each pipeline column to gamify the CRM experience. This shows what percentage of total clubs have reached or passed each stage.
 
-Currently, the codebase has **5 different card implementations** with inconsistent styling:
+## How It Works
 
-| Card | Styling Approach | Padding | Gaps | Icon Sizes | Title Size |
-|------|------------------|---------|------|------------|------------|
-| ClubCard | Custom `.club-card` CSS class | p-4 | gap-2, gap-3 | w-3, w-3.5 | text-sm |
-| OrganizationCard | Uses `<Card>` + `CardContent` | p-4 | gap-3, gap-4 | w-4, w-3 | default (text-base) |
-| PersonCard | Uses `<Card>` + `CardContent` | p-4 | gap-3, gap-2 | w-3.5 | default (text-base) |
-| EnterpriseGroupCard | Custom inline Tailwind | p-3 | gap-2, gap-3 | w-3, w-4 | text-sm |
-| ClubCardCompact | Custom `.club-card-row` class | px-3 py-2 | gap-2.5 | w-3, w-4 | text-sm |
-
-## Solution: Unified Design Tokens
-
-### 1. Define Standard Card Sizes
-
-Create three standardized card variants:
+The completion percentage for each stage represents how many clubs have progressed to **that stage or beyond**:
 
 ```text
-COMPACT (row-style cards)
-+------------------------------------------+
-| [icon] Title            [status] [icon] |
-+------------------------------------------+
-Padding: px-2.5 py-1.5 | Gap: 2 | Icons: w-3.5
-
-STANDARD (default cards - ClubCard, EnterpriseGroupCard)
-+------------------------------------------+
-| [icon] Title                    [status] |
-| Metadata line 1                          |
-| Metadata line 2                          |
-| [Badge]                      [secondary] |
-+------------------------------------------+
-Padding: p-3 | Gap: 1.5 | Icons: w-3 | Title: text-sm
-
-FEATURED (detail cards - PersonCard, OrganizationCard)
-+------------------------------------------+
-| [Avatar/Logo]  Title           [Badge]   |
-|                Subtitle                  |
-| ---------------------------------------- |
-| Icon  Detail 1                           |
-| Icon  Detail 2                           |
-| Icon  Detail 3                           |
-+------------------------------------------+
-Padding: p-3 | Avatar: w-10 h-10 | Gap: 2 | Icons: w-3.5 | Title: text-sm font-semibold
+Example with 10 total clubs:
+- Not Contacted: 2 clubs still here
+- Followed: 8 clubs have been followed (80% completion)
+- Engaged: 6 clubs have been engaged (60% completion)
+- DM Sent: 4 clubs received DMs (40% completion)
+- Content Created: 2 clubs have content (20% completion)
+- Customer: 1 club converted (10% completion)
 ```
 
-### 2. Standardized CSS Classes (src/index.css)
+## Visual Design
 
-Create unified utility classes:
+Each column header will show:
+1. Current stage color dot
+2. Stage label
+3. **New: Slim progress bar with percentage**
+4. Count badge
 
-```css
-/* Card Base - shared neumorphic shadow */
-.card-base {
-  @apply rounded-2xl bg-background cursor-pointer transition-all duration-200;
-  box-shadow: 5px 5px 10px hsl(var(--shadow-dark) / 0.5),
-              -2px -2px 5px hsl(var(--shadow-light) / 0.2);
-}
-.card-base:hover {
-  transform: translateY(-1px);
-  box-shadow: 6px 6px 12px hsl(var(--shadow-dark) / 0.55),
-              -2px -2px 6px hsl(var(--shadow-light) / 0.25);
-}
-
-/* Card Compact - row style */
-.card-compact {
-  @apply card-base px-2.5 py-1.5 flex items-center gap-2;
-}
-
-/* Card Standard - pipeline cards */
-.card-standard {
-  @apply card-base p-3;
-}
-
-/* Card Featured - detail cards with avatar/logo */
-.card-featured {
-  @apply card-base p-3;
-}
-
-/* Standardized internal spacing */
-.card-header { @apply flex items-start justify-between gap-2 mb-1.5; }
-.card-title { @apply font-semibold text-sm text-foreground truncate; }
-.card-subtitle { @apply text-xs text-muted-foreground; }
-.card-meta { @apply flex items-center gap-1 text-xs text-muted-foreground; }
-.card-meta-row { @apply flex items-center gap-3 text-xs text-muted-foreground mb-1.5; }
-.card-footer { @apply flex items-center justify-between mt-1.5; }
-.card-divider { @apply mt-1.5 pt-1.5 border-t border-border; }
-
-/* Standardized icon sizes */
-.card-icon-sm { @apply w-3 h-3 flex-shrink-0; }
-.card-icon { @apply w-3.5 h-3.5 flex-shrink-0; }
-.card-avatar { @apply w-10 h-10 rounded-lg flex-shrink-0; }
+```text
++--------------------------------------------------+
+| ● Followed                                        |
+| [████████░░░░░░░░░░░░] 80%               [8]      |
++--------------------------------------------------+
+| Club cards...                                     |
 ```
 
-### 3. Files to Update
+The progress bar will:
+- Use the stage's color for the filled portion
+- Be slim (h-1.5) to stay compact
+- Show percentage text in a small badge
 
-#### A. src/index.css
-- Add new unified card utility classes
-- Update existing `.club-card` and `.club-card-row` to use new tokens
-- Reduce `.tier-badge` and `.stage-badge` padding for compactness
+## Files to Modify
 
-#### B. src/components/ui/card.tsx
-- Update `CardHeader` padding: `p-6` → `p-3`, `space-y-1.5` → `space-y-1`
-- Update `CardContent` padding: `p-6` → `p-3`
-- Update `CardFooter` padding: `p-6` → `p-3`
-- Update `CardTitle` size: `text-2xl` → `text-sm`
+### 1. src/components/pipeline/PipelineBoard.tsx
+- Add a `useMemo` to calculate completion percentages per stage
+- Define stage order for "at or beyond" calculation
+- Create a helper component `StageProgressIndicator`
+- Insert the progress indicator in each column header
 
-#### C. src/components/pipeline/ClubCard.tsx
-- Keep using `.club-card` class (will be updated in CSS)
-- Standardize internal spacing: `mb-2` → `mb-1.5`, `gap-3` → `gap-2`
-- Use consistent icon size: `w-3 h-3` for all icons
+### 2. src/index.css (optional)
+- Add `.stage-progress` utility class for consistent styling
 
-#### D. src/components/organizations/OrganizationCard.tsx
-- Apply `card-featured` approach via updated Card component
-- Reduce avatar/logo: `w-12 h-12` → `w-10 h-10`
-- Standardize gaps: `gap-3` → `gap-2`, `gap-4` → `gap-3`
-- Standardize margins: `mb-2` → `mb-1.5`, `mb-1` → `mb-1`
-- Use consistent icon sizes: secondary icons `w-3.5 h-3.5`, inline icons `w-3 h-3`
+## Implementation Details
 
-#### E. src/components/people/PersonCard.tsx
-- Apply `card-featured` approach via updated Card component
-- Reduce avatar: `w-12 h-12` → `w-10 h-10`
-- Standardize gaps: `gap-3` → `gap-2`
-- Standardize section spacing: `mt-3 pt-3` → `mt-2 pt-2`
-- Reduce line spacing: `space-y-1.5` → `space-y-1`
-- Use consistent icon size: `w-3.5 h-3.5`
+### Stage Order Definition
+```typescript
+const STAGE_ORDER: PipelineStage[] = [
+  'not_contacted', 'followed', 'engaged', 'dm_sent', 
+  'responded', 'content_created', 'trial', 'customer', 'dead'
+];
+```
 
-#### F. src/components/pipeline/EnterpriseGroupCard.tsx
-- Compact mode: use `.card-compact` class pattern
-- Expanded mode: use `.card-standard` class pattern
-- Standardize icon sizes: all `w-3.5 h-3.5` → `w-3 h-3` for consistency with ClubCard
+### Completion Calculation Logic
+```typescript
+const stageCompletionPercentages = useMemo(() => {
+  if (!clubs || clubs.length === 0) return {};
+  
+  const totalClubs = clubs.length;
+  const percentages: Record<PipelineStage, number> = {} as any;
+  
+  PIPELINE_STAGES.forEach((stage, stageIndex) => {
+    // Count clubs at this stage or beyond (excluding 'dead')
+    const clubsAtOrBeyond = clubs.filter(club => {
+      const clubStageIndex = PIPELINE_STAGES.indexOf(club.pipeline_stage || 'not_contacted');
+      // Don't count 'dead' clubs for progression metrics
+      if (club.pipeline_stage === 'dead') return false;
+      return clubStageIndex >= stageIndex;
+    }).length;
+    
+    percentages[stage] = Math.round((clubsAtOrBeyond / totalClubs) * 100);
+  });
+  
+  return percentages;
+}, [clubs]);
+```
 
-#### G. src/components/pipeline/ClubCardCompact.tsx
-- Update to use new `.card-compact` styling tokens
-- Reduce padding: `px-3 py-2` → `px-2.5 py-1.5`
+### Progress Indicator Component
+```tsx
+function StageProgressIndicator({ 
+  percentage, 
+  colorClass 
+}: { 
+  percentage: number; 
+  colorClass: string 
+}) {
+  return (
+    <div className="flex items-center gap-2 mt-1">
+      <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+        <div 
+          className={cn("h-full rounded-full transition-all", colorClass)}
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
+      <span className="text-xs text-muted-foreground font-medium min-w-[32px]">
+        {percentage}%
+      </span>
+    </div>
+  );
+}
+```
 
----
+### Updated Column Header
+```tsx
+<div className="mb-3">
+  <div className="flex items-center gap-2">
+    <div className={cn('w-3 h-3 rounded-full', STAGE_CONFIG[stage].colorClass)} />
+    <h3 className="font-semibold text-sm text-foreground">
+      {STAGE_CONFIG[stage].label}
+    </h3>
+    <Badge variant="secondary" className="ml-auto text-xs">
+      {getStageCount(stage)}
+    </Badge>
+  </div>
+  {/* Only show progress for actionable stages */}
+  {stage !== 'not_contacted' && stage !== 'dead' && (
+    <StageProgressIndicator 
+      percentage={stageCompletionPercentages[stage] || 0}
+      colorClass={STAGE_CONFIG[stage].colorClass}
+    />
+  )}
+</div>
+```
 
-## Summary of Unified Tokens
+## Special Cases
 
-| Token | Value | Usage |
-|-------|-------|-------|
-| **Padding (compact)** | px-2.5 py-1.5 | Row-style cards |
-| **Padding (standard/featured)** | p-3 | All detail cards |
-| **Gap (internal)** | gap-2 | Between elements |
-| **Gap (metadata row)** | gap-3 | Between meta items |
-| **Margin (sections)** | mb-1.5 | Between card sections |
-| **Divider spacing** | mt-1.5 pt-1.5 | Border-separated sections |
-| **Icon (inline)** | w-3 h-3 | Icons in metadata |
-| **Icon (standalone)** | w-3.5 h-3.5 | Icons with emphasis |
-| **Avatar/Logo** | w-10 h-10 | Featured cards |
-| **Title** | text-sm font-semibold | All cards |
-| **Subtitle** | text-xs text-muted-foreground | Secondary text |
-| **Border radius** | rounded-2xl | All cards |
+| Stage | Behavior |
+|-------|----------|
+| **Not Contacted** | No progress bar (starting point) |
+| **Followed → Content Created** | Shows percentage of clubs that reached this stage |
+| **Trial & Customer** | Shows conversion percentages |
+| **Dead** | No progress bar (not a progression milestone) |
 
-This creates a cohesive, compact design system that maintains the neumorphic style while ensuring visual consistency across all card types.
+## Summary
+
+This gamification feature:
+- Provides instant visual feedback on pipeline health
+- Uses existing stage colors for consistency
+- Stays compact with slim progress bars
+- Excludes "dead" clubs from progression metrics
+- Skips progress bars for non-actionable stages (not_contacted, dead)
