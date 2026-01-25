@@ -25,6 +25,28 @@ const STAGE_CONFIG: Record<PipelineStage, { label: string; colorClass: string }>
   dead: { label: 'Dead', colorClass: 'bg-[hsl(var(--stage-dead))]' },
 };
 
+function StageProgressIndicator({ 
+  percentage, 
+  colorClass 
+}: { 
+  percentage: number; 
+  colorClass: string 
+}) {
+  return (
+    <div className="flex items-center gap-2 mt-1">
+      <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+        <div 
+          className={cn("h-full rounded-full transition-all", colorClass)}
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
+      <span className="text-xs text-muted-foreground font-medium min-w-[32px]">
+        {percentage}%
+      </span>
+    </div>
+  );
+}
+
 interface PipelineBoardProps {
   onClubClick: (club: Club) => void;
   searchQuery: string;
@@ -113,6 +135,28 @@ export function PipelineBoard({ onClubClick, searchQuery }: PipelineBoardProps) 
     return filteredClubs.filter(c => (c.pipeline_stage || 'not_contacted') === stage).length;
   };
 
+  // Calculate completion percentages for gamification
+  const stageCompletionPercentages = useMemo(() => {
+    if (!clubs || clubs.length === 0) return {} as Record<PipelineStage, number>;
+    
+    const totalClubs = clubs.length;
+    const percentages: Record<PipelineStage, number> = {} as Record<PipelineStage, number>;
+    
+    PIPELINE_STAGES.forEach((stage, stageIndex) => {
+      // Count clubs at this stage or beyond (excluding 'dead')
+      const clubsAtOrBeyond = clubs.filter(club => {
+        const clubStageIndex = PIPELINE_STAGES.indexOf(club.pipeline_stage || 'not_contacted');
+        // Don't count 'dead' clubs for progression metrics
+        if (club.pipeline_stage === 'dead') return false;
+        return clubStageIndex >= stageIndex;
+      }).length;
+      
+      percentages[stage] = Math.round((clubsAtOrBeyond / totalClubs) * 100);
+    });
+    
+    return percentages;
+  }, [clubs]);
+
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
 
@@ -158,14 +202,23 @@ export function PipelineBoard({ onClubClick, searchQuery }: PipelineBoardProps) 
         <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-thin">
           {PIPELINE_STAGES.map(stage => (
             <div key={stage} className="flex-shrink-0 w-72">
-              <div className="flex items-center gap-2 mb-3">
-                <div className={cn('w-3 h-3 rounded-full', STAGE_CONFIG[stage].colorClass)} />
-                <h3 className="font-semibold text-sm text-foreground">
-                  {STAGE_CONFIG[stage].label}
-                </h3>
-                <Badge variant="secondary" className="ml-auto text-xs">
-                  {getStageCount(stage)}
-                </Badge>
+              <div className="mb-3">
+                <div className="flex items-center gap-2">
+                  <div className={cn('w-3 h-3 rounded-full', STAGE_CONFIG[stage].colorClass)} />
+                  <h3 className="font-semibold text-sm text-foreground">
+                    {STAGE_CONFIG[stage].label}
+                  </h3>
+                  <Badge variant="secondary" className="ml-auto text-xs">
+                    {getStageCount(stage)}
+                  </Badge>
+                </div>
+                {/* Only show progress for actionable stages */}
+                {stage !== 'not_contacted' && stage !== 'dead' && (
+                  <StageProgressIndicator 
+                    percentage={stageCompletionPercentages[stage] || 0}
+                    colorClass={STAGE_CONFIG[stage].colorClass}
+                  />
+                )}
               </div>
               
               <Droppable droppableId={stage}>
