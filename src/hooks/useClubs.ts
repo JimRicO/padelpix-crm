@@ -21,7 +21,7 @@ export function useClubs() {
 
 export function useOwnershipGroups() {
   return useQuery({
-    queryKey: ['ownership-groups'],
+    queryKey: ['ownership-group-names'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('clubs')
