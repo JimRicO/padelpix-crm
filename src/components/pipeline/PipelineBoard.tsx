@@ -10,7 +10,8 @@ import { OwnershipGroupModal } from '@/components/group/OwnershipGroupModal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Users, LayoutGrid } from 'lucide-react';
+import { Users, LayoutGrid, ArrowUpDown } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { groupClubsByOwnership } from '@/utils/ownershipPatterns';
 
 const STAGE_CONFIG: Record<PipelineStage, { label: string; colorClass: string }> = {
@@ -58,6 +59,7 @@ export function PipelineBoard({ onClubClick, searchQuery }: PipelineBoardProps) 
   const updateStage = useUpdateClubStage();
   const [viewMode, setViewMode] = useState<'individual' | 'grouped'>('grouped');
   const [selectedGroupName, setSelectedGroupName] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<'name' | 'country' | 'courts'>('name');
 
   // Create a map of ownership group data for quick lookup
   const ownershipGroupDataMap = useMemo(() => {
@@ -74,16 +76,34 @@ export function PipelineBoard({ onClubClick, searchQuery }: PipelineBoardProps) 
 
   const filteredClubs = useMemo(() => {
     if (!clubs) return [];
-    if (!searchQuery.trim()) return clubs;
     
-    const query = searchQuery.toLowerCase();
-    return clubs.filter(club => 
-      club.club_name.toLowerCase().includes(query) ||
-      club.instagram_handle?.toLowerCase().includes(query) ||
-      club.city?.toLowerCase().includes(query) ||
-      club.country?.toLowerCase().includes(query)
-    );
-  }, [clubs, searchQuery]);
+    let result = clubs;
+    
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(club => 
+        club.club_name.toLowerCase().includes(query) ||
+        club.instagram_handle?.toLowerCase().includes(query) ||
+        club.city?.toLowerCase().includes(query) ||
+        club.country?.toLowerCase().includes(query)
+      );
+    }
+    
+    // Apply sorting
+    return [...result].sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return a.club_name.localeCompare(b.club_name);
+        case 'country':
+          return (a.country || 'South Africa').localeCompare(b.country || 'South Africa');
+        case 'courts':
+          return (b.number_of_courts || 0) - (a.number_of_courts || 0);
+        default:
+          return 0;
+      }
+    });
+  }, [clubs, searchQuery, sortBy]);
 
   const { groups: ownershipGroups, ungrouped: ungroupedClubs } = useMemo(() => {
     return groupClubsByOwnership(filteredClubs);
@@ -176,7 +196,7 @@ export function PipelineBoard({ onClubClick, searchQuery }: PipelineBoardProps) 
 
   return (
     <div className="space-y-3">
-      {/* View toggle */}
+      {/* View toggle and sort controls */}
       <div className="flex items-center gap-2">
         <Button
           variant={viewMode === 'individual' ? 'default' : 'outline'}
@@ -196,6 +216,21 @@ export function PipelineBoard({ onClubClick, searchQuery }: PipelineBoardProps) 
           <Users className="w-3.5 h-3.5" />
           GROUP
         </Button>
+
+        <div className="h-4 w-px bg-border mx-2" />
+
+        <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
+        <span className="text-sm text-muted-foreground">Sort:</span>
+        <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'name' | 'country' | 'courts')}>
+          <SelectTrigger className="w-[140px] h-8">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="name">Name (A-Z)</SelectItem>
+            <SelectItem value="country">Country</SelectItem>
+            <SelectItem value="courts">Most Courts</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <DragDropContext onDragEnd={handleDragEnd}>
