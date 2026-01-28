@@ -185,7 +185,7 @@ export function PipelineBoard({ onClubClick, searchQuery }: PipelineBoardProps) 
           className="gap-1.5"
         >
           <Users className="w-3.5 h-3.5" />
-          Group View
+          GROUP
         </Button>
         <Button
           variant={viewMode === 'individual' ? 'default' : 'outline'}
@@ -194,7 +194,7 @@ export function PipelineBoard({ onClubClick, searchQuery }: PipelineBoardProps) 
           className="gap-1.5"
         >
           <LayoutGrid className="w-3.5 h-3.5" />
-          Individual
+          CLUB
         </Button>
       </div>
 
