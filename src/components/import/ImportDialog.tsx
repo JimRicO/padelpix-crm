@@ -302,7 +302,34 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
             
             <TabsContent value="csv" className="flex-1 flex flex-col gap-4">
               <div className="text-sm text-muted-foreground">
-                Paste CSV data with headers. Supported columns: name, instagram, city, country, website, whatsapp, email, courts, address
+                Upload a CSV file or paste CSV data with headers. Supported columns: name, instagram, city, country, website, whatsapp, email, courts, address
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="flex items-center gap-2 px-4 py-2 border rounded-md cursor-pointer hover:bg-muted transition-colors">
+                  <Upload className="w-4 h-4" />
+                  <span className="text-sm">Upload .csv file</span>
+                  <input
+                    type="file"
+                    accept=".csv,text/csv"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                          const content = event.target?.result as string;
+                          setRawData(content);
+                        };
+                        reader.onerror = () => {
+                          setParseError('Failed to read file');
+                        };
+                        reader.readAsText(file);
+                      }
+                      e.target.value = '';
+                    }}
+                  />
+                </label>
+                {rawData && <span className="text-sm text-muted-foreground">File loaded</span>}
               </div>
               <Textarea 
                 placeholder={`club_name,instagram,city,country,courts\nPadel Club One,@padelclub1,Cape Town,South Africa,4\nPadel Club Two,@padelclub2,Johannesburg,South Africa,6`}
