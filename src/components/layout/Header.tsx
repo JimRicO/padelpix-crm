@@ -90,7 +90,7 @@ export function Header({ searchQuery, onSearchChange, onAddClub, onImport }: Hea
             <a href="/people">People</a>
           </Button>
           <Button variant="ghost" size="sm" asChild>
-            <a href="/organizations">Organizations</a>
+            <a href="/organizations">Groups</a>
           </Button>
         </div>
       </div>
