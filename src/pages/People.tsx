@@ -9,7 +9,8 @@ import { AddPersonDialog } from '@/components/people/AddPersonDialog';
 import { PersonDetailModal } from '@/components/people/PersonDetailModal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Plus, Users } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Search, Plus, Users, ArrowUpDown } from 'lucide-react';
 import type { Person } from '@/types/people';
 
 export default function People() {
@@ -19,18 +20,37 @@ export default function People() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
+  const [sortBy, setSortBy] = useState<'name' | 'country' | 'role'>('name');
 
   const filteredPeople = useMemo(() => {
-    if (!searchQuery) return people;
-    const query = searchQuery.toLowerCase();
-    return people.filter(
-      (person) =>
-        person.full_name.toLowerCase().includes(query) ||
-        person.email?.toLowerCase().includes(query) ||
-        person.role?.toLowerCase().includes(query) ||
-        person.country?.toLowerCase().includes(query)
-    );
-  }, [people, searchQuery]);
+    let result = people;
+    
+    // Apply search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(
+        (person) =>
+          person.full_name.toLowerCase().includes(query) ||
+          person.email?.toLowerCase().includes(query) ||
+          person.role?.toLowerCase().includes(query) ||
+          person.country?.toLowerCase().includes(query)
+      );
+    }
+    
+    // Apply sorting
+    return [...result].sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return a.full_name.localeCompare(b.full_name);
+        case 'country':
+          return (a.country || 'South Africa').localeCompare(b.country || 'South Africa');
+        case 'role':
+          return (a.role || '').localeCompare(b.role || '');
+        default:
+          return 0;
+      }
+    });
+  }, [people, searchQuery, sortBy]);
 
   if (authLoading) {
     return (
@@ -81,6 +101,23 @@ export default function People() {
       </header>
 
       <main className="p-6">
+        {/* Sort controls */}
+        {!isLoading && filteredPeople.length > 0 && (
+          <div className="flex items-center gap-2 mb-4">
+            <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Sort by:</span>
+            <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'name' | 'country' | 'role')}>
+              <SelectTrigger className="w-[160px] h-8">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name">Name (A-Z)</SelectItem>
+                <SelectItem value="country">Country</SelectItem>
+                <SelectItem value="role">Role</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
