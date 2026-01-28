@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -40,6 +40,8 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
   const [parseError, setParseError] = useState<string | null>(null);
   const [step, setStep] = useState<'input' | 'preview'>('input');
   const [isExtractingLocations, setIsExtractingLocations] = useState(false);
+
+  const csvFileInputRef = useRef<HTMLInputElement | null>(null);
   
   const { data: existingClubs } = useClubs();
   const bulkCreate = useBulkCreateClubs();
@@ -305,30 +307,38 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
                 Upload a CSV file or paste CSV data with headers. Supported columns: name, instagram, city, country, website, whatsapp, email, courts, address
               </div>
               <div className="flex items-center gap-2">
-                <label className="flex items-center gap-2 px-4 py-2 border rounded-md cursor-pointer hover:bg-muted transition-colors">
+                <input
+                  ref={csvFileInputRef}
+                  type="file"
+                  accept=".csv,text/csv"
+                  className="sr-only"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (event) => {
+                        const content = event.target?.result as string;
+                        setRawData(content);
+                      };
+                      reader.onerror = () => {
+                        setParseError('Failed to read file');
+                      };
+                      reader.readAsText(file);
+                    }
+                    // allow selecting the same file again
+                    e.target.value = '';
+                  }}
+                />
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="gap-2"
+                  onClick={() => csvFileInputRef.current?.click()}
+                >
                   <Upload className="w-4 h-4" />
                   <span className="text-sm">Upload .csv file</span>
-                  <input
-                    type="file"
-                    accept=".csv,text/csv"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        const reader = new FileReader();
-                        reader.onload = (event) => {
-                          const content = event.target?.result as string;
-                          setRawData(content);
-                        };
-                        reader.onerror = () => {
-                          setParseError('Failed to read file');
-                        };
-                        reader.readAsText(file);
-                      }
-                      e.target.value = '';
-                    }}
-                  />
-                </label>
+                </Button>
                 {rawData && <span className="text-sm text-muted-foreground">File loaded</span>}
               </div>
               <Textarea 
