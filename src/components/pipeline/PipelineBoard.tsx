@@ -179,15 +179,6 @@ export function PipelineBoard({ onClubClick, searchQuery }: PipelineBoardProps) 
       {/* View toggle */}
       <div className="flex items-center gap-2">
         <Button
-          variant={viewMode === 'grouped' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setViewMode('grouped')}
-          className="gap-1.5"
-        >
-          <Users className="w-3.5 h-3.5" />
-          GROUP
-        </Button>
-        <Button
           variant={viewMode === 'individual' ? 'default' : 'outline'}
           size="sm"
           onClick={() => setViewMode('individual')}
@@ -195,6 +186,15 @@ export function PipelineBoard({ onClubClick, searchQuery }: PipelineBoardProps) 
         >
           <LayoutGrid className="w-3.5 h-3.5" />
           CLUB
+        </Button>
+        <Button
+          variant={viewMode === 'grouped' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setViewMode('grouped')}
+          className="gap-1.5"
+        >
+          <Users className="w-3.5 h-3.5" />
+          GROUP
         </Button>
       </div>
 
