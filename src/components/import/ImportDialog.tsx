@@ -153,12 +153,12 @@ const FIELD_DISPLAY: Record<string, string> = {
 // Keyword rules for fuzzy matching (checked in order - first match wins)
 const KEYWORD_RULES: Array<{ keywords: string[]; allRequired?: boolean; field: string }> = [
   // Specific multi-word patterns first (require all keywords)
-  { keywords: ['team', 'member'], allRequired: false, field: 'key_individuals' },
-  { keywords: ['business', 'description'], allRequired: false, field: 'business_description' },
-  { keywords: ['phone', 'number'], allRequired: false, field: 'phone' },
-  { keywords: ['email', 'address'], allRequired: false, field: 'email' },
+  // NOTE: these MUST be strict to avoid bad matches (e.g. "Email Address" shouldn't match "Address").
+  { keywords: ['email', 'address'], allRequired: true, field: 'email' },
+  { keywords: ['phone', 'number'], allRequired: true, field: 'phone' },
   { keywords: ['number', 'court'], allRequired: true, field: 'number_of_courts' },
-  { keywords: ['google', 'map'], allRequired: false, field: 'google_maps_url' },
+  { keywords: ['business', 'description'], allRequired: true, field: 'business_description' },
+  { keywords: ['google', 'map'], allRequired: true, field: 'google_maps_url' },
   
   // Single keyword matches (any keyword matches)
   { keywords: ['phone', 'mobile', 'tel', 'telephone', 'cell'], field: 'phone' },
@@ -182,7 +182,8 @@ const KEYWORD_RULES: Array<{ keywords: string[]; allRequired?: boolean; field: s
   { keywords: ['comment'], field: 'avg_comments' },
   { keywords: ['view', 'video'], field: 'avg_video_views' },
   { keywords: ['hashtag', 'tag'], field: 'top_hashtags' },
-  { keywords: ['name', 'club'], field: 'club_name' },
+  // Avoid mapping "Number of Clubs" to club_name; require both "club" and "name"
+  { keywords: ['club', 'name'], allRequired: true, field: 'club_name' },
 ];
 
 // Smart column matching with fuzzy logic
@@ -226,6 +227,72 @@ const smartMatchColumn = (header: string): { field: string; display: string } | 
   }
   
   return null;
+};
+
+// Robust CSV parser (handles quoted fields, commas/newlines inside quotes, and escaped quotes "")
+const parseCsvRows = (text: string, delimiter: string = ','): string[][] => {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = '';
+  let inQuotes = false;
+
+  // Normalize line endings to simplify parsing
+  const input = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+  for (let i = 0; i < input.length; i++) {
+    const char = input[i];
+
+    if (inQuotes) {
+      if (char === '"') {
+        // Escaped quote
+        if (input[i + 1] === '"') {
+          field += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        field += char;
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      inQuotes = true;
+      continue;
+    }
+
+    if (char === delimiter) {
+      row.push(field);
+      field = '';
+      continue;
+    }
+
+    if (char === '\n') {
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = '';
+      continue;
+    }
+
+    field += char;
+  }
+
+  row.push(field);
+  rows.push(row);
+
+  const cleaned = rows
+    .map((r, ri) =>
+      r.map((c, ci) => {
+        const trimmed = c.trim();
+        // Strip UTF-8 BOM from first cell if present
+        return ri === 0 && ci === 0 ? trimmed.replace(/^\uFEFF/, '') : trimmed;
+      })
+    )
+    .filter(r => r.some(c => c !== ''));
+
+  return cleaned;
 };
 
 // All possible fields that can be imported (for counting filled fields)
@@ -306,101 +373,111 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
   };
 
   const parseCSV = (text: string): ParsedClub[] => {
-    const lines = text.trim().split('\n');
-    if (lines.length < 2) throw new Error('CSV must have a header row and at least one data row');
-    
-    const headers = lines[0].split(',').map(h => h.trim().replace(/^["']|["']$/g, ''));
-    
+    const rows = parseCsvRows(text);
+    if (rows.length < 2) throw new Error('CSV must have a header row and at least one data row');
+
+    const headers = (rows[0] || []).map(h => h.trim().replace(/^["']|["']$/g, ''));
+
     // Analyze headers for feedback using smart matching
     const { matched, unmatched } = analyzeHeaders(headers);
     setMatchedColumns(matched);
     setUnmatchedColumns(unmatched);
 
-    // Build a mapping from header index to field
-    const headerMappings = headers.map(header => smartMatchColumn(header));
+    // Build a mapping from header index to field (ignore duplicates)
+    const seen = new Set<string>();
+    const headerMappings = headers.map(header => {
+      const m = smartMatchColumn(header);
+      if (!m) return null;
+      if (seen.has(m.field)) return null;
+      seen.add(m.field);
+      return m;
+    });
 
-    return lines.slice(1).filter(line => line.trim()).map(line => {
-      const values = line.split(',').map(v => v.trim().replace(/^["']|["']$/g, ''));
+    return rows
+      .slice(1)
+      .filter(r => r.some(v => v.trim() !== ''))
+      .map(row => {
       const club: ParsedClub = { club_name: '' };
       
       headerMappings.forEach((mapping, i) => {
-        if (mapping && values[i]) {
+        const value = (row[i] ?? '').trim();
+        if (mapping && value) {
           const mappedField = mapping.field;
           switch (mappedField) {
             case 'number_of_courts':
-              club.number_of_courts = parseInt(values[i], 10) || undefined;
+              club.number_of_courts = parseInt(value, 10) || undefined;
               break;
             case 'insta_followers':
-              club.insta_followers = parseInt(values[i], 10) || undefined;
+              club.insta_followers = parseInt(value, 10) || undefined;
               break;
             case 'avg_likes':
-              club.avg_likes = parseInt(values[i], 10) || undefined;
+              club.avg_likes = parseInt(value, 10) || undefined;
               break;
             case 'avg_comments':
-              club.avg_comments = parseInt(values[i], 10) || undefined;
+              club.avg_comments = parseInt(value, 10) || undefined;
               break;
             case 'avg_video_views':
-              club.avg_video_views = parseInt(values[i], 10) || undefined;
+              club.avg_video_views = parseInt(value, 10) || undefined;
               break;
             case 'top_hashtags':
-              club.top_hashtags = values[i].split(/[;|]/).map(s => s.trim()).filter(Boolean);
+              club.top_hashtags = value.split(/[;|]/).map(s => s.trim()).filter(Boolean);
               break;
             case 'key_individuals':
-              club.key_individuals = values[i].split(/[;|]/).map(s => s.trim()).filter(Boolean);
+              club.key_individuals = value.split(/[;|]/).map(s => s.trim()).filter(Boolean);
               break;
             case 'club_name':
-              club.club_name = values[i];
+              club.club_name = value;
               break;
             case 'instagram_handle':
-              club.instagram_handle = values[i];
+              club.instagram_handle = value;
               break;
             case 'city':
-              club.city = values[i];
+              club.city = value;
               break;
             case 'country':
-              club.country = values[i];
+              club.country = value;
               break;
             case 'website':
-              club.website = values[i];
+              club.website = value;
               break;
             case 'whatsapp':
-              club.whatsapp = values[i];
+              club.whatsapp = value;
               break;
             case 'phone':
-              club.phone = values[i];
+              club.phone = value;
               break;
             case 'email':
-              club.email = values[i];
+              club.email = value;
               break;
             case 'address':
-              club.address = values[i];
+              club.address = value;
               break;
             case 'suburb':
-              club.suburb = values[i];
+              club.suburb = value;
               break;
             case 'contact_name':
-              club.contact_name = values[i];
+              club.contact_name = value;
               break;
             case 'business_description':
-              club.business_description = values[i];
+              club.business_description = value;
               break;
             case 'google_maps_url':
-              club.google_maps_url = values[i];
+              club.google_maps_url = value;
               break;
             case 'facebook':
-              club.facebook = values[i];
+              club.facebook = value;
               break;
             case 'twitter':
-              club.twitter = values[i];
+              club.twitter = value;
               break;
             case 'linkedin':
-              club.linkedin = values[i];
+              club.linkedin = value;
               break;
             case 'insta_url':
-              club.insta_url = values[i];
+              club.insta_url = value;
               break;
             case 'insta_bio':
-              club.insta_bio = values[i];
+              club.insta_bio = value;
               break;
           }
         }
@@ -412,7 +489,8 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
       club.isDuplicate = checkDuplicate(club.instagram_handle);
       
       return club;
-    }).filter(c => c.club_name);
+    })
+    .filter(c => c.club_name);
   };
 
   const parseJSON = (text: string): ParsedClub[] => {
@@ -557,11 +635,11 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
       
       // Count rows and columns for feedback
       if (format === 'csv') {
-        const lines = content.trim().split('\n');
-        const headers = lines[0]?.split(',') || [];
+        const rows = parseCsvRows(content);
+        const headers = rows[0] || [];
         setFileInfo({
           name: file.name,
-          rowCount: Math.max(0, lines.length - 1),
+          rowCount: Math.max(0, rows.length - 1),
           columnCount: headers.length
         });
         // Pre-analyze headers
