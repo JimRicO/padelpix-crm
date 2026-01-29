@@ -169,163 +169,179 @@ export function OwnershipGroupModal({
           </div>
         ) : (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
-            <TabsList className="mx-4 mb-2">
-              <TabsTrigger value="overview" className="gap-1">
-                <Sparkles className="w-4 h-4" />
-                Overview
-              </TabsTrigger>
-              <TabsTrigger value="contacts" className="gap-1">
-                <Users className="w-4 h-4" />
-                Contacts
-              </TabsTrigger>
-            </TabsList>
+            <div className="px-4 pb-3">
+              <TabsList className="w-full">
+                <TabsTrigger value="overview" className="flex-1 gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger value="contacts" className="flex-1 gap-2">
+                  <Users className="w-4 h-4" />
+                  Contacts
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
-            <TabsContent value="overview" className="flex-1 m-0 border-t">
+            <TabsContent value="overview" className="flex-1 m-0 border-t border-border/50">
               {existingGroup ? (
                 <div className="h-[65vh]">
                   <OrganizationDetailView group={existingGroup} clubCount={clubCount} />
                 </div>
               ) : (
                 <div className="flex items-center justify-center h-64 text-muted-foreground">
-                  No data available. Configure settings to get started.
+                  No data available. Configure contacts to get started.
                 </div>
               )}
             </TabsContent>
 
-            <TabsContent value="contacts" className="flex-1 m-0 border-t">
+            <TabsContent value="contacts" className="flex-1 m-0 border-t border-border/50">
               <ScrollArea className="h-[65vh]">
-                <div className="p-4 space-y-6">
-                  {/* Stats */}
-                  <div className="flex items-center gap-4 p-4 neu-pressed rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <Building2 className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm font-medium">
-                        {formData.total_clubs 
-                          ? `${clubCount} of ${formData.total_clubs} clubs imported`
-                          : `${clubCount} clubs`}
-                      </span>
-                    </div>
-                    {totalCourts > 0 && (
+                <div className="p-5 space-y-5">
+                  {/* Stats Card */}
+                  <div className="p-4 rounded-xl neu-pressed">
+                    <div className="flex items-center gap-6">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">{totalCourts} total courts</span>
+                        <Building2 className="w-4 h-4 text-primary" />
+                        <span className="text-sm font-medium text-foreground">
+                          {formData.total_clubs 
+                            ? `${clubCount} of ${formData.total_clubs} clubs imported`
+                            : `${clubCount} clubs`}
+                        </span>
                       </div>
-                    )}
+                      {totalCourts > 0 && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">{totalCourts} total courts</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Total Clubs */}
-                  <div className="space-y-2">
-                    <Label>Total Clubs Owned</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      value={formData.total_clubs ?? ''}
-                      onChange={(e) => setFormData(prev => ({ 
-                        ...prev, 
-                        total_clubs: e.target.value ? parseInt(e.target.value, 10) : null 
-                      }))}
-                      placeholder={`${clubCount} (auto-calculated from imported clubs)`}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Leave blank to use the count of imported clubs, or enter the total if you know the group owns more.
-                    </p>
-                  </div>
-
-                  {/* Logo & Branding */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Group Logo</Label>
-                      <div className="flex items-center gap-3">
-                        {formData.logo_url ? (
-                          <div className="w-16 h-16 rounded-xl neu-pressed p-2 flex items-center justify-center bg-background">
-                            <img 
-                              src={formData.logo_url} 
-                              alt={groupName} 
-                              className="w-full h-full object-contain"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = '/placeholder.svg';
-                              }}
-                            />
-                          </div>
-                        ) : (
-                          <div className="w-16 h-16 rounded-xl neu-pressed p-2 flex items-center justify-center bg-background">
-                            <Crown className="w-8 h-8 text-primary" />
-                          </div>
-                        )}
-                        <div className="flex flex-col gap-2">
-                          <div className="flex gap-2">
-                            <Button variant="outline" size="sm" asChild disabled={isUploading}>
-                              <label className="cursor-pointer">
-                                <Upload className="w-4 h-4 mr-2" />
-                                {isUploading ? 'Uploading...' : 'Upload'}
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  className="hidden"
-                                  onChange={handleLogoUpload}
-                                  disabled={isUploading}
-                                />
-                              </label>
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => setShowUrlInput(!showUrlInput)}
-                            >
-                              <Link className="w-4 h-4 mr-2" />
-                              URL
-                            </Button>
-                            {formData.logo_url && (
-                              <Button variant="ghost" size="sm" onClick={handleRemoveLogo}>
-                                <X className="w-4 h-4" />
-                              </Button>
-                            )}
-                          </div>
-                          {showUrlInput && (
-                            <div className="flex gap-2">
-                              <Input
-                                placeholder="https://example.com/logo.png"
-                                value={logoUrl}
-                                onChange={(e) => setLogoUrl(e.target.value)}
-                                className="flex-1"
+                  {/* Branding Section */}
+                  <div className="p-4 rounded-xl neu-subtle space-y-4">
+                    <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                      <Palette className="w-4 h-4 text-primary" />
+                      Branding
+                    </h3>
+                    <div className="grid grid-cols-2 gap-6">
+                      {/* Logo */}
+                      <div className="space-y-3">
+                        <Label className="text-xs text-muted-foreground">Group Logo</Label>
+                        <div className="flex items-center gap-3">
+                          {formData.logo_url ? (
+                            <div className="w-16 h-16 rounded-xl neu-pressed p-2 flex items-center justify-center bg-background">
+                              <img 
+                                src={formData.logo_url} 
+                                alt={groupName} 
+                                className="w-full h-full object-contain"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = '/placeholder.svg';
+                                }}
                               />
-                              <Button size="sm" onClick={handleUrlSubmit} disabled={!logoUrl.trim()}>
-                                <Check className="w-4 h-4" />
-                              </Button>
+                            </div>
+                          ) : (
+                            <div className="w-16 h-16 rounded-xl neu-pressed p-2 flex items-center justify-center bg-background">
+                              <Crown className="w-8 h-8 text-primary" />
                             </div>
                           )}
+                          <div className="flex flex-col gap-2">
+                            <div className="flex gap-2">
+                              <Button variant="outline" size="sm" asChild disabled={isUploading}>
+                                <label className="cursor-pointer">
+                                  <Upload className="w-4 h-4 mr-2" />
+                                  {isUploading ? 'Uploading...' : 'Upload'}
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={handleLogoUpload}
+                                    disabled={isUploading}
+                                  />
+                                </label>
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => setShowUrlInput(!showUrlInput)}
+                              >
+                                <Link className="w-4 h-4 mr-2" />
+                                URL
+                              </Button>
+                              {formData.logo_url && (
+                                <Button variant="ghost" size="sm" onClick={handleRemoveLogo}>
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              )}
+                            </div>
+                            {showUrlInput && (
+                              <div className="flex gap-2">
+                                <Input
+                                  placeholder="https://example.com/logo.png"
+                                  value={logoUrl}
+                                  onChange={(e) => setLogoUrl(e.target.value)}
+                                  className="flex-1"
+                                />
+                                <Button size="sm" onClick={handleUrlSubmit} disabled={!logoUrl.trim()}>
+                                  <Check className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Brand Color */}
+                      <div className="space-y-3">
+                        <Label className="text-xs text-muted-foreground">Brand Color</Label>
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-lg neu-pressed p-1">
+                            <Input
+                              type="color"
+                              value={formData.brand_color}
+                              onChange={(e) => setFormData(prev => ({ ...prev, brand_color: e.target.value }))}
+                              className="w-full h-full p-0 border-0 cursor-pointer rounded-md"
+                            />
+                          </div>
+                          <Input
+                            type="text"
+                            value={formData.brand_color}
+                            onChange={(e) => setFormData(prev => ({ ...prev, brand_color: e.target.value }))}
+                            placeholder="#6366f1"
+                            className="flex-1 font-mono text-sm"
+                          />
                         </div>
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label className="flex items-center gap-2">
-                        <Palette className="w-4 h-4" />
-                        Brand Color
-                      </Label>
-                      <div className="flex items-center gap-2">
+                    {/* Total Clubs */}
+                    <div className="pt-3 border-t border-border/30">
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground">Total Clubs Owned</Label>
                         <Input
-                          type="color"
-                          value={formData.brand_color}
-                          onChange={(e) => setFormData(prev => ({ ...prev, brand_color: e.target.value }))}
-                          className="w-16 h-10 p-1 cursor-pointer"
+                          type="number"
+                          min="0"
+                          value={formData.total_clubs ?? ''}
+                          onChange={(e) => setFormData(prev => ({ 
+                            ...prev, 
+                            total_clubs: e.target.value ? parseInt(e.target.value, 10) : null 
+                          }))}
+                          placeholder={`${clubCount} (auto-calculated from imported clubs)`}
                         />
-                        <Input
-                          type="text"
-                          value={formData.brand_color}
-                          onChange={(e) => setFormData(prev => ({ ...prev, brand_color: e.target.value }))}
-                          placeholder="#6366f1"
-                          className="flex-1"
-                        />
+                        <p className="text-xs text-muted-foreground">
+                          Leave blank to use the count of imported clubs, or enter the total if you know the group owns more.
+                        </p>
                       </div>
                     </div>
                   </div>
 
-                  {/* Contact Info */}
-                  <div className="space-y-4">
-                    <h3 className="text-sm font-medium">Contact Information</h3>
+                  {/* Contact Information Section */}
+                  <div className="p-4 rounded-xl neu-subtle space-y-4">
+                    <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                      <Users className="w-4 h-4 text-primary" />
+                      Contact Information
+                    </h3>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>Contact Name</Label>
+                        <Label className="text-xs text-muted-foreground">Contact Name</Label>
                         <Input
                           value={formData.contact_name}
                           onChange={(e) => setFormData(prev => ({ ...prev, contact_name: e.target.value }))}
@@ -333,8 +349,8 @@ export function OwnershipGroupModal({
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="flex items-center gap-2">
-                          <Mail className="w-4 h-4" />
+                        <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
+                          <Mail className="w-3.5 h-3.5" />
                           Email
                         </Label>
                         <Input
@@ -345,8 +361,8 @@ export function OwnershipGroupModal({
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="flex items-center gap-2">
-                          <Phone className="w-4 h-4" />
+                        <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
+                          <Phone className="w-3.5 h-3.5" />
                           Phone
                         </Label>
                         <Input
@@ -357,8 +373,8 @@ export function OwnershipGroupModal({
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="flex items-center gap-2">
-                          <Globe className="w-4 h-4" />
+                        <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
+                          <Globe className="w-3.5 h-3.5" />
                           Website
                         </Label>
                         <Input
@@ -369,8 +385,8 @@ export function OwnershipGroupModal({
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="flex items-center gap-2">
-                          <MapPin className="w-4 h-4" />
+                        <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
+                          <MapPin className="w-3.5 h-3.5" />
                           Country
                         </Label>
                         <Input
@@ -382,46 +398,50 @@ export function OwnershipGroupModal({
                     </div>
                   </div>
 
-                  {/* Relationship Status */}
-                  <div className="space-y-2">
-                    <Label>Relationship Status</Label>
-                    <Select
-                      value={formData.relationship_status}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, relationship_status: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {RELATIONSHIP_STATUSES.map(status => (
-                          <SelectItem key={status.value} value={status.value}>
-                            {status.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {/* Relationship & Notes Section */}
+                  <div className="p-4 rounded-xl neu-subtle space-y-4">
+                    <h3 className="text-sm font-semibold text-foreground">Relationship & Notes</h3>
+                    
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">Relationship Status</Label>
+                      <Select
+                        value={formData.relationship_status}
+                        onValueChange={(value) => setFormData(prev => ({ ...prev, relationship_status: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {RELATIONSHIP_STATUSES.map(status => (
+                            <SelectItem key={status.value} value={status.value}>
+                              {status.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                  {/* Notes */}
-                  <div className="space-y-2">
-                    <Label>Notes</Label>
-                    <Textarea
-                      value={formData.notes}
-                      onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                      placeholder="Add notes about the partnership, key contacts, or relationship history..."
-                      rows={4}
-                    />
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">Notes</Label>
+                      <Textarea
+                        value={formData.notes}
+                        onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                        placeholder="Add notes about the partnership, key contacts, or relationship history..."
+                        rows={4}
+                        className="resize-none"
+                      />
+                    </div>
                   </div>
 
                   {/* Actions */}
-                  <div className="flex justify-end gap-2 pt-4 border-t">
-                    <Button variant="outline" onClick={onClose}>
+                  <div className="flex justify-end gap-3 pt-4 border-t border-border/50">
+                    <Button variant="outline" onClick={onClose} className="px-6">
                       Cancel
                     </Button>
                     <Button 
                       onClick={handleSave} 
                       disabled={upsertMutation.isPending || !hasChanges}
-                      className={hasChanges && !upsertMutation.isPending ? 'bg-primary hover:bg-primary/90' : ''}
+                      className={hasChanges && !upsertMutation.isPending ? 'bg-primary hover:bg-primary/90 px-6' : 'px-6'}
                       variant={hasChanges && !upsertMutation.isPending ? 'default' : 'secondary'}
                     >
                       {upsertMutation.isPending ? (
