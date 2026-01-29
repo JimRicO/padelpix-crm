@@ -235,6 +235,7 @@ interface BulkClubData {
   google_maps_url?: string;
   facebook?: string;
   twitter?: string;
+  linkedin?: string;
   insta_url?: string;
   insta_bio?: string;
   insta_followers?: number;
@@ -276,6 +277,21 @@ export function useBulkCreateClubs() {
           priority: club.priority,
           ownership_group: ownershipGroup,
           created_by: user?.id,
+          // New fields
+          phone: club.phone,
+          business_description: club.business_description,
+          google_maps_url: club.google_maps_url,
+          facebook: club.facebook,
+          twitter: club.twitter,
+          linkedin: club.linkedin,
+          insta_url: club.insta_url,
+          insta_bio: club.insta_bio,
+          insta_followers: club.insta_followers,
+          avg_likes: club.avg_likes,
+          avg_comments: club.avg_comments,
+          avg_video_views: club.avg_video_views,
+          top_hashtags: club.top_hashtags,
+          key_individuals: club.key_individuals,
         };
       });
 
