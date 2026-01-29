@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Instagram, Globe, Phone, Mail, MapPin, Trash2, Save, ExternalLink, Users, Check, ChevronsUpDown, Linkedin, Upload, X, Link } from 'lucide-react';
+import { Instagram, Globe, Phone, Mail, MapPin, Trash2, Save, ExternalLink, Users, Check, ChevronsUpDown, Linkedin, Upload, X, Link, Facebook, Twitter, Heart, MessageCircle, Video, Hash } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
@@ -39,6 +39,20 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
     priority: club.priority || 'medium',
     notes: club.notes || '',
     next_action: club.next_action || '',
+    // New fields
+    phone: club.phone || '',
+    business_description: club.business_description || '',
+    google_maps_url: club.google_maps_url || '',
+    facebook: club.facebook || '',
+    twitter: club.twitter || '',
+    insta_url: club.insta_url || '',
+    insta_bio: club.insta_bio || '',
+    insta_followers: club.insta_followers || '',
+    avg_likes: club.avg_likes || '',
+    avg_comments: club.avg_comments || '',
+    avg_video_views: club.avg_video_views || '',
+    top_hashtags: club.top_hashtags?.join(', ') || '',
+    key_individuals: club.key_individuals?.join(', ') || '',
   });
 
   const [formData, setFormData] = useState(getInitialFormData);
@@ -102,9 +116,15 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
       ...formData,
       number_of_courts: formData.number_of_courts ? Number(formData.number_of_courts) : null,
       tier: formData.tier || null,
+      insta_followers: formData.insta_followers ? Number(formData.insta_followers) : null,
+      avg_likes: formData.avg_likes ? Number(formData.avg_likes) : null,
+      avg_comments: formData.avg_comments ? Number(formData.avg_comments) : null,
+      avg_video_views: formData.avg_video_views ? Number(formData.avg_video_views) : null,
+      top_hashtags: formData.top_hashtags ? formData.top_hashtags.split(',').map(t => t.trim()).filter(Boolean) : null,
+      key_individuals: formData.key_individuals ? formData.key_individuals.split(',').map(t => t.trim()).filter(Boolean) : null,
     }, {
       onSuccess: () => {
-        setInitialFormData(formData); // Reset dirty state after successful save
+        setInitialFormData(formData);
       }
     });
   };
@@ -177,260 +197,425 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Club Name</Label>
-          <Input 
-            value={formData.club_name}
-            onChange={(e) => setFormData(prev => ({ ...prev, club_name: e.target.value }))}
-          />
+      {/* Basic Info */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Basic Info</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Club Name</Label>
+            <Input 
+              value={formData.club_name}
+              onChange={(e) => setFormData(prev => ({ ...prev, club_name: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Contact Name</Label>
+            <Input 
+              value={formData.contact_name}
+              onChange={(e) => setFormData(prev => ({ ...prev, contact_name: e.target.value }))}
+            />
+          </div>
         </div>
+
         <div className="space-y-2">
-          <Label>Contact Name</Label>
-          <Input 
-            value={formData.contact_name}
-            onChange={(e) => setFormData(prev => ({ ...prev, contact_name: e.target.value }))}
-          />
+          <Label className="flex items-center gap-2">
+            <Users className="w-4 h-4" /> Ownership Group
+          </Label>
+          <Popover open={ownershipOpen} onOpenChange={setOwnershipOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={ownershipOpen}
+                className="w-full justify-between font-normal"
+              >
+                {formData.ownership_group || "Select or type ownership..."}
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-full p-0 bg-popover" align="start">
+              <Command>
+                <CommandInput 
+                  placeholder="Search or add new..." 
+                  value={formData.ownership_group}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, ownership_group: value }))}
+                />
+                <CommandList>
+                  <CommandEmpty>
+                    <div className="p-2 text-sm text-muted-foreground">
+                      Press enter to use "{formData.ownership_group}"
+                    </div>
+                  </CommandEmpty>
+                  <CommandGroup>
+                    {ownershipGroups.map((group) => (
+                      <CommandItem
+                        key={group}
+                        value={group}
+                        onSelect={() => {
+                          setFormData(prev => ({ ...prev, ownership_group: group }));
+                          setOwnershipOpen(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            formData.ownership_group === group ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        {group}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label className="flex items-center gap-2">
-          <Users className="w-4 h-4" /> Ownership Group
-        </Label>
-        <Popover open={ownershipOpen} onOpenChange={setOwnershipOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={ownershipOpen}
-              className="w-full justify-between font-normal"
-            >
-              {formData.ownership_group || "Select or type ownership..."}
-              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-full p-0 bg-popover" align="start">
-            <Command>
-              <CommandInput 
-                placeholder="Search or add new..." 
-                value={formData.ownership_group}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, ownership_group: value }))}
+      {/* Social Media */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Social Media</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Instagram className="w-4 h-4" /> Instagram Handle
+            </Label>
+            <div className="flex gap-2">
+              <Input 
+                value={formData.instagram_handle}
+                onChange={(e) => setFormData(prev => ({ ...prev, instagram_handle: e.target.value }))}
+                placeholder="@handle"
               />
-              <CommandList>
-                <CommandEmpty>
-                  <div className="p-2 text-sm text-muted-foreground">
-                    Press enter to use "{formData.ownership_group}"
-                  </div>
-                </CommandEmpty>
-                <CommandGroup>
-                  {ownershipGroups.map((group) => (
-                    <CommandItem
-                      key={group}
-                      value={group}
-                      onSelect={() => {
-                        setFormData(prev => ({ ...prev, ownership_group: group }));
-                        setOwnershipOpen(false);
-                      }}
-                    >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          formData.ownership_group === group ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                      {group}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label className="flex items-center gap-2">
-            <Instagram className="w-4 h-4" /> Instagram
-          </Label>
-          <div className="flex gap-2">
-            <Input 
-              value={formData.instagram_handle}
-              onChange={(e) => setFormData(prev => ({ ...prev, instagram_handle: e.target.value }))}
-              placeholder="@handle"
-            />
-            {instagramUrl && (
-              <Button variant="outline" size="icon" asChild>
-                <a href={instagramUrl} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="w-4 h-4" />
-                </a>
-              </Button>
-            )}
+              {instagramUrl && (
+                <Button variant="outline" size="icon" asChild>
+                  <a href={instagramUrl} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
-        <div className="space-y-2">
-          <Label className="flex items-center gap-2">
-            <Linkedin className="w-4 h-4" /> LinkedIn
-          </Label>
-          <div className="flex gap-2">
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Instagram className="w-4 h-4" /> Instagram URL
+            </Label>
             <Input 
-              value={formData.linkedin}
-              onChange={(e) => setFormData(prev => ({ ...prev, linkedin: e.target.value }))}
-              placeholder="https://linkedin.com/company/..."
+              value={formData.insta_url}
+              onChange={(e) => setFormData(prev => ({ ...prev, insta_url: e.target.value }))}
+              placeholder="https://instagram.com/..."
             />
-            {formData.linkedin && (
-              <Button variant="outline" size="icon" asChild>
-                <a href={formData.linkedin} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="w-4 h-4" />
-                </a>
-              </Button>
-            )}
+          </div>
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Facebook className="w-4 h-4" /> Facebook
+            </Label>
+            <Input 
+              value={formData.facebook}
+              onChange={(e) => setFormData(prev => ({ ...prev, facebook: e.target.value }))}
+              placeholder="https://facebook.com/..."
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Twitter className="w-4 h-4" /> Twitter/X
+            </Label>
+            <Input 
+              value={formData.twitter}
+              onChange={(e) => setFormData(prev => ({ ...prev, twitter: e.target.value }))}
+              placeholder="@handle or URL"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Linkedin className="w-4 h-4" /> LinkedIn
+            </Label>
+            <div className="flex gap-2">
+              <Input 
+                value={formData.linkedin}
+                onChange={(e) => setFormData(prev => ({ ...prev, linkedin: e.target.value }))}
+                placeholder="https://linkedin.com/company/..."
+              />
+              {formData.linkedin && (
+                <Button variant="outline" size="icon" asChild>
+                  <a href={formData.linkedin} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      {/* Instagram Metrics */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Instagram Metrics</h3>
+        <div className="space-y-2">
+          <Label>Instagram Bio</Label>
+          <Textarea 
+            value={formData.insta_bio}
+            onChange={(e) => setFormData(prev => ({ ...prev, insta_bio: e.target.value }))}
+            rows={2}
+            placeholder="Bio text from Instagram profile"
+          />
+        </div>
+        <div className="grid grid-cols-4 gap-4">
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Users className="w-4 h-4" /> Followers
+            </Label>
+            <Input 
+              type="number"
+              value={formData.insta_followers}
+              onChange={(e) => setFormData(prev => ({ ...prev, insta_followers: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Heart className="w-4 h-4" /> Avg Likes
+            </Label>
+            <Input 
+              type="number"
+              value={formData.avg_likes}
+              onChange={(e) => setFormData(prev => ({ ...prev, avg_likes: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <MessageCircle className="w-4 h-4" /> Avg Comments
+            </Label>
+            <Input 
+              type="number"
+              value={formData.avg_comments}
+              onChange={(e) => setFormData(prev => ({ ...prev, avg_comments: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Video className="w-4 h-4" /> Avg Video Views
+            </Label>
+            <Input 
+              type="number"
+              value={formData.avg_video_views}
+              onChange={(e) => setFormData(prev => ({ ...prev, avg_video_views: e.target.value }))}
+            />
+          </div>
+        </div>
         <div className="space-y-2">
           <Label className="flex items-center gap-2">
-            <Globe className="w-4 h-4" /> Website
+            <Hash className="w-4 h-4" /> Top Hashtags
           </Label>
           <Input 
-            value={formData.website}
-            onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))}
-            placeholder="https://"
+            value={formData.top_hashtags}
+            onChange={(e) => setFormData(prev => ({ ...prev, top_hashtags: e.target.value }))}
+            placeholder="padel, tennis, sports (comma-separated)"
           />
+        </div>
+      </div>
+
+      {/* Location & Contact */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Location & Contact</h3>
+        <div className="space-y-2">
+          <Label>Address</Label>
+          <Input 
+            value={formData.address}
+            onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+          />
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <MapPin className="w-4 h-4" /> City
+            </Label>
+            <Input 
+              value={formData.city}
+              onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Country</Label>
+            <Input 
+              value={formData.country}
+              onChange={(e) => setFormData(prev => ({ ...prev, country: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Courts</Label>
+            <Input 
+              type="number"
+              value={formData.number_of_courts}
+              onChange={(e) => setFormData(prev => ({ ...prev, number_of_courts: e.target.value }))}
+            />
+          </div>
         </div>
         <div className="space-y-2">
           <Label className="flex items-center gap-2">
-            <Phone className="w-4 h-4" /> WhatsApp
+            <MapPin className="w-4 h-4" /> Google Maps URL
           </Label>
           <Input 
-            value={formData.whatsapp}
-            onChange={(e) => setFormData(prev => ({ ...prev, whatsapp: e.target.value }))}
-            placeholder="+27..."
+            value={formData.google_maps_url}
+            onChange={(e) => setFormData(prev => ({ ...prev, google_maps_url: e.target.value }))}
+            placeholder="https://maps.google.com/..."
           />
         </div>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Phone className="w-4 h-4" /> Phone
+            </Label>
+            <Input 
+              value={formData.phone}
+              onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+              placeholder="+27..."
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Phone className="w-4 h-4" /> WhatsApp
+            </Label>
+            <Input 
+              value={formData.whatsapp}
+              onChange={(e) => setFormData(prev => ({ ...prev, whatsapp: e.target.value }))}
+              placeholder="+27..."
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Mail className="w-4 h-4" /> Email
+            </Label>
+            <Input 
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Business */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Business</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <Globe className="w-4 h-4" /> Website
+            </Label>
+            <Input 
+              value={formData.website}
+              onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))}
+              placeholder="https://"
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label>Business Description</Label>
+          <Textarea 
+            value={formData.business_description}
+            onChange={(e) => setFormData(prev => ({ ...prev, business_description: e.target.value }))}
+            rows={3}
+            placeholder="Description of the club's business..."
+          />
+        </div>
+      </div>
+
+      {/* Key People */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Key People</h3>
         <div className="space-y-2">
           <Label className="flex items-center gap-2">
-            <Mail className="w-4 h-4" /> Email
+            <Users className="w-4 h-4" /> Key Individuals
           </Label>
           <Input 
-            type="email"
-            value={formData.email}
-            onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+            value={formData.key_individuals}
+            onChange={(e) => setFormData(prev => ({ ...prev, key_individuals: e.target.value }))}
+            placeholder="John Doe, Jane Smith (comma-separated)"
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      {/* Pipeline Settings */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Pipeline Settings</h3>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label>Pipeline Stage</Label>
+            <Select 
+              value={formData.pipeline_stage} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, pipeline_stage: value as typeof prev.pipeline_stage }))}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PIPELINE_STAGES.map(stage => (
+                  <SelectItem key={stage} value={stage}>
+                    {stage.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Tier</Label>
+            <Select 
+              value={formData.tier} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, tier: value as typeof prev.tier }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select tier" />
+              </SelectTrigger>
+              <SelectContent>
+                {TIERS.map(tier => (
+                  <SelectItem key={tier} value={tier}>
+                    {tier.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Priority</Label>
+            <Select 
+              value={formData.priority} 
+              onValueChange={(value) => setFormData(prev => ({ ...prev, priority: value as typeof prev.priority }))}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PRIORITIES.map(priority => (
+                  <SelectItem key={priority} value={priority}>
+                    {priority.charAt(0).toUpperCase() + priority.slice(1)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+
+      {/* Notes & Actions */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Notes & Actions</h3>
         <div className="space-y-2">
-          <Label className="flex items-center gap-2">
-            <MapPin className="w-4 h-4" /> City
-          </Label>
+          <Label>Next Action</Label>
           <Input 
-            value={formData.city}
-            onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
+            value={formData.next_action}
+            onChange={(e) => setFormData(prev => ({ ...prev, next_action: e.target.value }))}
+            placeholder="What's the next step?"
           />
         </div>
+
         <div className="space-y-2">
-          <Label>Country</Label>
-          <Input 
-            value={formData.country}
-            onChange={(e) => setFormData(prev => ({ ...prev, country: e.target.value }))}
+          <Label>Notes</Label>
+          <Textarea 
+            value={formData.notes}
+            onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+            rows={3}
           />
         </div>
-        <div className="space-y-2">
-          <Label>Courts</Label>
-          <Input 
-            type="number"
-            value={formData.number_of_courts}
-            onChange={(e) => setFormData(prev => ({ ...prev, number_of_courts: e.target.value }))}
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label>Address</Label>
-        <Input 
-          value={formData.address}
-          onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-        />
-      </div>
-
-      <div className="grid grid-cols-3 gap-4">
-        <div className="space-y-2">
-          <Label>Pipeline Stage</Label>
-          <Select 
-            value={formData.pipeline_stage} 
-            onValueChange={(value) => setFormData(prev => ({ ...prev, pipeline_stage: value as typeof prev.pipeline_stage }))}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {PIPELINE_STAGES.map(stage => (
-                <SelectItem key={stage} value={stage}>
-                  {stage.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label>Tier</Label>
-          <Select 
-            value={formData.tier} 
-            onValueChange={(value) => setFormData(prev => ({ ...prev, tier: value as typeof prev.tier }))}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select tier" />
-            </SelectTrigger>
-            <SelectContent>
-              {TIERS.map(tier => (
-                <SelectItem key={tier} value={tier}>
-                  {tier.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label>Priority</Label>
-          <Select 
-            value={formData.priority} 
-            onValueChange={(value) => setFormData(prev => ({ ...prev, priority: value as typeof prev.priority }))}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {PRIORITIES.map(priority => (
-                <SelectItem key={priority} value={priority}>
-                  {priority.charAt(0).toUpperCase() + priority.slice(1)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label>Next Action</Label>
-        <Input 
-          value={formData.next_action}
-          onChange={(e) => setFormData(prev => ({ ...prev, next_action: e.target.value }))}
-          placeholder="What's the next step?"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label>Notes</Label>
-        <Textarea 
-          value={formData.notes}
-          onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-          rows={3}
-        />
       </div>
 
       <div className="flex justify-between pt-4 border-t">

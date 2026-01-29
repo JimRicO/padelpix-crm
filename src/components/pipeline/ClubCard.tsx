@@ -1,5 +1,5 @@
 import { Club } from '@/types/database';
-import { Instagram, MapPin, Building2, MessageSquare, Users, Crown } from 'lucide-react';
+import { Instagram, MapPin, Building2, MessageSquare, Users, Crown, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const TIER_LABELS: Record<string, string> = {
@@ -60,6 +60,22 @@ export function ClubCard({ club, onClick, isDragging }: ClubCardProps) {
         <div className="card-meta mb-1">
           <Instagram className="card-icon-sm" />
           <span className="line-clamp-1">@{club.instagram_handle.replace('@', '')}</span>
+          {club.insta_followers && (
+            <span className="text-muted-foreground ml-1">
+              ({club.insta_followers >= 1000 
+                ? `${(club.insta_followers / 1000).toFixed(1)}k` 
+                : club.insta_followers})
+            </span>
+          )}
+        </div>
+      )}
+
+      {club.avg_likes && (
+        <div className="card-meta mb-1">
+          <Heart className="card-icon-sm" />
+          <span className="text-muted-foreground">
+            ~{club.avg_likes >= 1000 ? `${(club.avg_likes / 1000).toFixed(1)}k` : club.avg_likes} avg
+          </span>
         </div>
       )}
 
