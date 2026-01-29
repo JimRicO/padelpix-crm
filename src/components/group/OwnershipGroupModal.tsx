@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useOwnershipGroupByName, useUpsertOwnershipGroup } from '@/hooks/useOwnershipGroups';
-import { Crown, Building2, Mail, Phone, Globe, Palette, Loader2, Upload, Link, X, Check, MapPin, Settings, Sparkles } from 'lucide-react';
+import { Crown, Building2, Mail, Phone, Globe, Palette, Loader2, Upload, Link, X, Check, MapPin, Users, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { OrganizationDetailView } from './OrganizationDetailView';
@@ -174,9 +174,9 @@ export function OwnershipGroupModal({
                 <Sparkles className="w-4 h-4" />
                 Overview
               </TabsTrigger>
-              <TabsTrigger value="settings" className="gap-1">
-                <Settings className="w-4 h-4" />
-                Settings
+              <TabsTrigger value="contacts" className="gap-1">
+                <Users className="w-4 h-4" />
+                Contacts
               </TabsTrigger>
             </TabsList>
 
@@ -192,7 +192,7 @@ export function OwnershipGroupModal({
               )}
             </TabsContent>
 
-            <TabsContent value="settings" className="flex-1 m-0 border-t">
+            <TabsContent value="contacts" className="flex-1 m-0 border-t">
               <ScrollArea className="h-[65vh]">
                 <div className="p-4 space-y-6">
                   {/* Stats */}
@@ -236,14 +236,19 @@ export function OwnershipGroupModal({
                       <Label>Group Logo</Label>
                       <div className="flex items-center gap-3">
                         {formData.logo_url ? (
-                          <img 
-                            src={formData.logo_url} 
-                            alt={groupName} 
-                            className="w-16 h-16 object-contain rounded-lg border"
-                          />
+                          <div className="w-16 h-16 rounded-xl neu-pressed p-2 flex items-center justify-center bg-background">
+                            <img 
+                              src={formData.logo_url} 
+                              alt={groupName} 
+                              className="w-full h-full object-contain"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = '/placeholder.svg';
+                              }}
+                            />
+                          </div>
                         ) : (
-                          <div className="w-16 h-16 neu-pressed rounded-lg flex items-center justify-center">
-                            <Crown className="w-6 h-6 text-muted-foreground" />
+                          <div className="w-16 h-16 rounded-xl neu-pressed p-2 flex items-center justify-center bg-background">
+                            <Crown className="w-8 h-8 text-primary" />
                           </div>
                         )}
                         <div className="flex flex-col gap-2">
