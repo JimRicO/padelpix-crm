@@ -50,6 +50,20 @@ export interface Club {
   suburb: string | null;
   coaches: string[] | null;
   ownership_group: string | null;
+  // New fields
+  phone: string | null;
+  business_description: string | null;
+  google_maps_url: string | null;
+  facebook: string | null;
+  twitter: string | null;
+  insta_url: string | null;
+  insta_bio: string | null;
+  insta_followers: number | null;
+  avg_likes: number | null;
+  avg_comments: number | null;
+  avg_video_views: number | null;
+  top_hashtags: string[] | null;
+  key_individuals: string[] | null;
 }
 
 export interface Activity {

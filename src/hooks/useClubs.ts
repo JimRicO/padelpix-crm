@@ -229,6 +229,20 @@ interface BulkClubData {
   tier?: 'group_owned' | 'large' | 'multi_court' | 'boutique';
   priority?: 'high' | 'medium' | 'low';
   ownership_group?: string;
+  // New fields
+  phone?: string;
+  business_description?: string;
+  google_maps_url?: string;
+  facebook?: string;
+  twitter?: string;
+  insta_url?: string;
+  insta_bio?: string;
+  insta_followers?: number;
+  avg_likes?: number;
+  avg_comments?: number;
+  avg_video_views?: number;
+  top_hashtags?: string[];
+  key_individuals?: string[];
 }
 
 export function useBulkCreateClubs() {

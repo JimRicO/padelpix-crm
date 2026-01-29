@@ -32,6 +32,20 @@ interface ParsedClub {
   priority?: 'high' | 'medium' | 'low';
   isDuplicate?: boolean;
   detectedOwnership?: string | null;
+  // New fields
+  phone?: string;
+  business_description?: string;
+  google_maps_url?: string;
+  facebook?: string;
+  twitter?: string;
+  insta_url?: string;
+  insta_bio?: string;
+  insta_followers?: number;
+  avg_likes?: number;
+  avg_comments?: number;
+  avg_video_views?: number;
+  top_hashtags?: string[];
+  key_individuals?: string[];
 }
 
 export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
@@ -70,7 +84,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
     const lines = text.trim().split('\n');
     if (lines.length < 2) throw new Error('CSV must have a header row and at least one data row');
     
-    const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/['"]/g, ''));
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/['"]/g, '').replace(/\s+/g, '_'));
     
     const fieldMap: Record<string, string> = {
       'club_name': 'club_name',
@@ -84,12 +98,44 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
       'website': 'website',
       'url': 'website',
       'whatsapp': 'whatsapp',
-      'phone': 'whatsapp',
+      'phone': 'phone',
       'email': 'email',
       'courts': 'number_of_courts',
       'number_of_courts': 'number_of_courts',
       'num_courts': 'number_of_courts',
       'address': 'address',
+      // New field mappings
+      'business_description': 'business_description',
+      'description': 'business_description',
+      'google_maps_url': 'google_maps_url',
+      'maps_url': 'google_maps_url',
+      'google_maps': 'google_maps_url',
+      'facebook': 'facebook',
+      'fb': 'facebook',
+      'twitter': 'twitter',
+      'x': 'twitter',
+      'instagram_url': 'insta_url',
+      'insta_url': 'insta_url',
+      'instagram_bio': 'insta_bio',
+      'insta_bio': 'insta_bio',
+      'bio': 'insta_bio',
+      'instagram_followers': 'insta_followers',
+      'insta_followers': 'insta_followers',
+      'followers': 'insta_followers',
+      'avg_likes': 'avg_likes',
+      'average_likes': 'avg_likes',
+      'likes': 'avg_likes',
+      'avg_comments': 'avg_comments',
+      'average_comments': 'avg_comments',
+      'comments': 'avg_comments',
+      'avg_video_views': 'avg_video_views',
+      'average_video_views': 'avg_video_views',
+      'video_views': 'avg_video_views',
+      'top_hashtags': 'top_hashtags',
+      'hashtags': 'top_hashtags',
+      'key_individuals': 'key_individuals',
+      'contacts': 'key_individuals',
+      'linkedin': 'linkedin',
     };
 
     return lines.slice(1).filter(line => line.trim()).map(line => {
@@ -99,24 +145,76 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
       headers.forEach((header, i) => {
         const mappedField = fieldMap[header];
         if (mappedField && values[i]) {
-          if (mappedField === 'number_of_courts') {
-            club.number_of_courts = parseInt(values[i], 10) || undefined;
-          } else if (mappedField === 'club_name') {
-            club.club_name = values[i];
-          } else if (mappedField === 'instagram_handle') {
-            club.instagram_handle = values[i];
-          } else if (mappedField === 'city') {
-            club.city = values[i];
-          } else if (mappedField === 'country') {
-            club.country = values[i];
-          } else if (mappedField === 'website') {
-            club.website = values[i];
-          } else if (mappedField === 'whatsapp') {
-            club.whatsapp = values[i];
-          } else if (mappedField === 'email') {
-            club.email = values[i];
-          } else if (mappedField === 'address') {
-            club.address = values[i];
+          switch (mappedField) {
+            case 'number_of_courts':
+              club.number_of_courts = parseInt(values[i], 10) || undefined;
+              break;
+            case 'insta_followers':
+              club.insta_followers = parseInt(values[i], 10) || undefined;
+              break;
+            case 'avg_likes':
+              club.avg_likes = parseInt(values[i], 10) || undefined;
+              break;
+            case 'avg_comments':
+              club.avg_comments = parseInt(values[i], 10) || undefined;
+              break;
+            case 'avg_video_views':
+              club.avg_video_views = parseInt(values[i], 10) || undefined;
+              break;
+            case 'top_hashtags':
+              club.top_hashtags = values[i].split(/[;|]/).map(s => s.trim()).filter(Boolean);
+              break;
+            case 'key_individuals':
+              club.key_individuals = values[i].split(/[;|]/).map(s => s.trim()).filter(Boolean);
+              break;
+            case 'club_name':
+              club.club_name = values[i];
+              break;
+            case 'instagram_handle':
+              club.instagram_handle = values[i];
+              break;
+            case 'city':
+              club.city = values[i];
+              break;
+            case 'country':
+              club.country = values[i];
+              break;
+            case 'website':
+              club.website = values[i];
+              break;
+            case 'whatsapp':
+              club.whatsapp = values[i];
+              break;
+            case 'phone':
+              club.phone = values[i];
+              break;
+            case 'email':
+              club.email = values[i];
+              break;
+            case 'address':
+              club.address = values[i];
+              break;
+            case 'business_description':
+              club.business_description = values[i];
+              break;
+            case 'google_maps_url':
+              club.google_maps_url = values[i];
+              break;
+            case 'facebook':
+              club.facebook = values[i];
+              break;
+            case 'twitter':
+              club.twitter = values[i];
+              break;
+            case 'insta_url':
+              club.insta_url = values[i];
+              break;
+            case 'insta_bio':
+              club.insta_bio = values[i];
+              break;
+            case 'linkedin':
+              // stored as linkedin field if needed in future
+              break;
           }
         }
       });
@@ -155,10 +253,19 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
         if (coaches.length === 0) coaches = undefined;
       }
 
-      const address = item.address as string | undefined;
+      // Parse other array fields
+      const parseArrayField = (val: unknown): string[] | undefined => {
+        if (Array.isArray(val)) {
+          const arr = val.filter((c): c is string => typeof c === 'string' && c.trim() !== '');
+          return arr.length > 0 ? arr : undefined;
+        }
+        if (typeof val === 'string' && val.trim()) {
+          return val.split(/[,;|]/).map(s => s.trim()).filter(Boolean);
+        }
+        return undefined;
+      };
 
-      // Let the AI layer derive suburb/city/country from address when needed.
-      // If the JSON already includes city/country fields, we keep them.
+      const address = item.address as string | undefined;
       const city = item.city as string | undefined;
       const country = item.country as string | undefined;
 
@@ -168,12 +275,26 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
         city,
         country,
         website: (item.website || item.url) as string | undefined,
-        whatsapp: (item.whatsapp || item.whatsapp_number || item.phone) as string | undefined,
+        whatsapp: (item.whatsapp || item.whatsapp_number) as string | undefined,
+        phone: item.phone as string | undefined,
         email: item.email as string | undefined,
         number_of_courts: parseInt(String(item.number_of_courts || item.courts || item.numCourts || ''), 10) || undefined,
         address,
         contact_name: (item.owner_or_manager_name || item.contact_name || item.owner || item.manager) as string | undefined,
         coaches,
+        // New fields
+        business_description: (item.business_description || item.description) as string | undefined,
+        google_maps_url: (item.google_maps_url || item.google_maps || item.maps_url) as string | undefined,
+        facebook: (item.facebook || item.fb) as string | undefined,
+        twitter: (item.twitter || item.x) as string | undefined,
+        insta_url: (item.insta_url || item.instagram_url) as string | undefined,
+        insta_bio: (item.insta_bio || item.instagram_bio || item.bio) as string | undefined,
+        insta_followers: parseInt(String(item.insta_followers || item.instagram_followers || item.followers || ''), 10) || undefined,
+        avg_likes: parseInt(String(item.avg_likes || item.average_likes || item.likes || ''), 10) || undefined,
+        avg_comments: parseInt(String(item.avg_comments || item.average_comments || item.comments || ''), 10) || undefined,
+        avg_video_views: parseInt(String(item.avg_video_views || item.average_video_views || item.video_views || ''), 10) || undefined,
+        top_hashtags: parseArrayField(item.top_hashtags || item.hashtags),
+        key_individuals: parseArrayField(item.key_individuals || item.contacts),
       };
       
       club.detectedOwnership = detectOwnershipGroup(club.club_name);

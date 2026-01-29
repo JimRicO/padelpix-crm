@@ -64,6 +64,10 @@ export type Database = {
       clubs: {
         Row: {
           address: string | null
+          avg_comments: number | null
+          avg_likes: number | null
+          avg_video_views: number | null
+          business_description: string | null
           city: string | null
           club_name: string
           coaches: string[] | null
@@ -74,12 +78,18 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           email: string | null
+          facebook: string | null
           first_comment_date: string | null
           first_dm_date: string | null
           first_response_date: string | null
           followed_date: string | null
+          google_maps_url: string | null
           id: string
+          insta_bio: string | null
+          insta_followers: number | null
+          insta_url: string | null
           instagram_handle: string | null
+          key_individuals: string[] | null
           linkedin: string | null
           logo: string | null
           next_action: string | null
@@ -87,21 +97,28 @@ export type Database = {
           notes: string | null
           number_of_courts: number | null
           ownership_group: string | null
+          phone: string | null
           pipeline_stage: Database["public"]["Enums"]["pipeline_stage"] | null
           priority: Database["public"]["Enums"]["priority_level"] | null
           response_time_hours: number | null
           suburb: string | null
           tier: Database["public"]["Enums"]["club_tier"] | null
+          top_hashtags: string[] | null
           total_comments: number | null
           total_content_pieces: number | null
           total_dms: number | null
           trial_start_date: string | null
+          twitter: string | null
           updated_at: string | null
           website: string | null
           whatsapp: string | null
         }
         Insert: {
           address?: string | null
+          avg_comments?: number | null
+          avg_likes?: number | null
+          avg_video_views?: number | null
+          business_description?: string | null
           city?: string | null
           club_name: string
           coaches?: string[] | null
@@ -112,12 +129,18 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           email?: string | null
+          facebook?: string | null
           first_comment_date?: string | null
           first_dm_date?: string | null
           first_response_date?: string | null
           followed_date?: string | null
+          google_maps_url?: string | null
           id?: string
+          insta_bio?: string | null
+          insta_followers?: number | null
+          insta_url?: string | null
           instagram_handle?: string | null
+          key_individuals?: string[] | null
           linkedin?: string | null
           logo?: string | null
           next_action?: string | null
@@ -125,21 +148,28 @@ export type Database = {
           notes?: string | null
           number_of_courts?: number | null
           ownership_group?: string | null
+          phone?: string | null
           pipeline_stage?: Database["public"]["Enums"]["pipeline_stage"] | null
           priority?: Database["public"]["Enums"]["priority_level"] | null
           response_time_hours?: number | null
           suburb?: string | null
           tier?: Database["public"]["Enums"]["club_tier"] | null
+          top_hashtags?: string[] | null
           total_comments?: number | null
           total_content_pieces?: number | null
           total_dms?: number | null
           trial_start_date?: string | null
+          twitter?: string | null
           updated_at?: string | null
           website?: string | null
           whatsapp?: string | null
         }
         Update: {
           address?: string | null
+          avg_comments?: number | null
+          avg_likes?: number | null
+          avg_video_views?: number | null
+          business_description?: string | null
           city?: string | null
           club_name?: string
           coaches?: string[] | null
@@ -150,12 +180,18 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           email?: string | null
+          facebook?: string | null
           first_comment_date?: string | null
           first_dm_date?: string | null
           first_response_date?: string | null
           followed_date?: string | null
+          google_maps_url?: string | null
           id?: string
+          insta_bio?: string | null
+          insta_followers?: number | null
+          insta_url?: string | null
           instagram_handle?: string | null
+          key_individuals?: string[] | null
           linkedin?: string | null
           logo?: string | null
           next_action?: string | null
@@ -163,15 +199,18 @@ export type Database = {
           notes?: string | null
           number_of_courts?: number | null
           ownership_group?: string | null
+          phone?: string | null
           pipeline_stage?: Database["public"]["Enums"]["pipeline_stage"] | null
           priority?: Database["public"]["Enums"]["priority_level"] | null
           response_time_hours?: number | null
           suburb?: string | null
           tier?: Database["public"]["Enums"]["club_tier"] | null
+          top_hashtags?: string[] | null
           total_comments?: number | null
           total_content_pieces?: number | null
           total_dms?: number | null
           trial_start_date?: string | null
+          twitter?: string | null
           updated_at?: string | null
           website?: string | null
           whatsapp?: string | null
