@@ -14,6 +14,7 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import Papa from 'papaparse';
 
 interface ImportDialogProps {
   open: boolean;
@@ -229,70 +230,12 @@ const smartMatchColumn = (header: string): { field: string; display: string } | 
   return null;
 };
 
-// Robust CSV parser (handles quoted fields, commas/newlines inside quotes, and escaped quotes "")
-const parseCsvRows = (text: string, delimiter: string = ','): string[][] => {
-  const rows: string[][] = [];
-  let row: string[] = [];
-  let field = '';
-  let inQuotes = false;
-
-  // Normalize line endings to simplify parsing
-  const input = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-
-  for (let i = 0; i < input.length; i++) {
-    const char = input[i];
-
-    if (inQuotes) {
-      if (char === '"') {
-        // Escaped quote
-        if (input[i + 1] === '"') {
-          field += '"';
-          i++;
-        } else {
-          inQuotes = false;
-        }
-      } else {
-        field += char;
-      }
-      continue;
-    }
-
-    if (char === '"') {
-      inQuotes = true;
-      continue;
-    }
-
-    if (char === delimiter) {
-      row.push(field);
-      field = '';
-      continue;
-    }
-
-    if (char === '\n') {
-      row.push(field);
-      rows.push(row);
-      row = [];
-      field = '';
-      continue;
-    }
-
-    field += char;
-  }
-
-  row.push(field);
-  rows.push(row);
-
-  const cleaned = rows
-    .map((r, ri) =>
-      r.map((c, ci) => {
-        const trimmed = c.trim();
-        // Strip UTF-8 BOM from first cell if present
-        return ri === 0 && ci === 0 ? trimmed.replace(/^\uFEFF/, '') : trimmed;
-      })
-    )
-    .filter(r => r.some(c => c !== ''));
-
-  return cleaned;
+// Use Papa Parse for robust CSV parsing (handles quoted fields, embedded newlines, etc.)
+const parseCsvRows = (text: string): string[][] => {
+  const result = Papa.parse<string[]>(text, {
+    skipEmptyLines: true,
+  });
+  return result.data;
 };
 
 // All possible fields that can be imported (for counting filled fields)
