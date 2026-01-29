@@ -260,7 +260,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
   const [parsedClubs, setParsedClubs] = useState<ParsedClub[]>([]);
   const [parseError, setParseError] = useState<string | null>(null);
   const [step, setStep] = useState<'input' | 'preview'>('input');
-  const [isExtractingLocations, setIsExtractingLocations] = useState(false);
+  const [isParsing, setIsParsing] = useState(false);
   const [fileInfo, setFileInfo] = useState<FileInfo | null>(null);
   const [matchedColumns, setMatchedColumns] = useState<ColumnMatch[]>([]);
   const [unmatchedColumns, setUnmatchedColumns] = useState<string[]>([]);
@@ -565,104 +565,47 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
     }).filter(c => c.club_name);
   };
 
-  const extractLocationsWithAI = async (clubs: ParsedClub[]): Promise<ParsedClub[]> => {
-    // 1) Fast local extraction for non-SA addresses like "Street, City, State, United States".
-    const localExtract = (address: string): { city?: string; country?: string } => {
-      const parts = address
-        .split(',')
-        .map(p => p.trim())
-        .filter(Boolean);
-      if (parts.length < 2) return {};
+  // Fast local extraction for non-SA addresses like "Street, City, State, United States".
+  const localExtractLocation = (address: string): { city?: string; country?: string } => {
+    const parts = address
+      .split(',')
+      .map(p => p.trim())
+      .filter(Boolean);
+    if (parts.length < 2) return {};
 
-      const last = parts[parts.length - 1];
-      let city: string | undefined;
+    const last = parts[parts.length - 1];
+    let city: string | undefined;
 
-      if (parts.length >= 4) {
-        city = parts[parts.length - 3];
-      } else if (parts.length === 3) {
-        const first = parts[0];
-        const looksStreet =
-          /\d/.test(first) || /(street|st\b|road|rd\b|ave\b|avenue|blvd|boulevard|drive|dr\b|lane|ln\b|way|suite|ste\b)/i.test(first);
-        city = looksStreet ? parts[1] : parts[0];
-      } else {
-        city = parts[parts.length - 2];
-      }
+    if (parts.length >= 4) {
+      city = parts[parts.length - 3];
+    } else if (parts.length === 3) {
+      const first = parts[0];
+      const looksStreet =
+        /\d/.test(first) || /(street|st\b|road|rd\b|ave\b|avenue|blvd|boulevard|drive|dr\b|lane|ln\b|way|suite|ste\b)/i.test(first);
+      city = looksStreet ? parts[1] : parts[0];
+    } else {
+      city = parts[parts.length - 2];
+    }
 
-      return { city, country: last };
-    };
+    return { city, country: last };
+  };
 
-    const withLocal = clubs.map(club => {
+  // Apply local location extraction (fast, no AI)
+  const applyLocalLocationExtraction = (clubs: ParsedClub[]): ParsedClub[] => {
+    return clubs.map(club => {
       const country = (club.country || '').trim();
       const isSouthAfrica = /south\s*africa/i.test(country);
+      // Only apply local extraction for non-SA addresses that have country but no city
       if (club.address && !club.city && country && !isSouthAfrica) {
-        const guess = localExtract(club.address);
+        const guess = localExtractLocation(club.address);
         return {
           ...club,
           city: club.city || guess.city,
-          // don't overwrite explicit country from CSV
           country: club.country || guess.country,
         };
       }
       return club;
     });
-
-    // 2) Only call AI for rows still missing city/country (or explicitly SA where our hierarchy matters)
-    const addressesToExtract = withLocal
-      .map((club, index) => ({ index, address: club.address, country: club.country }))
-      .filter(item => {
-        if (!item.address) return false;
-        const country = (item.country || '').trim();
-        const isSouthAfrica = /south\s*africa/i.test(country) || country === '';
-        const needs = !withLocal[item.index].city || !withLocal[item.index].country;
-        return needs && isSouthAfrica;
-      });
-
-    if (addressesToExtract.length === 0) return withLocal;
-    
-    try {
-      setIsExtractingLocations(true);
-      const invokePromise = supabase.functions.invoke('extract-location', {
-        body: { addresses: addressesToExtract.map(a => a.address) }
-      });
-
-      const { data, error } = await Promise.race([
-        invokePromise,
-        new Promise<{ data: any; error: any }>((_, reject) =>
-          setTimeout(() => reject(new Error('Location extraction timed out')), 25000)
-        ),
-      ]);
-      
-      if (error) {
-        console.error('Location extraction error:', error);
-        toast.error('Could not extract locations automatically');
-        return clubs;
-      }
-      
-      const locations = data?.locations || [];
-      const updatedClubs = [...withLocal];
-      
-      addressesToExtract.forEach((item, i) => {
-        if (locations[i]) {
-          if (!updatedClubs[item.index].suburb && locations[i].suburb) {
-            updatedClubs[item.index].suburb = locations[i].suburb;
-          }
-          if (!updatedClubs[item.index].city && locations[i].city) {
-            updatedClubs[item.index].city = locations[i].city;
-          }
-          if (!updatedClubs[item.index].country && locations[i].country) {
-            updatedClubs[item.index].country = locations[i].country;
-          }
-        }
-      });
-      
-      return updatedClubs;
-    } catch (err) {
-      console.error('AI extraction failed:', err);
-      toast.error('Location extraction failed — continuing without it');
-      return withLocal;
-    } finally {
-      setIsExtractingLocations(false);
-    }
   };
 
   const handleFileUpload = (file: File, format: 'csv' | 'json') => {
@@ -716,22 +659,26 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
     reader.readAsText(file);
   };
 
-  const handleParse = async (format: 'csv' | 'json') => {
+  const handleParse = (format: 'csv' | 'json') => {
     setParseError(null);
+    setIsParsing(true);
     try {
       let clubs = format === 'csv' ? parseCSV(rawData) : parseJSON(rawData);
       if (clubs.length === 0) {
         setParseError('No valid clubs found in the data');
+        setIsParsing(false);
         return;
       }
       
-      // Use AI to extract locations from addresses
-      clubs = await extractLocationsWithAI(clubs);
+      // Apply fast local location extraction (no AI during preview)
+      clubs = applyLocalLocationExtraction(clubs);
       
       setParsedClubs(clubs);
       setStep('preview');
     } catch (error) {
       setParseError(error instanceof Error ? error.message : 'Failed to parse data');
+    } finally {
+      setIsParsing(false);
     }
   };
 
@@ -976,11 +923,11 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
         </div>
       )}
       
-      <Button onClick={() => handleParse(format)} disabled={!rawData.trim() || isExtractingLocations}>
-        {isExtractingLocations ? (
+      <Button onClick={() => handleParse(format)} disabled={!rawData.trim() || isParsing}>
+        {isParsing ? (
           <>
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Extracting locations...
+            Parsing...
           </>
         ) : (
           'Preview Import'
