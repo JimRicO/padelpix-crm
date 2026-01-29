@@ -81,10 +81,25 @@ export function useEnrichmentPolling(groups: OwnershipGroup[] | undefined) {
 
   // Apply results when enrichment completes
   const applyResultsMutation = useMutation({
-    mutationFn: async ({ groupId, results }: { groupId: string; results: EnrichmentStatusResponse['results'] }) => {
-      if (!results || results.length === 0) return null;
+    mutationFn: async ({ groupId, results }: { groupId: string; results: unknown }) => {
+      // Handle different result structures - API returns { clubs: [...] }
+      let clubsArray: Array<Record<string, unknown>> = [];
       
-      const enrichmentData = results[0]; // Take first result
+      if (Array.isArray(results)) {
+        clubsArray = results;
+      } else if (results && typeof results === 'object' && 'clubs' in results) {
+        const resultsObj = results as { clubs?: unknown };
+        if (Array.isArray(resultsObj.clubs)) {
+          clubsArray = resultsObj.clubs;
+        }
+      }
+      
+      if (clubsArray.length === 0) {
+        console.log('No enrichment results found');
+        return null;
+      }
+      
+      const enrichmentData = clubsArray[0]; // Take first result
       
       const updateData: Record<string, unknown> = {
         enrichment_status: 'completed',
@@ -107,9 +122,11 @@ export function useEnrichmentPolling(groups: OwnershipGroup[] | undefined) {
       if (enrichmentData.founding_year) updateData.founding_year = enrichmentData.founding_year;
       if (enrichmentData.recent_activities) updateData.recent_activities = enrichmentData.recent_activities;
       if (enrichmentData.perplexity_citations) updateData.perplexity_citations = enrichmentData.perplexity_citations;
-      if (enrichmentData.email && !updateData.contact_email) updateData.contact_email = enrichmentData.email;
-      if (enrichmentData.phone && !updateData.contact_phone) updateData.contact_phone = enrichmentData.phone;
+      if (enrichmentData.email) updateData.contact_email = enrichmentData.email;
+      if (enrichmentData.phone) updateData.contact_phone = enrichmentData.phone;
       if (enrichmentData.website_url) updateData.website = enrichmentData.website_url;
+
+      console.log('Applying enrichment data:', updateData);
 
       const { error } = await supabase
         .from('ownership_groups')
