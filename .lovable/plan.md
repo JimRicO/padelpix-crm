@@ -1,88 +1,127 @@
 
+## Fix Organization Detail View - Display ALL Enriched Fields Correctly
 
-## Display All Enrichment Fields on OrganizationCard
+### Problem Analysis
+The current `OrganizationDetailView.tsx` is NOT matching the reference design and is missing/misrepresenting fields:
 
-### Problem
-The OrganizationCard component is NOT displaying all the enrichment data that has been saved to the database. Critical fields like `founder_info`, `description`, `perplexity_description`, `address`, and `contact_phone` are completely ignored on the card view.
+1. **Layout order is wrong** - Should follow the exact order from the reference image
+2. **Typography labels are wrong** - Shows "Body:" instead of "Primary:" 
+3. **Attitude & Aesthetics not showing** - These fields exist in the database but may not be rendering due to conditional logic or the user expects them in a different location
+4. **Section structure doesn't match** - The reference shows a cleaner, more compact layout
 
-### Current State
-The database has rich data for enriched organizations including:
-- `founder_info`: "Africa Padel was founded by James Baber, who serves as CEO..."
-- `perplexity_description`: Full research summary
-- `description`: AI-generated description
-- `address`: Physical location
-- `contact_phone`: Phone number
-- `color_palette`: Full color set with 6+ colors
+### Database Fields Available (from Africa Padel record)
+| Field | Value Present |
+|-------|--------------|
+| `logo_url` | Yes (SVG) |
+| `name` | "Africa Padel" |
+| `founding_year` | "2021" |
+| `website` | Yes |
+| `contact_phone` | "202023-07-18" |
+| `color_palette` | 5 colors: link, accent, primary, background, textPrimary |
+| `fonts` | heading + primary + list array |
+| `description` | Full description text |
+| `founder_info` | Full founder info |
+| `attitude` | Full attitude text |
+| `aesthetics` | Full aesthetics text |
+| `perplexity_description` | Full research summary |
+| `perplexity_citations` | Array of URLs |
 
-But the card only shows a subset of fields (name, logo, status, founding year, Instagram, attitude/aesthetics).
+### Solution: Restructure OrganizationDetailView to Match Reference
 
-### Solution
-Update `OrganizationCard.tsx` to display ALL enrichment fields in a comprehensive but readable layout.
+**File: `src/components/group/OrganizationDetailView.tsx`**
 
-### Changes to OrganizationCard.tsx
+#### Changes Required:
 
-**Add these fields to the card:**
+1. **Fix section order to match reference image:**
+   - Header (logo, name, Est. year, website)
+   - Phone number card (standalone, not in grid)
+   - Color Palette section
+   - Typography section (fix labels: "Primary:" and "Heading:")
+   - Description section
+   - Founder section
+   - Attitude & Aesthetics section (ensure these render)
+   - Research Summary section
+   - Recent Activities section
+   - Sources/Citations section
 
-1. **Description** - Show a truncated version (2-3 lines max) of `group.description`
-2. **Founder Info** - Display `group.founder_info` with a label
-3. **Address** - Show `group.address` with MapPin icon
-4. **Phone** - Display `group.contact_phone` alongside email
-5. **Color Palette** - Show color swatches from `group.color_palette`
-6. **Instagram Bio** - Display truncated `group.instagram_bio`
-7. **Perplexity Description** - Show truncated research summary
+2. **Fix Typography labels:**
+   ```tsx
+   // Current (wrong):
+   {fonts.heading && <Badge>Heading: {fonts.heading}</Badge>}
+   {fonts.primary && <Badge>Body: {fonts.primary}</Badge>}
+   
+   // Fixed:
+   {fonts.primary && <Badge>Primary: {fonts.primary}</Badge>}
+   {fonts.heading && <Badge>Heading: {fonts.heading}</Badge>}
+   ```
 
-**Card Layout (updated):**
+3. **Fix Phone display styling:**
+   - Move phone out of the contact grid into its own prominent card (matching reference)
+   - Style it as a standalone `neu-pressed` card with phone icon
+
+4. **Ensure Attitude & Aesthetics always render:**
+   - Add dedicated sections for each (not combined into "Brand Identity")
+   - Style as full-width text blocks in `detail-section-content` containers
+
+5. **Complete Layout Structure:**
 
 ```text
-+----------------------------------------+
-| [Logo] Name           [Status] [Enrich]|
-|        3 of 15 clubs • South Africa    |
-|        Est. 2021                        |
-|----------------------------------------|
-| 📍 123 Main St, Cape Town              |
-| 📧 email@org.com  📞 +27 123 456       |
-| 🌐 website.com                          |
-|----------------------------------------|
-| 📸 @instagram • 15.2K followers         |
-| "Instagram bio text here..."            |
-|----------------------------------------|
-| Description text here (truncated)...   |
-|----------------------------------------|
-| 👤 Founder: James Baber, CEO...         |
-|----------------------------------------|
-| Colors: [■][■][■][■][■]                 |
-| Tags: [Energetic] [Modern Design]       |
-+----------------------------------------+
-|                           [✓ Enriched] |
-+----------------------------------------+
++------------------------------------------------+
+| [Logo]  Africa Padel   | Est. 2021 |           |
+|         🌐 https://www.africapadel.com/        |
++------------------------------------------------+
+| 📞 202023-07-18                                |
++------------------------------------------------+
+| 🎨 Color Palette                               |
+| [■ link] [■ accent] [■ primary] [■ bg] [■ txt] |
++------------------------------------------------+
+| T Typography                                    |
+| [Primary: Archivo...] [Heading: Archivo...]    |
++------------------------------------------------+
+| 💬 Description                                  |
+| Africa Padel is the largest padel club...      |
++------------------------------------------------+
+| 👤 Founder                                      |
+| Africa Padel was founded by James Baber...     |
++------------------------------------------------+
+| ✨ Attitude                                     |
+| Energetic, inclusive, and community-focused... |
++------------------------------------------------+
+| 👁 Aesthetics                                   |
+| Clean, modern design with a dark navy...       |
++------------------------------------------------+
+| 🔬 Research Summary                             |
+| [Perplexity description text...]               |
++------------------------------------------------+
+| 📊 Recent Activities                            |
+| [Activity cards...]                            |
++------------------------------------------------+
+| 🔗 Sources (N)                                  |
+| [Collapsible citations...]                     |
++------------------------------------------------+
 ```
 
+### Technical Implementation
+
+**1. Update OrganizationDetailView.tsx:**
+
+- Reorder sections to match reference
+- Split Attitude and Aesthetics into separate sections with full text (not badges)
+- Fix Typography badge labels
+- Move Phone to standalone card
+- Ensure all fields render with appropriate fallbacks
+
+**2. Add new section handlers for:**
+- `attitude` - Full text in detail-section-content
+- `aesthetics` - Full text in detail-section-content
+
 ### Files to Modify
-
-1. **`src/components/organizations/OrganizationCard.tsx`**
-   - Add display for `description` (truncated to ~100 chars)
-   - Add display for `founder_info` (truncated)
-   - Add display for `address` with MapPin icon
-   - Add display for `contact_phone` with Phone icon
-   - Add color palette swatches (dynamic rendering like EnrichmentSections)
-   - Add display for `instagram_bio` (truncated)
-   - Organize into clear visual sections
-
-### Implementation Details
-
-- Use `line-clamp-2` or `line-clamp-3` CSS classes for truncation
-- Add Phone icon from lucide-react for phone display
-- Dynamically render all colors from `color_palette` object
-- Maintain compact design while showing all data
-- Keep existing functionality (click handler, enrich button)
+- `src/components/group/OrganizationDetailView.tsx` - Complete restructure to match reference design
 
 ### Expected Outcome
-After this change, the OrganizationCard will show ALL enrichment data including:
-- Founder information (the missing field you mentioned)
-- Full color palette
-- Description
-- Address
-- Phone
-- Instagram bio
-- All other enriched fields
-
+After this fix:
+- All enriched fields will display including Attitude and Aesthetics
+- Layout will match the reference image exactly
+- Typography labels will be correct ("Primary:" and "Heading:")
+- Phone number will be prominent as shown in reference
+- Color palette will show all 5+ colors with labels and hex values
