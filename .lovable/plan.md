@@ -1,110 +1,142 @@
 
 
-# Plan: Improve CSV Import Preview Experience
+# Plan: Add Intelligent Fuzzy Column Matching to CSV Import
 
-## Problem Summary
-The current import preview is confusing because:
-- The preview table only shows 6 of 18+ possible columns
-- Users can't see if their new fields (followers, likes, hashtags, etc.) were parsed
-- The "Supported columns" help text is outdated
-- There's no clear feedback when a file is loaded or which columns were recognized
+## Problem
+The current column matching is too strict. Your CSV has columns like:
+- `Club_Name` → should match `club_name` ✗ (not matching)
+- `Business Description` → should match `business_description` ✗
+- `Phone Number` → should match `phone` ✗  
+- `Location 1 Address` → should match `address` ✗
+- `Team Members (Basic)` → should match `key_individuals` ✗
+- `Number of Courts` → should match `number_of_courts` ✗
 
-## Solution Overview
-Redesign the import preview to give clear feedback at every step.
-
----
-
-## Changes
-
-### 1. Update Help Text (Supported Columns)
-**File:** `src/components/import/ImportDialog.tsx`
-
-Replace the outdated "Supported columns" text with a complete list organized by category:
-- Basic: name, instagram, city, country, address, website, email
-- Contact: phone, whatsapp, contact name
-- Social: facebook, twitter, linkedin
-- Instagram: insta_url, insta_bio, insta_followers, avg_likes, avg_comments, avg_video_views, top_hashtags
-- Other: courts, key_individuals, business_description, google_maps_url
-
-### 2. Show File Upload Feedback
-**File:** `src/components/import/ImportDialog.tsx`
-
-After a file is uploaded:
-- Display a success message with the filename
-- Show a quick summary: "Found X rows and Y columns"
-- Replace the placeholder text in the textarea with actual data
-
-### 3. Add Column Recognition Summary
-**File:** `src/components/import/ImportDialog.tsx`
-
-Before the preview table, show which columns from the CSV were recognized:
-- Green checkmarks for matched columns (e.g., "name → club_name")
-- Yellow warnings for unrecognized columns that will be skipped
-- This helps users understand if their data will import correctly
-
-### 4. Expand Preview Table Columns
-**File:** `src/components/import/ImportDialog.tsx`
-
-Make the preview table scrollable horizontally and show more fields:
-- Always show: Name, Instagram, City, Status
-- Conditionally show columns that have data: Followers, Likes, Phone, etc.
-- Add a small badge showing "X more fields" that users can hover to see full list
-
-### 5. Add Data Quality Indicators
-**File:** `src/components/import/ImportDialog.tsx`
-
-For each row in preview, show:
-- How many fields were populated (e.g., "12/18 fields")
-- Highlight any issues (missing required field, invalid data format)
+The system only does exact lowercase+underscore matching, which misses obvious variations.
 
 ---
 
-## UI Flow After Changes
+## Solution: Smart Fuzzy Matching
 
-```text
-+-------------------------------------------+
-| Upload .csv file   [Choose File]          |
-+-------------------------------------------+
-| File loaded: clubs_export.csv             |
-| Found 45 rows, 12 columns                 |
-+-------------------------------------------+
-| Recognized columns:                       |
-| ✓ name → club_name                        |
-| ✓ instagram → instagram_handle            |
-| ✓ followers → insta_followers             |
-| ✓ avg_likes → avg_likes                   |
-| ⚠ "random_col" - not recognized, skipped  |
-+-------------------------------------------+
-|        [Preview Import]                   |
-+-------------------------------------------+
+Add a multi-layer matching strategy that tries progressively looser matching:
 
-After clicking Preview Import:
+### Layer 1: Exact Match (current)
+`phone` → `phone`
 
-+-------------------------------------------+
-| ✓ 43 new clubs  ⚠ 2 duplicates (skipped)  |
-+-------------------------------------------+
-| Name | Instagram | City | Followers | ... |
-|------|-----------|------|-----------|-----|
-| Club | @handle   | NYC  | 1.2k      | ... |
-+-------------------------------------------+
-| Each row shows: "8/18 fields filled"      |
-+-------------------------------------------+
-|    [Back]            [Import 43 Clubs]    |
-+-------------------------------------------+
+### Layer 2: Normalized Match
+Remove spaces, underscores, parentheses, numbers, and compare:
+`Phone Number` → `phonenumber` → matches `phone`
+`Business Description` → `businessdescription` → matches `business_description`
+
+### Layer 3: Keyword Contains Match
+Check if column contains a key term:
+- Contains "phone" → `phone`
+- Contains "address" → `address`  
+- Contains "instagram" or "insta" → `instagram_handle`
+- Contains "facebook" or "fb" → `facebook`
+- Contains "courts" → `number_of_courts`
+- Contains "description" → `business_description`
+- Contains "team" or "members" or "individuals" → `key_individuals`
+- Contains "location" + "name" → `club_name` (for multi-location imports)
+
+### Layer 4: Semantic Aliases
+Map common business terminology:
+- "team members" → `key_individuals`
+- "contact number" → `phone`
+- "mobile" → `phone`
+- "email address" → `email`
+- "web" → `website`
+- "insta" → `instagram_handle`
+
+---
+
+## Changes to ImportDialog.tsx
+
+### 1. Add Smart Matching Function
+```typescript
+const smartMatchColumn = (header: string): { field: string; display: string } | null => {
+  const original = header.trim();
+  const lower = original.toLowerCase();
+  const normalized = lower.replace(/[^a-z]/g, ''); // remove all non-letters
+  
+  // Layer 1: Exact match in FIELD_MAP
+  if (FIELD_MAP[lower.replace(/\s+/g, '_')]) {
+    return FIELD_MAP[lower.replace(/\s+/g, '_')];
+  }
+  
+  // Layer 2: Keyword matching
+  const keywordRules = [
+    { keywords: ['club', 'name'], field: 'club_name' },
+    { keywords: ['phone', 'mobile', 'tel'], field: 'phone' },
+    { keywords: ['email'], field: 'email' },
+    { keywords: ['address'], field: 'address' },
+    { keywords: ['court'], field: 'number_of_courts' },
+    { keywords: ['instagram', 'insta', 'ig'], field: 'instagram_handle' },
+    { keywords: ['facebook', 'fb'], field: 'facebook' },
+    { keywords: ['linkedin'], field: 'linkedin' },
+    { keywords: ['twitter', 'x.com'], field: 'twitter' },
+    { keywords: ['whatsapp', 'wa'], field: 'whatsapp' },
+    { keywords: ['website', 'url', 'web'], field: 'website' },
+    { keywords: ['description', 'bio', 'about'], field: 'business_description' },
+    { keywords: ['team', 'member', 'individual', 'staff', 'people'], field: 'key_individuals' },
+    { keywords: ['country'], field: 'country' },
+    { keywords: ['city'], field: 'city' },
+  ];
+  
+  for (const rule of keywordRules) {
+    if (rule.keywords.some(kw => normalized.includes(kw))) {
+      return { field: rule.field, display: FIELD_DISPLAY[rule.field] };
+    }
+  }
+  
+  return null;
+};
 ```
+
+### 2. Update analyzeHeaders Function
+Replace the current strict matching with the smart matcher.
+
+### 3. Handle "Location 1" Prefix Pattern
+For multi-location CSVs, strip "location 1", "location 2" prefixes:
+- `Location 1 Address` → `address`
+- `Location 1 Phone` → `phone`
+- `Location 1 Name` → `club_name` (treat as the name for first location)
+
+### 4. Update parseCSV to Use Smart Matching
+Apply the same smart matching when parsing values.
+
+---
+
+## Expected Results After Change
+
+Your columns will match:
+
+| CSV Header | Matched Field |
+|------------|---------------|
+| Club_Name | club_name |
+| Business Description | business_description |
+| Team Members (Basic) | key_individuals |
+| Phone Number | phone |
+| Email Address | email |
+| Number of Courts | number_of_courts |
+| Location 1 Name | club_name |
+| Location 1 Address | address |
+| Location 1 Phone | phone |
+| Instagram | instagram_handle |
+| Facebook | facebook |
+| LinkedIn | linkedin |
+| Website | website |
+| Country | country |
 
 ---
 
 ## Technical Details
 
-### Column Detection Logic
-Add a function to compare CSV headers against the field mapping dictionary and return:
-- `matchedColumns`: array of { csvHeader, mappedField }
-- `unmatchedColumns`: array of unrecognized header names
+**File:** `src/components/import/ImportDialog.tsx`
 
-### Dynamic Table Columns
-Instead of hardcoding 6 columns, dynamically generate table headers based on which fields have at least one non-empty value in the parsed data.
-
-### Files Modified
-- `src/components/import/ImportDialog.tsx` - all UI changes
+- Add `smartMatchColumn()` function with keyword-based matching
+- Add `FIELD_DISPLAY` lookup for display names
+- Update `analyzeHeaders()` to use smart matching
+- Update `parseCSV()` to use smart matching for values
+- Add "Location N" prefix stripping logic
+- Keep backward compatibility with exact matches
 
