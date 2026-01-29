@@ -95,6 +95,7 @@ export type Database = {
           next_action: string | null
           next_action_date: string | null
           notes: string | null
+          number_of_clubs: number | null
           number_of_courts: number | null
           ownership_group: string | null
           phone: string | null
@@ -146,6 +147,7 @@ export type Database = {
           next_action?: string | null
           next_action_date?: string | null
           notes?: string | null
+          number_of_clubs?: number | null
           number_of_courts?: number | null
           ownership_group?: string | null
           phone?: string | null
@@ -197,6 +199,7 @@ export type Database = {
           next_action?: string | null
           next_action_date?: string | null
           notes?: string | null
+          number_of_clubs?: number | null
           number_of_courts?: number | null
           ownership_group?: string | null
           phone?: string | null
