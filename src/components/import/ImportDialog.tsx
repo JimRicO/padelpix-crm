@@ -43,6 +43,7 @@ interface ParsedClub {
   google_maps_url?: string;
   facebook?: string;
   twitter?: string;
+  linkedin?: string;
   insta_url?: string;
   insta_bio?: string;
   insta_followers?: number;
@@ -120,12 +121,119 @@ const FIELD_MAP: Record<string, { field: string; display: string }> = {
   'suburb': { field: 'suburb', display: 'Suburb' },
 };
 
+// Display names for all fields
+const FIELD_DISPLAY: Record<string, string> = {
+  'club_name': 'Club Name',
+  'instagram_handle': 'Instagram',
+  'city': 'City',
+  'country': 'Country',
+  'website': 'Website',
+  'whatsapp': 'WhatsApp',
+  'phone': 'Phone',
+  'email': 'Email',
+  'number_of_courts': 'Courts',
+  'address': 'Address',
+  'contact_name': 'Contact Name',
+  'business_description': 'Description',
+  'google_maps_url': 'Google Maps',
+  'facebook': 'Facebook',
+  'twitter': 'Twitter/X',
+  'insta_url': 'Instagram URL',
+  'insta_bio': 'Instagram Bio',
+  'insta_followers': 'Followers',
+  'avg_likes': 'Avg Likes',
+  'avg_comments': 'Avg Comments',
+  'avg_video_views': 'Avg Video Views',
+  'top_hashtags': 'Hashtags',
+  'key_individuals': 'Key Individuals',
+  'linkedin': 'LinkedIn',
+  'suburb': 'Suburb',
+};
+
+// Keyword rules for fuzzy matching (checked in order - first match wins)
+const KEYWORD_RULES: Array<{ keywords: string[]; allRequired?: boolean; field: string }> = [
+  // Specific multi-word patterns first (require all keywords)
+  { keywords: ['team', 'member'], allRequired: false, field: 'key_individuals' },
+  { keywords: ['business', 'description'], allRequired: false, field: 'business_description' },
+  { keywords: ['phone', 'number'], allRequired: false, field: 'phone' },
+  { keywords: ['email', 'address'], allRequired: false, field: 'email' },
+  { keywords: ['number', 'court'], allRequired: true, field: 'number_of_courts' },
+  { keywords: ['google', 'map'], allRequired: false, field: 'google_maps_url' },
+  
+  // Single keyword matches (any keyword matches)
+  { keywords: ['phone', 'mobile', 'tel', 'telephone', 'cell'], field: 'phone' },
+  { keywords: ['email', 'mail'], field: 'email' },
+  { keywords: ['address', 'location', 'street'], field: 'address' },
+  { keywords: ['court'], field: 'number_of_courts' },
+  { keywords: ['instagram', 'insta', 'ig'], field: 'instagram_handle' },
+  { keywords: ['facebook', 'fb'], field: 'facebook' },
+  { keywords: ['linkedin'], field: 'linkedin' },
+  { keywords: ['twitter'], field: 'twitter' },
+  { keywords: ['whatsapp', 'wa'], field: 'whatsapp' },
+  { keywords: ['website', 'url', 'web', 'site'], field: 'website' },
+  { keywords: ['description', 'bio', 'about'], field: 'business_description' },
+  { keywords: ['team', 'member', 'individual', 'staff', 'people', 'personnel'], field: 'key_individuals' },
+  { keywords: ['country'], field: 'country' },
+  { keywords: ['city', 'town'], field: 'city' },
+  { keywords: ['suburb', 'district', 'area'], field: 'suburb' },
+  { keywords: ['contact', 'owner', 'manager'], field: 'contact_name' },
+  { keywords: ['follower'], field: 'insta_followers' },
+  { keywords: ['like'], field: 'avg_likes' },
+  { keywords: ['comment'], field: 'avg_comments' },
+  { keywords: ['view', 'video'], field: 'avg_video_views' },
+  { keywords: ['hashtag', 'tag'], field: 'top_hashtags' },
+  { keywords: ['name', 'club'], field: 'club_name' },
+];
+
+// Smart column matching with fuzzy logic
+const smartMatchColumn = (header: string): { field: string; display: string } | null => {
+  const original = header.trim();
+  
+  // Strip "Location N" prefix pattern (e.g., "Location 1 Address" → "Address")
+  const withoutLocationPrefix = original.replace(/^location\s*\d+\s*/i, '').trim();
+  const headerToMatch = withoutLocationPrefix || original;
+  
+  const lower = headerToMatch.toLowerCase();
+  const underscored = lower.replace(/\s+/g, '_');
+  const normalized = lower.replace(/[^a-z]/g, ''); // letters only for fuzzy matching
+  
+  // Layer 1: Exact match with underscore normalization
+  if (FIELD_MAP[underscored]) {
+    return FIELD_MAP[underscored];
+  }
+  
+  // Layer 2: Try without underscores (e.g., "clubname" matches "club_name")
+  const noUnderscoreMatch = Object.entries(FIELD_MAP).find(([key]) => 
+    key.replace(/_/g, '') === normalized
+  );
+  if (noUnderscoreMatch) {
+    return noUnderscoreMatch[1];
+  }
+  
+  // Layer 3: Keyword-based matching
+  for (const rule of KEYWORD_RULES) {
+    if (rule.allRequired) {
+      // All keywords must be present
+      if (rule.keywords.every(kw => normalized.includes(kw))) {
+        return { field: rule.field, display: FIELD_DISPLAY[rule.field] || rule.field };
+      }
+    } else {
+      // Any keyword matches
+      if (rule.keywords.some(kw => normalized.includes(kw))) {
+        return { field: rule.field, display: FIELD_DISPLAY[rule.field] || rule.field };
+      }
+    }
+  }
+  
+  return null;
+};
+
 // All possible fields that can be imported (for counting filled fields)
 const ALL_IMPORT_FIELDS = [
   'club_name', 'instagram_handle', 'city', 'country', 'website', 'whatsapp', 'phone', 'email',
   'number_of_courts', 'address', 'contact_name', 'business_description', 'google_maps_url',
   'facebook', 'twitter', 'insta_url', 'insta_bio', 'insta_followers', 'avg_likes', 'avg_comments',
-  'avg_video_views', 'top_hashtags', 'key_individuals', 'suburb'
+  'avg_video_views', 'top_hashtags', 'key_individuals', 'suburb', 'linkedin'
 ];
 
 // Supported columns organized by category for help text
@@ -173,15 +281,14 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
     );
   }, [existingClubs]);
 
-  // Analyze CSV headers to detect matched/unmatched columns
+  // Analyze CSV headers to detect matched/unmatched columns using smart matching
   const analyzeHeaders = (headers: string[]): { matched: ColumnMatch[]; unmatched: string[] } => {
     const matched: ColumnMatch[] = [];
     const unmatched: string[] = [];
     const seenFields = new Set<string>();
 
     headers.forEach(header => {
-      const normalized = header.trim().toLowerCase().replace(/['"]/g, '').replace(/\s+/g, '_');
-      const mapping = FIELD_MAP[normalized];
+      const mapping = smartMatchColumn(header);
       
       if (mapping && !seenFields.has(mapping.field)) {
         matched.push({
@@ -203,19 +310,20 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
     if (lines.length < 2) throw new Error('CSV must have a header row and at least one data row');
     
     const headers = lines[0].split(',').map(h => h.trim().replace(/^["']|["']$/g, ''));
-    const normalizedHeaders = headers.map(h => h.toLowerCase().replace(/\s+/g, '_'));
     
-    // Analyze headers for feedback
+    // Analyze headers for feedback using smart matching
     const { matched, unmatched } = analyzeHeaders(headers);
     setMatchedColumns(matched);
     setUnmatchedColumns(unmatched);
+
+    // Build a mapping from header index to field
+    const headerMappings = headers.map(header => smartMatchColumn(header));
 
     return lines.slice(1).filter(line => line.trim()).map(line => {
       const values = line.split(',').map(v => v.trim().replace(/^["']|["']$/g, ''));
       const club: ParsedClub = { club_name: '' };
       
-      normalizedHeaders.forEach((header, i) => {
-        const mapping = FIELD_MAP[header];
+      headerMappings.forEach((mapping, i) => {
         if (mapping && values[i]) {
           const mappedField = mapping.field;
           switch (mappedField) {
@@ -284,6 +392,9 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
               break;
             case 'twitter':
               club.twitter = values[i];
+              break;
+            case 'linkedin':
+              club.linkedin = values[i];
               break;
             case 'insta_url':
               club.insta_url = values[i];
