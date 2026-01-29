@@ -105,20 +105,22 @@ export function OrganizationDetailView({ group, clubCount }: OrganizationDetailV
               <Palette className="w-4 h-4 text-primary" />
               Color Palette
             </h3>
-            <div className="flex gap-4 flex-wrap">
-              {Object.entries(colorPalette).map(([name, color]) => 
-                color && (
-                  <div key={name} className="color-swatch">
-                    <div 
-                      className="color-swatch-box"
-                      style={{ backgroundColor: color }}
-                      title={`${name}: ${color}`}
-                    />
-                    <span className="color-swatch-label">{name}</span>
-                    <span className="color-swatch-value">{color}</span>
-                  </div>
-                )
-              )}
+            <div className="detail-section-content">
+              <div className="flex gap-6 flex-wrap">
+                {Object.entries(colorPalette).map(([name, color]) => 
+                  color && (
+                    <div key={name} className="flex flex-col items-center gap-1.5">
+                      <div 
+                        className="w-12 h-12 rounded-lg border border-border/50 neu-subtle"
+                        style={{ backgroundColor: color }}
+                        title={`${name}: ${color}`}
+                      />
+                      <span className="text-xs text-muted-foreground capitalize">{name}</span>
+                      <span className="text-[10px] text-muted-foreground font-mono uppercase">{color}</span>
+                    </div>
+                  )
+                )}
+              </div>
             </div>
           </div>
         )}
