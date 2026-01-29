@@ -271,6 +271,26 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
   const { data: existingClubs } = useClubs();
   const bulkCreate = useBulkCreateClubs();
 
+  const parsePeopleList = (input: string | undefined): string[] | undefined => {
+    if (!input) return undefined;
+    const raw = input.trim();
+    if (!raw) return undefined;
+
+    // Common separators seen in CSV exports for people lists.
+    const normalized = raw
+      .replace(/\r?\n/g, ',')
+      .replace(/\s+&\s+/g, ',')
+      .replace(/\s+and\s+/gi, ',')
+      .replace(/\s*\/\s*/g, ',');
+
+    const parts = normalized
+      .split(/[,;|]+/)
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    return parts.length ? parts : undefined;
+  };
+
   const cleanInstagramHandle = (input: string | undefined): string | undefined => {
     if (!input) return undefined;
 
@@ -408,7 +428,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
               club.top_hashtags = value.split(/[;|]/).map(s => s.trim()).filter(Boolean);
               break;
             case 'key_individuals':
-              club.key_individuals = value.split(/[;|]/).map(s => s.trim()).filter(Boolean);
+              club.key_individuals = parsePeopleList(value);
               break;
             case 'club_name':
               club.club_name = value;
@@ -469,6 +489,13 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
       });
 
       club.instagram_handle = cleanInstagramHandle(club.instagram_handle);
+
+      // If the CSV only has "members" / team list, store the first as the primary contact name
+      // (while keeping the full list in key_individuals).
+      if (!club.contact_name && club.key_individuals?.length) {
+        club.contact_name = club.key_individuals[0];
+      }
+
       club.detectedOwnership = detectOwnershipGroup(club.club_name);
       club.tier = club.detectedOwnership ? 'group_owned' : inferTier(club.number_of_courts);
       club.isDuplicate = checkDuplicate(club.instagram_handle);
@@ -556,6 +583,10 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
         top_hashtags: parseArrayField(item.top_hashtags || item.hashtags),
         key_individuals: parseArrayField(item.key_individuals || item.contacts),
       };
+
+      if (!club.contact_name && club.key_individuals?.length) {
+        club.contact_name = club.key_individuals[0];
+      }
       
       club.detectedOwnership = detectOwnershipGroup(club.club_name);
       club.tier = club.detectedOwnership ? 'group_owned' : inferTier(club.number_of_courts);
