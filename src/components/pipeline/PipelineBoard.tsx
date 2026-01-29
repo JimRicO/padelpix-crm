@@ -10,7 +10,7 @@ import { OwnershipGroupModal } from '@/components/group/OwnershipGroupModal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Users, LayoutGrid, ArrowUpDown } from 'lucide-react';
+import { Users, LayoutGrid, ArrowUpDown, Filter } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { groupClubsByOwnership } from '@/utils/ownershipPatterns';
 
@@ -60,6 +60,14 @@ export function PipelineBoard({ onClubClick, searchQuery }: PipelineBoardProps) 
   const [viewMode, setViewMode] = useState<'individual' | 'grouped'>('grouped');
   const [selectedGroupName, setSelectedGroupName] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'name' | 'country' | 'courts'>('name');
+  const [countryFilter, setCountryFilter] = useState<string>('all');
+
+  // Get unique countries for filter dropdown
+  const uniqueCountries = useMemo(() => {
+    if (!clubs) return [];
+    const countries = [...new Set(clubs.map(c => c.country || 'South Africa').filter(Boolean))];
+    return countries.sort((a, b) => a.localeCompare(b));
+  }, [clubs]);
 
   // Create a map of ownership group data for quick lookup
   const ownershipGroupDataMap = useMemo(() => {
@@ -78,6 +86,11 @@ export function PipelineBoard({ onClubClick, searchQuery }: PipelineBoardProps) 
     if (!clubs) return [];
     
     let result = clubs;
+    
+    // Apply country filter
+    if (countryFilter && countryFilter !== 'all') {
+      result = result.filter(club => (club.country || 'South Africa') === countryFilter);
+    }
     
     // Apply search filter
     if (searchQuery.trim()) {
@@ -103,7 +116,7 @@ export function PipelineBoard({ onClubClick, searchQuery }: PipelineBoardProps) 
           return 0;
       }
     });
-  }, [clubs, searchQuery, sortBy]);
+  }, [clubs, searchQuery, sortBy, countryFilter]);
 
   const { groups: ownershipGroups, ungrouped: ungroupedClubs } = useMemo(() => {
     return groupClubsByOwnership(filteredClubs);
@@ -216,6 +229,22 @@ export function PipelineBoard({ onClubClick, searchQuery }: PipelineBoardProps) 
           <Users className="w-3.5 h-3.5" />
           GROUP
         </Button>
+
+        <div className="h-4 w-px bg-border mx-2" />
+
+        <Filter className="w-4 h-4 text-muted-foreground" />
+        <span className="text-sm text-muted-foreground">Country:</span>
+        <Select value={countryFilter} onValueChange={setCountryFilter}>
+          <SelectTrigger className="w-[160px] h-8">
+            <SelectValue placeholder="All Countries" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Countries</SelectItem>
+            {uniqueCountries.map(country => (
+              <SelectItem key={country} value={country}>{country}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         <div className="h-4 w-px bg-border mx-2" />
 
