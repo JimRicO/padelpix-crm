@@ -1,14 +1,19 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useBulkCreateClubs, useClubs } from '@/hooks/useClubs';
-import { Upload, FileJson, FileSpreadsheet, AlertTriangle, CheckCircle, Loader2, Building2 } from 'lucide-react';
+import { Upload, FileJson, FileSpreadsheet, AlertTriangle, CheckCircle, Loader2, Building2, Check, X, FileCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { detectOwnershipGroup } from '@/utils/ownershipPatterns';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface ImportDialogProps {
   open: boolean;
@@ -48,12 +53,100 @@ interface ParsedClub {
   key_individuals?: string[];
 }
 
+interface ColumnMatch {
+  csvHeader: string;
+  mappedField: string;
+  displayName: string;
+}
+
+interface FileInfo {
+  name: string;
+  rowCount: number;
+  columnCount: number;
+}
+
+// Complete field mapping with display names
+const FIELD_MAP: Record<string, { field: string; display: string }> = {
+  'club_name': { field: 'club_name', display: 'Club Name' },
+  'clubname': { field: 'club_name', display: 'Club Name' },
+  'name': { field: 'club_name', display: 'Club Name' },
+  'instagram': { field: 'instagram_handle', display: 'Instagram' },
+  'instagram_handle': { field: 'instagram_handle', display: 'Instagram' },
+  'ig': { field: 'instagram_handle', display: 'Instagram' },
+  'city': { field: 'city', display: 'City' },
+  'country': { field: 'country', display: 'Country' },
+  'website': { field: 'website', display: 'Website' },
+  'url': { field: 'website', display: 'Website' },
+  'whatsapp': { field: 'whatsapp', display: 'WhatsApp' },
+  'phone': { field: 'phone', display: 'Phone' },
+  'email': { field: 'email', display: 'Email' },
+  'courts': { field: 'number_of_courts', display: 'Courts' },
+  'number_of_courts': { field: 'number_of_courts', display: 'Courts' },
+  'num_courts': { field: 'number_of_courts', display: 'Courts' },
+  'address': { field: 'address', display: 'Address' },
+  'contact_name': { field: 'contact_name', display: 'Contact Name' },
+  'contact': { field: 'contact_name', display: 'Contact Name' },
+  'business_description': { field: 'business_description', display: 'Description' },
+  'description': { field: 'business_description', display: 'Description' },
+  'google_maps_url': { field: 'google_maps_url', display: 'Google Maps' },
+  'maps_url': { field: 'google_maps_url', display: 'Google Maps' },
+  'google_maps': { field: 'google_maps_url', display: 'Google Maps' },
+  'facebook': { field: 'facebook', display: 'Facebook' },
+  'fb': { field: 'facebook', display: 'Facebook' },
+  'twitter': { field: 'twitter', display: 'Twitter/X' },
+  'x': { field: 'twitter', display: 'Twitter/X' },
+  'instagram_url': { field: 'insta_url', display: 'Instagram URL' },
+  'insta_url': { field: 'insta_url', display: 'Instagram URL' },
+  'instagram_bio': { field: 'insta_bio', display: 'Instagram Bio' },
+  'insta_bio': { field: 'insta_bio', display: 'Instagram Bio' },
+  'bio': { field: 'insta_bio', display: 'Instagram Bio' },
+  'instagram_followers': { field: 'insta_followers', display: 'Followers' },
+  'insta_followers': { field: 'insta_followers', display: 'Followers' },
+  'followers': { field: 'insta_followers', display: 'Followers' },
+  'avg_likes': { field: 'avg_likes', display: 'Avg Likes' },
+  'average_likes': { field: 'avg_likes', display: 'Avg Likes' },
+  'likes': { field: 'avg_likes', display: 'Avg Likes' },
+  'avg_comments': { field: 'avg_comments', display: 'Avg Comments' },
+  'average_comments': { field: 'avg_comments', display: 'Avg Comments' },
+  'comments': { field: 'avg_comments', display: 'Avg Comments' },
+  'avg_video_views': { field: 'avg_video_views', display: 'Avg Video Views' },
+  'average_video_views': { field: 'avg_video_views', display: 'Avg Video Views' },
+  'video_views': { field: 'avg_video_views', display: 'Avg Video Views' },
+  'top_hashtags': { field: 'top_hashtags', display: 'Hashtags' },
+  'hashtags': { field: 'top_hashtags', display: 'Hashtags' },
+  'key_individuals': { field: 'key_individuals', display: 'Key Individuals' },
+  'contacts': { field: 'key_individuals', display: 'Key Individuals' },
+  'linkedin': { field: 'linkedin', display: 'LinkedIn' },
+  'suburb': { field: 'suburb', display: 'Suburb' },
+};
+
+// All possible fields that can be imported (for counting filled fields)
+const ALL_IMPORT_FIELDS = [
+  'club_name', 'instagram_handle', 'city', 'country', 'website', 'whatsapp', 'phone', 'email',
+  'number_of_courts', 'address', 'contact_name', 'business_description', 'google_maps_url',
+  'facebook', 'twitter', 'insta_url', 'insta_bio', 'insta_followers', 'avg_likes', 'avg_comments',
+  'avg_video_views', 'top_hashtags', 'key_individuals', 'suburb'
+];
+
+// Supported columns organized by category for help text
+const SUPPORTED_COLUMNS = {
+  basic: ['name', 'instagram', 'city', 'country', 'address', 'website', 'email'],
+  contact: ['phone', 'whatsapp', 'contact_name'],
+  social: ['facebook', 'twitter', 'linkedin'],
+  instagram: ['insta_url', 'insta_bio', 'insta_followers', 'avg_likes', 'avg_comments', 'avg_video_views', 'top_hashtags'],
+  other: ['courts', 'key_individuals', 'business_description', 'google_maps_url', 'suburb']
+};
+
 export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
   const [rawData, setRawData] = useState('');
   const [parsedClubs, setParsedClubs] = useState<ParsedClub[]>([]);
   const [parseError, setParseError] = useState<string | null>(null);
   const [step, setStep] = useState<'input' | 'preview'>('input');
   const [isExtractingLocations, setIsExtractingLocations] = useState(false);
+  const [fileInfo, setFileInfo] = useState<FileInfo | null>(null);
+  const [matchedColumns, setMatchedColumns] = useState<ColumnMatch[]>([]);
+  const [unmatchedColumns, setUnmatchedColumns] = useState<string[]>([]);
+  const [showAllColumns, setShowAllColumns] = useState(false);
 
   const csvFileInputRef = useRef<HTMLInputElement | null>(null);
   
@@ -80,71 +173,51 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
     );
   }, [existingClubs]);
 
+  // Analyze CSV headers to detect matched/unmatched columns
+  const analyzeHeaders = (headers: string[]): { matched: ColumnMatch[]; unmatched: string[] } => {
+    const matched: ColumnMatch[] = [];
+    const unmatched: string[] = [];
+    const seenFields = new Set<string>();
+
+    headers.forEach(header => {
+      const normalized = header.trim().toLowerCase().replace(/['"]/g, '').replace(/\s+/g, '_');
+      const mapping = FIELD_MAP[normalized];
+      
+      if (mapping && !seenFields.has(mapping.field)) {
+        matched.push({
+          csvHeader: header,
+          mappedField: mapping.field,
+          displayName: mapping.display
+        });
+        seenFields.add(mapping.field);
+      } else if (!mapping) {
+        unmatched.push(header);
+      }
+    });
+
+    return { matched, unmatched };
+  };
+
   const parseCSV = (text: string): ParsedClub[] => {
     const lines = text.trim().split('\n');
     if (lines.length < 2) throw new Error('CSV must have a header row and at least one data row');
     
-    const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/['"]/g, '').replace(/\s+/g, '_'));
+    const headers = lines[0].split(',').map(h => h.trim().replace(/^["']|["']$/g, ''));
+    const normalizedHeaders = headers.map(h => h.toLowerCase().replace(/\s+/g, '_'));
     
-    const fieldMap: Record<string, string> = {
-      'club_name': 'club_name',
-      'clubname': 'club_name',
-      'name': 'club_name',
-      'instagram': 'instagram_handle',
-      'instagram_handle': 'instagram_handle',
-      'ig': 'instagram_handle',
-      'city': 'city',
-      'country': 'country',
-      'website': 'website',
-      'url': 'website',
-      'whatsapp': 'whatsapp',
-      'phone': 'phone',
-      'email': 'email',
-      'courts': 'number_of_courts',
-      'number_of_courts': 'number_of_courts',
-      'num_courts': 'number_of_courts',
-      'address': 'address',
-      // New field mappings
-      'business_description': 'business_description',
-      'description': 'business_description',
-      'google_maps_url': 'google_maps_url',
-      'maps_url': 'google_maps_url',
-      'google_maps': 'google_maps_url',
-      'facebook': 'facebook',
-      'fb': 'facebook',
-      'twitter': 'twitter',
-      'x': 'twitter',
-      'instagram_url': 'insta_url',
-      'insta_url': 'insta_url',
-      'instagram_bio': 'insta_bio',
-      'insta_bio': 'insta_bio',
-      'bio': 'insta_bio',
-      'instagram_followers': 'insta_followers',
-      'insta_followers': 'insta_followers',
-      'followers': 'insta_followers',
-      'avg_likes': 'avg_likes',
-      'average_likes': 'avg_likes',
-      'likes': 'avg_likes',
-      'avg_comments': 'avg_comments',
-      'average_comments': 'avg_comments',
-      'comments': 'avg_comments',
-      'avg_video_views': 'avg_video_views',
-      'average_video_views': 'avg_video_views',
-      'video_views': 'avg_video_views',
-      'top_hashtags': 'top_hashtags',
-      'hashtags': 'top_hashtags',
-      'key_individuals': 'key_individuals',
-      'contacts': 'key_individuals',
-      'linkedin': 'linkedin',
-    };
+    // Analyze headers for feedback
+    const { matched, unmatched } = analyzeHeaders(headers);
+    setMatchedColumns(matched);
+    setUnmatchedColumns(unmatched);
 
     return lines.slice(1).filter(line => line.trim()).map(line => {
       const values = line.split(',').map(v => v.trim().replace(/^["']|["']$/g, ''));
       const club: ParsedClub = { club_name: '' };
       
-      headers.forEach((header, i) => {
-        const mappedField = fieldMap[header];
-        if (mappedField && values[i]) {
+      normalizedHeaders.forEach((header, i) => {
+        const mapping = FIELD_MAP[header];
+        if (mapping && values[i]) {
+          const mappedField = mapping.field;
           switch (mappedField) {
             case 'number_of_courts':
               club.number_of_courts = parseInt(values[i], 10) || undefined;
@@ -194,6 +267,12 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
             case 'address':
               club.address = values[i];
               break;
+            case 'suburb':
+              club.suburb = values[i];
+              break;
+            case 'contact_name':
+              club.contact_name = values[i];
+              break;
             case 'business_description':
               club.business_description = values[i];
               break;
@@ -211,9 +290,6 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
               break;
             case 'insta_bio':
               club.insta_bio = values[i];
-              break;
-            case 'linkedin':
-              // stored as linkedin field if needed in future
               break;
           }
         }
@@ -243,6 +319,15 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
       clubs = [data];
     } else {
       throw new Error('Invalid JSON structure');
+    }
+
+    // Analyze JSON keys for feedback
+    if (clubs.length > 0) {
+      const firstItem = clubs[0] as Record<string, unknown>;
+      const keys = Object.keys(firstItem);
+      const { matched, unmatched } = analyzeHeaders(keys);
+      setMatchedColumns(matched);
+      setUnmatchedColumns(unmatched);
     }
     
     return clubs.map((item: Record<string, unknown>) => {
@@ -282,6 +367,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
         address,
         contact_name: (item.owner_or_manager_name || item.contact_name || item.owner || item.manager) as string | undefined,
         coaches,
+        suburb: item.suburb as string | undefined,
         // New fields
         business_description: (item.business_description || item.description) as string | undefined,
         google_maps_url: (item.google_maps_url || item.google_maps || item.maps_url) as string | undefined,
@@ -352,6 +438,57 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
     }
   };
 
+  const handleFileUpload = (file: File, format: 'csv' | 'json') => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      setRawData(content);
+      
+      // Count rows and columns for feedback
+      if (format === 'csv') {
+        const lines = content.trim().split('\n');
+        const headers = lines[0]?.split(',') || [];
+        setFileInfo({
+          name: file.name,
+          rowCount: Math.max(0, lines.length - 1),
+          columnCount: headers.length
+        });
+        // Pre-analyze headers
+        const { matched, unmatched } = analyzeHeaders(headers.map(h => h.trim().replace(/^["']|["']$/g, '')));
+        setMatchedColumns(matched);
+        setUnmatchedColumns(unmatched);
+      } else {
+        try {
+          const data = JSON.parse(content);
+          let items: unknown[] = [];
+          if (Array.isArray(data)) items = data;
+          else if (data.padel_clubs) items = data.padel_clubs;
+          else if (data.clubs) items = data.clubs;
+          else items = [data];
+          
+          const firstItem = items[0] as Record<string, unknown> | undefined;
+          const keys = firstItem ? Object.keys(firstItem) : [];
+          setFileInfo({
+            name: file.name,
+            rowCount: items.length,
+            columnCount: keys.length
+          });
+          if (keys.length > 0) {
+            const { matched, unmatched } = analyzeHeaders(keys);
+            setMatchedColumns(matched);
+            setUnmatchedColumns(unmatched);
+          }
+        } catch {
+          setFileInfo({ name: file.name, rowCount: 0, columnCount: 0 });
+        }
+      }
+    };
+    reader.onerror = () => {
+      setParseError('Failed to read file');
+    };
+    reader.readAsText(file);
+  };
+
   const handleParse = async (format: 'csv' | 'json') => {
     setParseError(null);
     try {
@@ -382,6 +519,9 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
         setRawData('');
         setParsedClubs([]);
         setStep('input');
+        setFileInfo(null);
+        setMatchedColumns([]);
+        setUnmatchedColumns([]);
       },
     });
   };
@@ -392,14 +532,239 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
     setParsedClubs([]);
     setStep('input');
     setParseError(null);
+    setFileInfo(null);
+    setMatchedColumns([]);
+    setUnmatchedColumns([]);
   };
 
   const newClubs = parsedClubs.filter(c => !c.isDuplicate);
   const duplicates = parsedClubs.filter(c => c.isDuplicate);
 
+  // Calculate which columns have data in the parsed clubs
+  const columnsWithData = useMemo(() => {
+    if (parsedClubs.length === 0) return [];
+    
+    const fieldsWithData: string[] = [];
+    ALL_IMPORT_FIELDS.forEach(field => {
+      const hasData = parsedClubs.some(club => {
+        const value = club[field as keyof ParsedClub];
+        if (Array.isArray(value)) return value.length > 0;
+        if (typeof value === 'number') return true;
+        return Boolean(value);
+      });
+      if (hasData) fieldsWithData.push(field);
+    });
+    return fieldsWithData;
+  }, [parsedClubs]);
+
+  // Calculate filled fields count for each club
+  const getFilledFieldsCount = (club: ParsedClub): number => {
+    return ALL_IMPORT_FIELDS.filter(field => {
+      const value = club[field as keyof ParsedClub];
+      if (Array.isArray(value)) return value.length > 0;
+      if (typeof value === 'number') return true;
+      return Boolean(value);
+    }).length;
+  };
+
+  // Format large numbers
+  const formatNumber = (num: number | undefined): string => {
+    if (!num) return '';
+    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+    if (num >= 1000) return `${(num / 1000).toFixed(1)}k`;
+    return num.toString();
+  };
+
+  // Get display value for a field
+  const getDisplayValue = (club: ParsedClub, field: string): string => {
+    const value = club[field as keyof ParsedClub];
+    if (value === undefined || value === null) return '';
+    if (Array.isArray(value)) return value.slice(0, 2).join(', ') + (value.length > 2 ? '...' : '');
+    if (field === 'insta_followers' || field === 'avg_likes' || field === 'avg_comments' || field === 'avg_video_views') {
+      return formatNumber(value as number);
+    }
+    if (typeof value === 'string' && value.length > 30) return value.slice(0, 30) + '...';
+    return String(value);
+  };
+
+  // Define which columns to always show and which to show conditionally
+  const alwaysShowColumns = ['club_name', 'instagram_handle', 'city'];
+  const priorityColumns = ['insta_followers', 'avg_likes', 'phone', 'email', 'country', 'address'];
+  
+  const displayColumns = useMemo(() => {
+    const cols = [...alwaysShowColumns];
+    priorityColumns.forEach(col => {
+      if (columnsWithData.includes(col) && !cols.includes(col)) {
+        cols.push(col);
+      }
+    });
+    // Add more columns that have data
+    columnsWithData.forEach(col => {
+      if (!cols.includes(col) && cols.length < 8) {
+        cols.push(col);
+      }
+    });
+    return cols;
+  }, [columnsWithData]);
+
+  const hiddenColumnsCount = columnsWithData.length - displayColumns.length;
+
+  const getFieldDisplayName = (field: string): string => {
+    const entry = Object.values(FIELD_MAP).find(v => v.field === field);
+    return entry?.display || field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  const renderInputStep = (format: 'csv' | 'json') => (
+    <div className="flex-1 flex flex-col gap-4 overflow-hidden">
+      {/* Supported columns help */}
+      <Collapsible>
+        <CollapsibleTrigger asChild>
+          <Button variant="ghost" size="sm" className="w-full justify-start text-muted-foreground text-xs hover:text-foreground">
+            <Check className="w-3 h-3 mr-1" />
+            View supported columns ({Object.keys(SUPPORTED_COLUMNS).reduce((acc, key) => acc + SUPPORTED_COLUMNS[key as keyof typeof SUPPORTED_COLUMNS].length, 0)} total)
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="mt-2">
+          <div className="text-xs text-muted-foreground bg-muted/50 rounded-lg p-3 space-y-2">
+            <div><span className="font-medium text-foreground">Basic:</span> {SUPPORTED_COLUMNS.basic.join(', ')}</div>
+            <div><span className="font-medium text-foreground">Contact:</span> {SUPPORTED_COLUMNS.contact.join(', ')}</div>
+            <div><span className="font-medium text-foreground">Social:</span> {SUPPORTED_COLUMNS.social.join(', ')}</div>
+            <div><span className="font-medium text-foreground">Instagram:</span> {SUPPORTED_COLUMNS.instagram.join(', ')}</div>
+            <div><span className="font-medium text-foreground">Other:</span> {SUPPORTED_COLUMNS.other.join(', ')}</div>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+
+      {/* File upload */}
+      <div className="flex items-center gap-2">
+        <input
+          ref={format === 'csv' ? csvFileInputRef : undefined}
+          type="file"
+          accept={format === 'csv' ? '.csv,text/csv' : '.json,application/json'}
+          className="sr-only"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) {
+              handleFileUpload(file, format);
+            }
+            e.target.value = '';
+          }}
+        />
+        <Button
+          type="button"
+          variant="outline"
+          className="gap-2"
+          onClick={() => {
+            if (format === 'csv') {
+              csvFileInputRef.current?.click();
+            } else {
+              document.getElementById('json-file-input')?.click();
+            }
+          }}
+        >
+          <Upload className="w-4 h-4" />
+          <span className="text-sm">Upload .{format} file</span>
+        </Button>
+        {format === 'json' && (
+          <input
+            id="json-file-input"
+            type="file"
+            accept=".json,application/json"
+            className="sr-only"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                handleFileUpload(file, 'json');
+              }
+              e.target.value = '';
+            }}
+          />
+        )}
+      </div>
+
+      {/* File info feedback */}
+      {fileInfo && (
+        <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <FileCheck className="w-4 h-4 text-primary" />
+            {fileInfo.name}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            Found {fileInfo.rowCount} rows and {fileInfo.columnCount} columns
+          </div>
+          
+          {/* Column recognition summary */}
+          {(matchedColumns.length > 0 || unmatchedColumns.length > 0) && (
+            <div className="pt-2 border-t border-border space-y-1">
+              <div className="text-xs font-medium text-foreground mb-1">Column Recognition:</div>
+              <div className="flex flex-wrap gap-1">
+                {matchedColumns.slice(0, showAllColumns ? undefined : 6).map((col, i) => (
+                  <Badge key={i} variant="outline" className="text-xs bg-primary/10 text-primary border-primary/20 gap-1">
+                    <Check className="w-3 h-3" />
+                    {col.csvHeader} → {col.displayName}
+                  </Badge>
+                ))}
+                {unmatchedColumns.slice(0, showAllColumns ? undefined : 3).map((col, i) => (
+                  <Badge key={`u-${i}`} variant="outline" className="text-xs bg-warning/10 text-warning border-warning/20 gap-1">
+                    <X className="w-3 h-3" />
+                    {col}
+                  </Badge>
+                ))}
+              </div>
+              {!showAllColumns && (matchedColumns.length > 6 || unmatchedColumns.length > 3) && (
+                <Button variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground" onClick={() => setShowAllColumns(true)}>
+                  Show all columns...
+                </Button>
+              )}
+              {showAllColumns && (
+                <Button variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground" onClick={() => setShowAllColumns(false)}>
+                  Show less
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Data textarea */}
+      <Textarea 
+        placeholder={format === 'csv' 
+          ? `club_name,instagram,city,country,courts,followers\nPadel Club One,@padelclub1,Cape Town,South Africa,4,5000\nPadel Club Two,@padelclub2,Johannesburg,South Africa,6,12000`
+          : `[\n  {\n    "name": "Padel Club One",\n    "instagram": "@padelclub1",\n    "city": "Cape Town",\n    "followers": 5000\n  }\n]`
+        }
+        value={rawData}
+        onChange={(e) => {
+          setRawData(e.target.value);
+          setFileInfo(null);
+          setMatchedColumns([]);
+          setUnmatchedColumns([]);
+        }}
+        className="flex-1 min-h-[150px] font-mono text-sm"
+      />
+      
+      {parseError && (
+        <div className="flex items-center gap-2 text-sm text-destructive">
+          <AlertTriangle className="w-4 h-4" />
+          {parseError}
+        </div>
+      )}
+      
+      <Button onClick={() => handleParse(format)} disabled={!rawData.trim() || isExtractingLocations}>
+        {isExtractingLocations ? (
+          <>
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            Extracting locations...
+          </>
+        ) : (
+          'Preview Import'
+        )}
+      </Button>
+    </div>
+  );
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Upload className="w-5 h-5 text-primary" />
@@ -411,7 +776,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
         </DialogHeader>
 
         {step === 'input' ? (
-          <Tabs defaultValue="csv" className="flex-1 flex flex-col">
+          <Tabs defaultValue="csv" className="flex-1 flex flex-col overflow-hidden">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="csv" className="gap-2">
                 <FileSpreadsheet className="w-4 h-4" />
@@ -423,130 +788,21 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="csv" className="flex-1 flex flex-col gap-4">
-              <div className="text-sm text-muted-foreground">
-                Upload a CSV file or paste CSV data with headers. Supported columns: name, instagram, city, country, website, whatsapp, email, courts, address
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  ref={csvFileInputRef}
-                  type="file"
-                  accept=".csv,text/csv"
-                  className="sr-only"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onload = (event) => {
-                        const content = event.target?.result as string;
-                        setRawData(content);
-                      };
-                      reader.onerror = () => {
-                        setParseError('Failed to read file');
-                      };
-                      reader.readAsText(file);
-                    }
-                    // allow selecting the same file again
-                    e.target.value = '';
-                  }}
-                />
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="gap-2"
-                  onClick={() => csvFileInputRef.current?.click()}
-                >
-                  <Upload className="w-4 h-4" />
-                  <span className="text-sm">Upload .csv file</span>
-                </Button>
-                {rawData && <span className="text-sm text-muted-foreground">File loaded</span>}
-              </div>
-              <Textarea 
-                placeholder={`club_name,instagram,city,country,courts\nPadel Club One,@padelclub1,Cape Town,South Africa,4\nPadel Club Two,@padelclub2,Johannesburg,South Africa,6`}
-                value={rawData}
-                onChange={(e) => setRawData(e.target.value)}
-                className="flex-1 min-h-[200px] font-mono text-sm"
-              />
-              {parseError && (
-                <div className="flex items-center gap-2 text-sm text-destructive">
-                  <AlertTriangle className="w-4 h-4" />
-                  {parseError}
-                </div>
-              )}
-              <Button onClick={() => handleParse('csv')} disabled={!rawData.trim() || isExtractingLocations}>
-                {isExtractingLocations ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Extracting locations...
-                  </>
-                ) : (
-                  'Preview Import'
-                )}
-              </Button>
+            <TabsContent value="csv" className="flex-1 flex flex-col gap-4 overflow-hidden">
+              {renderInputStep('csv')}
             </TabsContent>
             
-            <TabsContent value="json" className="flex-1 flex flex-col gap-4">
-              <div className="text-sm text-muted-foreground">
-                Upload a JSON file or paste JSON array of club objects
-              </div>
-              <div className="flex items-center gap-2">
-                <label className="flex items-center gap-2 px-4 py-2 border rounded-md cursor-pointer hover:bg-muted transition-colors">
-                  <Upload className="w-4 h-4" />
-                  <span className="text-sm">Upload .json file</span>
-                  <input
-                    type="file"
-                    accept=".json,application/json"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        const reader = new FileReader();
-                        reader.onload = (event) => {
-                          const content = event.target?.result as string;
-                          setRawData(content);
-                        };
-                        reader.onerror = () => {
-                          setParseError('Failed to read file');
-                        };
-                        reader.readAsText(file);
-                      }
-                      e.target.value = '';
-                    }}
-                  />
-                </label>
-                {rawData && <span className="text-sm text-muted-foreground">File loaded</span>}
-              </div>
-              <Textarea 
-                placeholder={`[\n  {\n    "name": "Padel Club One",\n    "instagram": "@padelclub1",\n    "city": "Cape Town",\n    "courts": 4\n  }\n]`}
-                value={rawData}
-                onChange={(e) => setRawData(e.target.value)}
-                className="flex-1 min-h-[200px] font-mono text-sm"
-              />
-              {parseError && (
-                <div className="flex items-center gap-2 text-sm text-destructive">
-                  <AlertTriangle className="w-4 h-4" />
-                  {parseError}
-                </div>
-              )}
-              <Button onClick={() => handleParse('json')} disabled={!rawData.trim() || isExtractingLocations}>
-                {isExtractingLocations ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Extracting locations...
-                  </>
-                ) : (
-                  'Preview Import'
-                )}
-              </Button>
+            <TabsContent value="json" className="flex-1 flex flex-col gap-4 overflow-hidden">
+              {renderInputStep('json')}
             </TabsContent>
           </Tabs>
         ) : (
           <div className="flex-1 flex flex-col gap-4 overflow-hidden">
-            <div className="flex items-center gap-4">
+            {/* Summary stats */}
+            <div className="flex items-center gap-4 flex-wrap">
               <div className="flex items-center gap-2 text-sm">
-                <CheckCircle className="w-4 h-4 text-success" />
-                <span>{newClubs.length} new clubs</span>
+                <CheckCircle className="w-4 h-4 text-primary" />
+                <span className="font-medium">{newClubs.length} new clubs</span>
               </div>
               {duplicates.length > 0 && (
                 <div className="flex items-center gap-2 text-sm text-warning">
@@ -554,53 +810,76 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
                   <span>{duplicates.length} duplicates (will be skipped)</span>
                 </div>
               )}
+              {columnsWithData.length > 0 && (
+                <div className="text-xs text-muted-foreground ml-auto">
+                  {columnsWithData.length} fields detected
+                </div>
+              )}
             </div>
 
-            <div className="flex-1 overflow-y-auto border rounded-lg">
-              <table className="w-full text-sm">
-                <thead className="bg-muted sticky top-0">
-                  <tr>
-                    <th className="text-left p-2 font-medium">Club Name</th>
-                    <th className="text-left p-2 font-medium">Instagram</th>
-                    <th className="text-left p-2 font-medium">Ownership</th>
-                    <th className="text-left p-2 font-medium">City</th>
-                    <th className="text-left p-2 font-medium">Courts</th>
-                    <th className="text-left p-2 font-medium">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {parsedClubs.map((club, i) => (
-                    <tr 
-                      key={i} 
-                      className={cn(
-                        'border-t',
-                        club.isDuplicate && 'opacity-50 bg-warning/5'
-                      )}
-                    >
-                      <td className="p-2">{club.club_name}</td>
-                      <td className="p-2">{club.instagram_handle && `@${club.instagram_handle}`}</td>
-                      <td className="p-2">
-                        {club.detectedOwnership && (
-                          <span className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                            <Building2 className="w-3 h-3" />
-                            {club.detectedOwnership}
+            {/* Dynamic preview table */}
+            <ScrollArea className="flex-1 border rounded-lg">
+              <Table>
+                <TableHeader className="bg-muted sticky top-0">
+                  <TableRow>
+                    {displayColumns.map(col => (
+                      <TableHead key={col} className="whitespace-nowrap">
+                        {getFieldDisplayName(col)}
+                      </TableHead>
+                    ))}
+                    <TableHead className="whitespace-nowrap">Status</TableHead>
+                    <TableHead className="whitespace-nowrap text-right">Fields</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {parsedClubs.map((club, i) => {
+                    const filledCount = getFilledFieldsCount(club);
+                    return (
+                      <TableRow 
+                        key={i} 
+                        className={cn(club.isDuplicate && 'opacity-50 bg-warning/5')}
+                      >
+                        {displayColumns.map(col => (
+                          <TableCell key={col} className="whitespace-nowrap max-w-[200px] truncate">
+                            {col === 'instagram_handle' && club.instagram_handle ? `@${club.instagram_handle}` : getDisplayValue(club, col)}
+                            {col === 'club_name' && club.detectedOwnership && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Building2 className="w-3 h-3 text-primary inline ml-1" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>{club.detectedOwnership}</TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </TableCell>
+                        ))}
+                        <TableCell>
+                          {club.isDuplicate ? (
+                            <Badge variant="outline" className="text-xs bg-warning/10 text-warning border-warning/20">Duplicate</Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/20">New</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <span className="text-xs text-muted-foreground">
+                            {filledCount}/{ALL_IMPORT_FIELDS.length}
                           </span>
-                        )}
-                      </td>
-                      <td className="p-2">{club.city}</td>
-                      <td className="p-2">{club.number_of_courts}</td>
-                      <td className="p-2">
-                        {club.isDuplicate ? (
-                          <span className="text-warning text-xs">Duplicate</span>
-                        ) : (
-                          <span className="text-success text-xs">New</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
+
+            {/* Hidden columns indicator */}
+            {hiddenColumnsCount > 0 && (
+              <div className="text-xs text-muted-foreground text-center">
+                +{hiddenColumnsCount} more fields not shown in preview
+              </div>
+            )}
 
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={() => setStep('input')}>
