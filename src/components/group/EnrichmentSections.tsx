@@ -86,36 +86,18 @@ export function EnrichmentSections({ group }: EnrichmentSectionsProps) {
             {colorPalette && Object.keys(colorPalette).length > 0 && (
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">Colors</p>
-                <div className="flex gap-2">
-                  {colorPalette.primary && (
-                    <div className="flex items-center gap-1">
-                      <div 
-                        className="w-6 h-6 rounded border" 
-                        style={{ backgroundColor: colorPalette.primary }}
-                        title="Primary"
-                      />
-                      <span className="text-xs">{colorPalette.primary}</span>
-                    </div>
-                  )}
-                  {colorPalette.secondary && (
-                    <div className="flex items-center gap-1">
-                      <div 
-                        className="w-6 h-6 rounded border" 
-                        style={{ backgroundColor: colorPalette.secondary }}
-                        title="Secondary"
-                      />
-                      <span className="text-xs">{colorPalette.secondary}</span>
-                    </div>
-                  )}
-                  {colorPalette.accent && (
-                    <div className="flex items-center gap-1">
-                      <div 
-                        className="w-6 h-6 rounded border" 
-                        style={{ backgroundColor: colorPalette.accent }}
-                        title="Accent"
-                      />
-                      <span className="text-xs">{colorPalette.accent}</span>
-                    </div>
+                <div className="flex gap-2 flex-wrap">
+                  {Object.entries(colorPalette).map(([name, color]) => 
+                    color && (
+                      <div key={name} className="flex items-center gap-1">
+                        <div 
+                          className="w-6 h-6 rounded border" 
+                          style={{ backgroundColor: color as string }}
+                          title={name.charAt(0).toUpperCase() + name.slice(1)}
+                        />
+                        <span className="text-xs capitalize">{name}</span>
+                      </div>
+                    )
                   )}
                 </div>
               </div>
