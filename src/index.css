@@ -58,10 +58,17 @@
     --sidebar-border: 220 20% 25%;
     --sidebar-ring: 18 95% 50%;
 
-    /* Neumorphic shadow colors - subtle, no bright highlights */
-    --shadow-light: 220 15% 95%;
-    --shadow-dark: 220 20% 75%;
-
+    /* Neumorphic shadow colors - critical for depth */
+    --shadow-light: 220 15% 98%;
+    --shadow-dark: 220 15% 75%;
+    
+    /* Neumorphic shadow definitions as custom properties */
+    --neu-shadow-sm: 4px 4px 8px hsl(var(--shadow-dark) / 0.3), 
+                     -4px -4px 8px hsl(var(--shadow-light));
+    --neu-shadow-md: 6px 6px 12px hsl(var(--shadow-dark) / 0.35), 
+                     -6px -6px 12px hsl(var(--shadow-light));
+    --neu-shadow-inset: inset 4px 4px 8px hsl(var(--shadow-dark) / 0.25), 
+                        inset -4px -4px 8px hsl(var(--shadow-light));
     /* Pipeline stage colors - softer for neumorphic */
     --stage-not-contacted: 220 15% 80%;
     --stage-followed: 199 70% 55%;
@@ -124,9 +131,17 @@
     --sidebar-border: 220 20% 18%;
     --sidebar-ring: 18 95% 55%;
 
-    /* Dark neumorphic shadows - subtle */
+    /* Dark neumorphic shadows */
     --shadow-light: 220 20% 18%;
     --shadow-dark: 220 25% 6%;
+    
+    /* Dark mode shadow definitions */
+    --neu-shadow-sm: 4px 4px 8px hsl(var(--shadow-dark) / 0.6), 
+                     -4px -4px 8px hsl(var(--shadow-light) / 0.08);
+    --neu-shadow-md: 6px 6px 12px hsl(var(--shadow-dark) / 0.65), 
+                     -6px -6px 12px hsl(var(--shadow-light) / 0.1);
+    --neu-shadow-inset: inset 4px 4px 8px hsl(var(--shadow-dark) / 0.5), 
+                        inset -4px -4px 8px hsl(var(--shadow-light) / 0.06);
   }
 }
 

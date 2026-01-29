@@ -39,22 +39,23 @@ export function OrganizationDetailView({ group, clubCount }: OrganizationDetailV
   return (
     <ScrollArea className="h-full">
       <div className="p-6 space-y-6">
-        {/* Header with Logo */}
+        {/* Header with Logo - Neumorphic inset treatment */}
         <div className="flex items-start gap-4">
           {group.logo_url ? (
-            <img 
-              src={group.logo_url} 
-              alt={group.name} 
-              className="w-20 h-20 object-contain rounded-xl border bg-white"
-            />
+            <div className="w-20 h-20 rounded-xl neu-pressed p-2 flex items-center justify-center bg-background">
+              <img 
+                src={group.logo_url} 
+                alt={group.name} 
+                className="w-full h-full object-contain"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/placeholder.svg';
+                }}
+              />
+            </div>
           ) : (
-            <div 
-              className="w-20 h-20 rounded-xl flex items-center justify-center neu-pressed"
-              style={{ backgroundColor: `${group.brand_color || 'hsl(var(--primary))'}15` }}
-            >
+            <div className="w-20 h-20 rounded-xl neu-pressed p-2 flex items-center justify-center bg-background">
               <Building2 
-                className="w-8 h-8" 
-                style={{ color: group.brand_color || 'hsl(var(--primary))' }}
+                className="w-10 h-10 text-primary" 
               />
             </div>
           )}
