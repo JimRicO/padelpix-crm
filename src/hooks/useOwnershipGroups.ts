@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import type { Json } from '@/integrations/supabase/types';
 
 export interface OwnershipGroup {
   id: string;
@@ -18,7 +19,29 @@ export interface OwnershipGroup {
   created_at: string | null;
   updated_at: string | null;
   created_by: string | null;
+  // Enrichment fields
+  description: string | null;
+  instagram_handle: string | null;
+  instagram_followers: number | null;
+  instagram_bio: string | null;
+  address: string | null;
+  color_palette: { primary?: string; secondary?: string; accent?: string; background?: string } | null;
+  fonts: { primary?: string; heading?: string } | null;
+  attitude: string | null;
+  aesthetics: string | null;
+  perplexity_description: string | null;
+  founder_info: string | null;
+  founding_year: string | null;
+  recent_activities: Json | null;
+  perplexity_citations: string[] | null;
+  enrichment_job_id: string | null;
+  enrichment_status: string | null;
+  enriched_at: string | null;
 }
+
+// Type for database operations (omit computed/readonly fields)
+type OwnershipGroupInsert = Omit<OwnershipGroup, 'id' | 'created_at' | 'updated_at'>;
+type OwnershipGroupUpdate = Partial<Omit<OwnershipGroup, 'id' | 'created_at' | 'updated_at' | 'created_by'>>;
 
 export function useOwnershipGroupsList() {
   return useQuery({
@@ -59,13 +82,28 @@ export function useCreateOwnershipGroup() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (data: Partial<OwnershipGroup> & { name: string }) => {
+    mutationFn: async (data: Partial<OwnershipGroupInsert> & { name: string }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      const insertData = {
+        name: data.name,
+        contact_name: data.contact_name,
+        contact_email: data.contact_email,
+        contact_phone: data.contact_phone,
+        notes: data.notes,
+        logo_url: data.logo_url,
+        brand_color: data.brand_color,
+        website: data.website,
+        relationship_status: data.relationship_status,
+        total_clubs: data.total_clubs,
+        country: data.country,
+        created_by: user.id,
+      };
+
       const { data: result, error } = await supabase
         .from('ownership_groups')
-        .insert({ ...data, created_by: user.id })
+        .insert(insertData)
         .select()
         .single();
       
@@ -87,10 +125,10 @@ export function useUpdateOwnershipGroup() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, ...data }: Partial<OwnershipGroup> & { id: string }) => {
+    mutationFn: async ({ id, ...data }: OwnershipGroupUpdate & { id: string }) => {
       const { data: result, error } = await supabase
         .from('ownership_groups')
-        .update(data)
+        .update(data as Record<string, unknown>)
         .eq('id', id)
         .select()
         .single();
@@ -114,7 +152,7 @@ export function useUpsertOwnershipGroup() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (data: Partial<OwnershipGroup> & { name: string }) => {
+    mutationFn: async (data: OwnershipGroupUpdate & { name: string }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
@@ -129,7 +167,7 @@ export function useUpsertOwnershipGroup() {
         // Update existing
         const { data: result, error } = await supabase
           .from('ownership_groups')
-          .update(data)
+          .update(data as Record<string, unknown>)
           .eq('id', existing.id)
           .select()
           .single();
@@ -138,9 +176,24 @@ export function useUpsertOwnershipGroup() {
         return result as OwnershipGroup;
       } else {
         // Create new
+        const insertData = {
+          name: data.name,
+          contact_name: data.contact_name,
+          contact_email: data.contact_email,
+          contact_phone: data.contact_phone,
+          notes: data.notes,
+          logo_url: data.logo_url,
+          brand_color: data.brand_color,
+          website: data.website,
+          relationship_status: data.relationship_status,
+          total_clubs: data.total_clubs,
+          country: data.country,
+          created_by: user.id,
+        };
+        
         const { data: result, error } = await supabase
           .from('ownership_groups')
-          .insert({ ...data, created_by: user.id })
+          .insert(insertData)
           .select()
           .single();
         
