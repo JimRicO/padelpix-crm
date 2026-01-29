@@ -323,6 +323,43 @@
       6px 6px 12px hsl(var(--shadow-dark) / 0.5),
       -2px -2px 6px hsl(var(--shadow-light) / 0.2);
   }
+
+  /* Neumorphic subtle shadow for list items */
+  .neu-subtle {
+    box-shadow: 
+      4px 4px 8px hsl(var(--shadow-dark) / 0.3),
+      -2px -2px 4px hsl(var(--shadow-light) / 0.1);
+  }
+
+  /* Detail panel section */
+  .detail-section {
+    @apply space-y-2;
+  }
+
+  .detail-section-header {
+    @apply text-sm font-medium flex items-center gap-2 text-foreground;
+  }
+
+  .detail-section-content {
+    @apply neu-pressed rounded-lg p-3;
+  }
+
+  /* Color swatch */
+  .color-swatch {
+    @apply flex flex-col items-center gap-1;
+  }
+
+  .color-swatch-box {
+    @apply w-8 h-8 rounded-lg border border-border;
+  }
+
+  .color-swatch-label {
+    @apply text-[10px] text-muted-foreground capitalize;
+  }
+
+  .color-swatch-value {
+    @apply text-[9px] text-muted-foreground font-mono;
+  }
 }
 
 /* Custom scrollbar - neumorphic style */
