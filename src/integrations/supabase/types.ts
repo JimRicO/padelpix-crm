@@ -320,51 +320,102 @@ export type Database = {
       }
       ownership_groups: {
         Row: {
+          address: string | null
+          aesthetics: string | null
+          attitude: string | null
           brand_color: string | null
+          color_palette: Json | null
           contact_email: string | null
           contact_name: string | null
           contact_phone: string | null
           country: string | null
           created_at: string
           created_by: string | null
+          description: string | null
+          enriched_at: string | null
+          enrichment_job_id: string | null
+          enrichment_status: string | null
+          fonts: Json | null
+          founder_info: string | null
+          founding_year: string | null
           id: string
+          instagram_bio: string | null
+          instagram_followers: number | null
+          instagram_handle: string | null
           logo_url: string | null
           name: string
           notes: string | null
+          perplexity_citations: string[] | null
+          perplexity_description: string | null
+          recent_activities: Json | null
           relationship_status: string | null
           total_clubs: number | null
           updated_at: string
           website: string | null
         }
         Insert: {
+          address?: string | null
+          aesthetics?: string | null
+          attitude?: string | null
           brand_color?: string | null
+          color_palette?: Json | null
           contact_email?: string | null
           contact_name?: string | null
           contact_phone?: string | null
           country?: string | null
           created_at?: string
           created_by?: string | null
+          description?: string | null
+          enriched_at?: string | null
+          enrichment_job_id?: string | null
+          enrichment_status?: string | null
+          fonts?: Json | null
+          founder_info?: string | null
+          founding_year?: string | null
           id?: string
+          instagram_bio?: string | null
+          instagram_followers?: number | null
+          instagram_handle?: string | null
           logo_url?: string | null
           name: string
           notes?: string | null
+          perplexity_citations?: string[] | null
+          perplexity_description?: string | null
+          recent_activities?: Json | null
           relationship_status?: string | null
           total_clubs?: number | null
           updated_at?: string
           website?: string | null
         }
         Update: {
+          address?: string | null
+          aesthetics?: string | null
+          attitude?: string | null
           brand_color?: string | null
+          color_palette?: Json | null
           contact_email?: string | null
           contact_name?: string | null
           contact_phone?: string | null
           country?: string | null
           created_at?: string
           created_by?: string | null
+          description?: string | null
+          enriched_at?: string | null
+          enrichment_job_id?: string | null
+          enrichment_status?: string | null
+          fonts?: Json | null
+          founder_info?: string | null
+          founding_year?: string | null
           id?: string
+          instagram_bio?: string | null
+          instagram_followers?: number | null
+          instagram_handle?: string | null
           logo_url?: string | null
           name?: string
           notes?: string | null
+          perplexity_citations?: string[] | null
+          perplexity_description?: string | null
+          recent_activities?: Json | null
           relationship_status?: string | null
           total_clubs?: number | null
           updated_at?: string

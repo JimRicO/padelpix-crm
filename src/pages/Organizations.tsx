@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useOwnershipGroupsList, useSyncMissingOrganizations } from '@/hooks/useOwnershipGroups';
 import { useClubs } from '@/hooks/useClubs';
+import { useEnrichmentPolling } from '@/hooks/useEnrichmentStatus';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -18,6 +19,9 @@ export default function Organizations() {
   const { user, loading, signOut } = useAuth();
   const { data: groups = [], isLoading: groupsLoading } = useOwnershipGroupsList();
   const { data: clubs = [] } = useClubs();
+  
+  // Enable polling for pending enrichments
+  useEnrichmentPolling(groups);
   
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddDialog, setShowAddDialog] = useState(false);

@@ -1,10 +1,8 @@
-import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Crown, Building2, Globe, Mail, MapPin, Sparkles, Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { Crown, Building2, Globe, Mail, MapPin, Sparkles, Loader2, Instagram, Check } from 'lucide-react';
+import { useStartEnrichment } from '@/hooks/useEnrichmentStatus';
 import type { OwnershipGroup } from '@/hooks/useOwnershipGroups';
 
 interface OrganizationCardProps {
@@ -31,40 +29,33 @@ const STATUS_LABELS: Record<string, string> = {
   inactive: 'Inactive',
 };
 
+const ENRICHMENT_STATUS_DISPLAY: Record<string, { label: string; className: string }> = {
+  pending: { label: 'Enriching...', className: 'bg-yellow-500/10 text-yellow-600' },
+  processing: { label: 'Processing...', className: 'bg-blue-500/10 text-blue-600' },
+  completed: { label: 'Enriched', className: 'bg-green-500/10 text-green-600' },
+  failed: { label: 'Failed', className: 'bg-red-500/10 text-red-600' },
+};
+
 export function OrganizationCard({ group, clubCount, onClick }: OrganizationCardProps) {
-  const [isEnriching, setIsEnriching] = useState(false);
+  const startEnrichment = useStartEnrichment();
   const status = group.relationship_status || 'active';
+  const enrichmentStatus = group.enrichment_status;
+  const isEnriching = startEnrichment.isPending || enrichmentStatus === 'pending' || enrichmentStatus === 'processing';
 
   const handleEnrich = async (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent card click
-    setIsEnriching(true);
+    e.stopPropagation();
+    startEnrichment.mutate({
+      groupId: group.id,
+      name: group.name,
+      website: group.website || undefined,
+      instagramHandle: group.instagram_handle || undefined,
+    });
+  };
 
-    try {
-      const { data, error } = await supabase.functions.invoke('enrich-organization', {
-        body: {
-          organization_name: group.name,
-          website_url: group.website || undefined,
-        },
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: 'Enrichment submitted',
-        description: data.job_id 
-          ? `Job ID: ${data.job_id}` 
-          : `${group.name} sent for enrichment`,
-      });
-    } catch (error: any) {
-      console.error('Enrichment error:', error);
-      toast({
-        title: 'Enrichment failed',
-        description: error.message || 'Could not submit enrichment request',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsEnriching(false);
-    }
+  const formatFollowers = (count: number): string => {
+    if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
+    if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
+    return count.toString();
   };
 
   return (
@@ -94,11 +85,17 @@ export function OrganizationCard({ group, clubCount, onClick }: OrganizationCard
           )}
 
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <h3 className="card-title">{group.name}</h3>
               <Badge variant="outline" className={STATUS_COLORS[status]}>
                 {STATUS_LABELS[status]}
               </Badge>
+              {enrichmentStatus && ENRICHMENT_STATUS_DISPLAY[enrichmentStatus] && (
+                <Badge variant="outline" className={ENRICHMENT_STATUS_DISPLAY[enrichmentStatus].className}>
+                  <Sparkles className="w-3 h-3 mr-1" />
+                  {ENRICHMENT_STATUS_DISPLAY[enrichmentStatus].label}
+                </Badge>
+              )}
             </div>
 
             <div className="card-meta-row">
@@ -114,10 +111,42 @@ export function OrganizationCard({ group, clubCount, onClick }: OrganizationCard
                 <MapPin className="card-icon-sm" />
                 <span>{group.country || 'South Africa'}</span>
               </div>
+              {group.founding_year && (
+                <div className="card-meta">
+                  <span className="text-muted-foreground">Est. {group.founding_year}</span>
+                </div>
+              )}
             </div>
 
+            {/* Instagram & Social */}
+            {group.instagram_handle && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                <Instagram className="card-icon-sm" />
+                <span>@{group.instagram_handle.replace('@', '')}</span>
+                {group.instagram_followers && (
+                  <span className="font-medium">{formatFollowers(group.instagram_followers)} followers</span>
+                )}
+              </div>
+            )}
+
+            {/* Attitude/Aesthetics tags */}
+            {(group.attitude || group.aesthetics) && (
+              <div className="flex flex-wrap gap-1 mt-1">
+                {group.attitude && (
+                  <Badge variant="secondary" className="text-xs py-0 px-1.5">
+                    {group.attitude}
+                  </Badge>
+                )}
+                {group.aesthetics && (
+                  <Badge variant="secondary" className="text-xs py-0 px-1.5">
+                    {group.aesthetics}
+                  </Badge>
+                )}
+              </div>
+            )}
+
             {(group.contact_name || group.contact_email || group.website) && (
-              <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+              <div className="flex flex-wrap gap-2 text-xs text-muted-foreground mt-1">
                 {group.contact_name && (
                   <span>{group.contact_name}</span>
                 )}
@@ -141,15 +170,17 @@ export function OrganizationCard({ group, clubCount, onClick }: OrganizationCard
                 variant="outline"
                 size="sm"
                 onClick={handleEnrich}
-                disabled={isEnriching}
+                disabled={isEnriching || enrichmentStatus === 'completed'}
                 className="h-7 text-xs"
               >
                 {isEnriching ? (
                   <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                ) : enrichmentStatus === 'completed' ? (
+                  <Check className="w-3 h-3 mr-1" />
                 ) : (
                   <Sparkles className="w-3 h-3 mr-1" />
                 )}
-                Enrich
+                {enrichmentStatus === 'completed' ? 'Enriched' : 'Enrich'}
               </Button>
             </div>
           </div>

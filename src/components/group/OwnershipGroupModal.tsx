@@ -9,6 +9,7 @@ import { useOwnershipGroupByName, useUpsertOwnershipGroup, OwnershipGroup } from
 import { Crown, Building2, Mail, Phone, Globe, Palette, Loader2, Upload, Link, X, Check, MapPin } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { EnrichmentSections } from './EnrichmentSections';
 
 interface OwnershipGroupModalProps {
   groupName: string | null;
@@ -371,6 +372,9 @@ export function OwnershipGroupModal({
                 rows={4}
               />
             </div>
+
+            {/* Enrichment Data Sections */}
+            {existingGroup && <EnrichmentSections group={existingGroup} />}
 
             {/* Actions */}
             <div className="flex justify-end gap-2 pt-4 border-t">
