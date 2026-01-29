@@ -2,3 +2,9 @@ project_id = "vysrhwytayytcqnwdhwv"
 
 [functions.extract-location]
 verify_jwt = false
+
+[functions.api-get-clubs]
+verify_jwt = false
+
+[functions.api-update-clubs]
+verify_jwt = false
