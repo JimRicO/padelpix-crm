@@ -271,9 +271,51 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
   const { data: existingClubs } = useClubs();
   const bulkCreate = useBulkCreateClubs();
 
-  const cleanInstagramHandle = (handle: string | undefined): string | undefined => {
-    if (!handle) return undefined;
-    return handle.replace(/^@/, '').trim().toLowerCase();
+  const cleanInstagramHandle = (input: string | undefined): string | undefined => {
+    if (!input) return undefined;
+
+    const raw = input.trim();
+    if (!raw) return undefined;
+
+    // Some CSV cells contain multiple IG URLs separated by commas.
+    // We want the first resolvable username.
+    const candidates = raw
+      .split(/[\s,]+/)
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    const extractFrom = (val: string): string | undefined => {
+      const v = val.trim();
+      if (!v) return undefined;
+
+      // @handle
+      if (v.startsWith('@')) {
+        const h = v.replace(/^@+/, '').trim().toLowerCase();
+        return h || undefined;
+      }
+
+      // URL -> username
+      const m = v.match(/instagram\.com\/(?:@)?([^/?#]+)(?:[/?#]|$)/i);
+      if (m?.[1]) {
+        const seg = m[1].toLowerCase();
+        // ignore common non-username path segments
+        if (['p', 'reel', 'tv', 'stories', 'explore'].includes(seg)) return undefined;
+        return seg;
+      }
+
+      // Plain handle (no @)
+      if (/^[a-z0-9._]{2,30}$/i.test(v)) return v.toLowerCase();
+
+      return undefined;
+    };
+
+    for (const c of candidates) {
+      const h = extractFrom(c);
+      if (h) return h;
+    }
+
+    // As a last resort, try the whole string (in case it contains spaces/commas but also a URL)
+    return extractFrom(raw);
   };
 
   const inferTier = (courts: number | undefined): 'large' | 'multi_court' | 'boutique' | undefined => {
@@ -524,18 +566,71 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
   };
 
   const extractLocationsWithAI = async (clubs: ParsedClub[]): Promise<ParsedClub[]> => {
-    // Get addresses that need location extraction
-    const addressesToExtract = clubs
-      .map((club, index) => ({ index, address: club.address }))
-      .filter(item => item.address && (!clubs[item.index].city || !clubs[item.index].country));
-    
-    if (addressesToExtract.length === 0) return clubs;
+    // 1) Fast local extraction for non-SA addresses like "Street, City, State, United States".
+    const localExtract = (address: string): { city?: string; country?: string } => {
+      const parts = address
+        .split(',')
+        .map(p => p.trim())
+        .filter(Boolean);
+      if (parts.length < 2) return {};
+
+      const last = parts[parts.length - 1];
+      let city: string | undefined;
+
+      if (parts.length >= 4) {
+        city = parts[parts.length - 3];
+      } else if (parts.length === 3) {
+        const first = parts[0];
+        const looksStreet =
+          /\d/.test(first) || /(street|st\b|road|rd\b|ave\b|avenue|blvd|boulevard|drive|dr\b|lane|ln\b|way|suite|ste\b)/i.test(first);
+        city = looksStreet ? parts[1] : parts[0];
+      } else {
+        city = parts[parts.length - 2];
+      }
+
+      return { city, country: last };
+    };
+
+    const withLocal = clubs.map(club => {
+      const country = (club.country || '').trim();
+      const isSouthAfrica = /south\s*africa/i.test(country);
+      if (club.address && !club.city && country && !isSouthAfrica) {
+        const guess = localExtract(club.address);
+        return {
+          ...club,
+          city: club.city || guess.city,
+          // don't overwrite explicit country from CSV
+          country: club.country || guess.country,
+        };
+      }
+      return club;
+    });
+
+    // 2) Only call AI for rows still missing city/country (or explicitly SA where our hierarchy matters)
+    const addressesToExtract = withLocal
+      .map((club, index) => ({ index, address: club.address, country: club.country }))
+      .filter(item => {
+        if (!item.address) return false;
+        const country = (item.country || '').trim();
+        const isSouthAfrica = /south\s*africa/i.test(country) || country === '';
+        const needs = !withLocal[item.index].city || !withLocal[item.index].country;
+        return needs && isSouthAfrica;
+      });
+
+    if (addressesToExtract.length === 0) return withLocal;
     
     try {
       setIsExtractingLocations(true);
-      const { data, error } = await supabase.functions.invoke('extract-location', {
+      const invokePromise = supabase.functions.invoke('extract-location', {
         body: { addresses: addressesToExtract.map(a => a.address) }
       });
+
+      const { data, error } = await Promise.race([
+        invokePromise,
+        new Promise<{ data: any; error: any }>((_, reject) =>
+          setTimeout(() => reject(new Error('Location extraction timed out')), 25000)
+        ),
+      ]);
       
       if (error) {
         console.error('Location extraction error:', error);
@@ -544,7 +639,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
       }
       
       const locations = data?.locations || [];
-      const updatedClubs = [...clubs];
+      const updatedClubs = [...withLocal];
       
       addressesToExtract.forEach((item, i) => {
         if (locations[i]) {
@@ -563,8 +658,8 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
       return updatedClubs;
     } catch (err) {
       console.error('AI extraction failed:', err);
-      toast.error('Location extraction failed');
-      return clubs;
+      toast.error('Location extraction failed — continuing without it');
+      return withLocal;
     } finally {
       setIsExtractingLocations(false);
     }
