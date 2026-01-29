@@ -223,6 +223,7 @@ interface BulkClubData {
   whatsapp?: string;
   email?: string;
   number_of_courts?: number;
+  number_of_clubs?: number;
   address?: string;
   contact_name?: string;
   coaches?: string[];
@@ -269,6 +270,7 @@ export function useBulkCreateClubs() {
           whatsapp: club.whatsapp,
           email: club.email,
           number_of_courts: club.number_of_courts,
+          number_of_clubs: club.number_of_clubs,
           address: club.address,
           contact_name: club.contact_name,
           coaches: club.coaches,

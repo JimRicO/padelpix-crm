@@ -31,6 +31,7 @@ interface ParsedClub {
   whatsapp?: string;
   email?: string;
   number_of_courts?: number;
+  number_of_clubs?: number;
   address?: string;
   contact_name?: string;
   coaches?: string[];
@@ -120,6 +121,8 @@ const FIELD_MAP: Record<string, { field: string; display: string }> = {
   'contacts': { field: 'key_individuals', display: 'Key Individuals' },
   'linkedin': { field: 'linkedin', display: 'LinkedIn' },
   'suburb': { field: 'suburb', display: 'Suburb' },
+  'number_of_clubs': { field: 'number_of_clubs', display: 'Clubs' },
+  'num_clubs': { field: 'number_of_clubs', display: 'Clubs' },
 };
 
 // Display names for all fields
@@ -133,6 +136,7 @@ const FIELD_DISPLAY: Record<string, string> = {
   'phone': 'Phone',
   'email': 'Email',
   'number_of_courts': 'Courts',
+  'number_of_clubs': 'Clubs',
   'address': 'Address',
   'contact_name': 'Contact Name',
   'business_description': 'Description',
@@ -158,13 +162,14 @@ const KEYWORD_RULES: Array<{ keywords: string[]; allRequired?: boolean; field: s
   { keywords: ['email', 'address'], allRequired: true, field: 'email' },
   { keywords: ['phone', 'number'], allRequired: true, field: 'phone' },
   { keywords: ['number', 'court'], allRequired: true, field: 'number_of_courts' },
+  { keywords: ['number', 'club'], allRequired: true, field: 'number_of_clubs' },
   { keywords: ['business', 'description'], allRequired: true, field: 'business_description' },
   { keywords: ['google', 'map'], allRequired: true, field: 'google_maps_url' },
   
   // Single keyword matches (any keyword matches)
   { keywords: ['phone', 'mobile', 'tel', 'telephone', 'cell'], field: 'phone' },
   { keywords: ['email', 'mail'], field: 'email' },
-  { keywords: ['address', 'location', 'street'], field: 'address' },
+  { keywords: ['address', 'street'], field: 'address' },
   { keywords: ['court'], field: 'number_of_courts' },
   { keywords: ['instagram', 'insta', 'ig'], field: 'instagram_handle' },
   { keywords: ['facebook', 'fb'], field: 'facebook' },
@@ -241,7 +246,7 @@ const parseCsvRows = (text: string): string[][] => {
 // All possible fields that can be imported (for counting filled fields)
 const ALL_IMPORT_FIELDS = [
   'club_name', 'instagram_handle', 'city', 'country', 'website', 'whatsapp', 'phone', 'email',
-  'number_of_courts', 'address', 'contact_name', 'business_description', 'google_maps_url',
+  'number_of_courts', 'number_of_clubs', 'address', 'contact_name', 'business_description', 'google_maps_url',
   'facebook', 'twitter', 'insta_url', 'insta_bio', 'insta_followers', 'avg_likes', 'avg_comments',
   'avg_video_views', 'top_hashtags', 'key_individuals', 'suburb', 'linkedin'
 ];
@@ -411,6 +416,9 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
           switch (mappedField) {
             case 'number_of_courts':
               club.number_of_courts = parseInt(value, 10) || undefined;
+              break;
+            case 'number_of_clubs':
+              club.number_of_clubs = parseInt(value, 10) || undefined;
               break;
             case 'insta_followers':
               club.insta_followers = parseInt(value, 10) || undefined;
