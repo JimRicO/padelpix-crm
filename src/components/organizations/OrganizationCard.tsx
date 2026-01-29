@@ -1,6 +1,10 @@
+import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Crown, Building2, Globe, Mail, MapPin } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Crown, Building2, Globe, Mail, MapPin, Sparkles, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 import type { OwnershipGroup } from '@/hooks/useOwnershipGroups';
 
 interface OrganizationCardProps {
@@ -28,7 +32,40 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export function OrganizationCard({ group, clubCount, onClick }: OrganizationCardProps) {
+  const [isEnriching, setIsEnriching] = useState(false);
   const status = group.relationship_status || 'active';
+
+  const handleEnrich = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
+    setIsEnriching(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('enrich-organization', {
+        body: {
+          organization_name: group.name,
+          website_url: group.website || undefined,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Enrichment submitted',
+        description: data.job_id 
+          ? `Job ID: ${data.job_id}` 
+          : `${group.name} sent for enrichment`,
+      });
+    } catch (error: any) {
+      console.error('Enrichment error:', error);
+      toast({
+        title: 'Enrichment failed',
+        description: error.message || 'Could not submit enrichment request',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsEnriching(false);
+    }
+  };
 
   return (
     <Card 
@@ -98,6 +135,23 @@ export function OrganizationCard({ group, clubCount, onClick }: OrganizationCard
                 )}
               </div>
             )}
+
+            <div className="mt-2 flex justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleEnrich}
+                disabled={isEnriching}
+                className="h-7 text-xs"
+              >
+                {isEnriching ? (
+                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                ) : (
+                  <Sparkles className="w-3 h-3 mr-1" />
+                )}
+                Enrich
+              </Button>
+            </div>
           </div>
         </div>
       </CardContent>
