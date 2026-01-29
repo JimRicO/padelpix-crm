@@ -2,9 +2,7 @@ import {
   Building2, 
   Globe, 
   Instagram, 
-  MapPin, 
   Phone, 
-  Mail, 
   Palette, 
   Type, 
   MessageSquare, 
@@ -29,7 +27,7 @@ interface OrganizationDetailViewProps {
 
 export function OrganizationDetailView({ group, clubCount }: OrganizationDetailViewProps) {
   const colorPalette = group.color_palette as Record<string, string> | null;
-  const fonts = group.fonts as { primary?: string; heading?: string } | null;
+  const fonts = group.fonts as { primary?: string; heading?: string; list?: string[] } | null;
   const recentActivities = group.recent_activities as Array<{ title?: string; date?: string; description?: string }> | null;
 
   const formatFollowers = (count: number): string => {
@@ -84,34 +82,119 @@ export function OrganizationDetailView({ group, clubCount }: OrganizationDetailV
                 className="text-sm text-primary hover:underline flex items-center gap-1 mt-1"
               >
                 <Globe className="w-4 h-4" />
-                {new URL(group.website).hostname}
+                {group.website}
                 <ExternalLink className="w-3 h-3" />
               </a>
             )}
           </div>
         </div>
 
-        {/* Contact Info Grid */}
-        {(group.address || group.contact_phone || group.contact_email) && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {group.address && (
-              <div className="flex items-start gap-2 p-3 rounded-lg neu-subtle">
-                <MapPin className="w-4 h-4 text-primary mt-0.5" />
-                <span className="text-sm text-foreground">{group.address}</span>
-              </div>
-            )}
-            {group.contact_phone && (
-              <div className="flex items-center gap-2 p-3 rounded-lg neu-subtle">
-                <Phone className="w-4 h-4 text-primary" />
-                <span className="text-sm text-foreground">{group.contact_phone}</span>
-              </div>
-            )}
-            {group.contact_email && (
-              <div className="flex items-center gap-2 p-3 rounded-lg neu-subtle">
-                <Mail className="w-4 h-4 text-primary" />
-                <span className="text-sm text-foreground">{group.contact_email}</span>
-              </div>
-            )}
+        {/* Phone Number - Standalone Card */}
+        {group.contact_phone && (
+          <div className="flex items-center gap-3 p-4 rounded-xl neu-pressed">
+            <Phone className="w-5 h-5 text-primary" />
+            <span className="text-base font-medium text-foreground">{group.contact_phone}</span>
+          </div>
+        )}
+
+        {/* Color Palette */}
+        {colorPalette && Object.keys(colorPalette).length > 0 && (
+          <div className="detail-section">
+            <h3 className="detail-section-header">
+              <Palette className="w-4 h-4 text-primary" />
+              Color Palette
+            </h3>
+            <div className="flex gap-4 flex-wrap">
+              {Object.entries(colorPalette).map(([name, color]) => 
+                color && (
+                  <div key={name} className="color-swatch">
+                    <div 
+                      className="color-swatch-box"
+                      style={{ backgroundColor: color }}
+                      title={`${name}: ${color}`}
+                    />
+                    <span className="color-swatch-label">{name}</span>
+                    <span className="color-swatch-value">{color}</span>
+                  </div>
+                )
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Typography */}
+        {fonts && (fonts.primary || fonts.heading) && (
+          <div className="detail-section">
+            <h3 className="detail-section-header">
+              <Type className="w-4 h-4 text-primary" />
+              Typography
+            </h3>
+            <div className="flex gap-3 flex-wrap">
+              {fonts.primary && (
+                <Badge variant="outline" className="text-xs">
+                  Primary: {fonts.primary}
+                </Badge>
+              )}
+              {fonts.heading && (
+                <Badge variant="outline" className="text-xs">
+                  Heading: {fonts.heading}
+                </Badge>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Description */}
+        {group.description && (
+          <div className="detail-section">
+            <h3 className="detail-section-header">
+              <MessageSquare className="w-4 h-4 text-primary" />
+              Description
+            </h3>
+            <div className="detail-section-content">
+              <p className="text-sm text-foreground leading-relaxed">
+                {group.description}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Founder Info */}
+        {group.founder_info && (
+          <div className="detail-section">
+            <h3 className="detail-section-header">
+              <User className="w-4 h-4 text-primary" />
+              Founder
+            </h3>
+            <div className="detail-section-content">
+              <p className="text-sm text-foreground leading-relaxed">{group.founder_info}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Attitude - Separate Section */}
+        {group.attitude && (
+          <div className="detail-section">
+            <h3 className="detail-section-header">
+              <Sparkles className="w-4 h-4 text-primary" />
+              Attitude
+            </h3>
+            <div className="detail-section-content">
+              <p className="text-sm text-foreground leading-relaxed">{group.attitude}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Aesthetics - Separate Section */}
+        {group.aesthetics && (
+          <div className="detail-section">
+            <h3 className="detail-section-header">
+              <Eye className="w-4 h-4 text-primary" />
+              Aesthetics
+            </h3>
+            <div className="detail-section-content">
+              <p className="text-sm text-foreground leading-relaxed">{group.aesthetics}</p>
+            </div>
           </div>
         )}
 
@@ -153,103 +236,6 @@ export function OrganizationDetailView({ group, clubCount }: OrganizationDetailV
                 <p className="text-sm text-muted-foreground mt-3 italic">
                   "{group.instagram_bio}"
                 </p>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Description */}
-        {group.description && (
-          <div className="detail-section">
-            <h3 className="detail-section-header">
-              <MessageSquare className="w-4 h-4 text-primary" />
-              Description
-            </h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {group.description}
-            </p>
-          </div>
-        )}
-
-        {/* Founder Info */}
-        {group.founder_info && (
-          <div className="detail-section">
-            <h3 className="detail-section-header">
-              <User className="w-4 h-4 text-primary" />
-              Founder
-            </h3>
-            <div className="detail-section-content">
-              <p className="text-sm text-foreground">{group.founder_info}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Color Palette */}
-        {colorPalette && Object.keys(colorPalette).length > 0 && (
-          <div className="detail-section">
-            <h3 className="detail-section-header">
-              <Palette className="w-4 h-4 text-primary" />
-              Color Palette
-            </h3>
-            <div className="flex gap-4 flex-wrap">
-              {Object.entries(colorPalette).map(([name, color]) => 
-                color && (
-                  <div key={name} className="color-swatch">
-                    <div 
-                      className="color-swatch-box"
-                      style={{ backgroundColor: color }}
-                      title={`${name}: ${color}`}
-                    />
-                    <span className="color-swatch-label">{name}</span>
-                    <span className="color-swatch-value">{color}</span>
-                  </div>
-                )
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Typography */}
-        {fonts && Object.keys(fonts).length > 0 && (
-          <div className="detail-section">
-            <h3 className="detail-section-header">
-              <Type className="w-4 h-4 text-primary" />
-              Typography
-            </h3>
-            <div className="flex gap-3 flex-wrap">
-              {fonts.heading && (
-                <Badge variant="outline" className="text-xs">
-                  Heading: {fonts.heading}
-                </Badge>
-              )}
-              {fonts.primary && (
-                <Badge variant="outline" className="text-xs">
-                  Body: {fonts.primary}
-                </Badge>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Attitude & Aesthetics */}
-        {(group.attitude || group.aesthetics) && (
-          <div className="detail-section">
-            <h3 className="detail-section-header">
-              <Sparkles className="w-4 h-4 text-primary" />
-              Brand Identity
-            </h3>
-            <div className="flex gap-2 flex-wrap">
-              {group.attitude && (
-                <Badge className="gap-1">
-                  <Sparkles className="w-3 h-3" />
-                  {group.attitude}
-                </Badge>
-              )}
-              {group.aesthetics && (
-                <Badge variant="secondary" className="gap-1">
-                  <Eye className="w-3 h-3" />
-                  {group.aesthetics}
-                </Badge>
               )}
             </div>
           </div>
