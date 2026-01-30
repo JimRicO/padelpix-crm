@@ -2,13 +2,16 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, Building2, Users, Star, Crown, Shield } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from '@/components/ui/command';
+import { Plus, Trash2, Building2, Star, Crown, Shield, Check, ChevronsUpDown } from 'lucide-react';
 import { usePersonLinks, useCreatePersonLink, useDeletePersonLink } from '@/hooks/usePersonLinks';
 import { useClubs } from '@/hooks/useClubs';
 import { useOwnershipGroupsList, useCreateOwnershipGroup } from '@/hooks/useOwnershipGroups';
+import { cn } from '@/lib/utils';
 
 import type { Person } from '@/types/people';
 
@@ -32,6 +35,8 @@ export function PersonLinksTab({ person }: PersonLinksTabProps) {
   const [isPrimary, setIsPrimary] = useState(false);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
+  const [clubOpen, setClubOpen] = useState(false);
+  const [organizationOpen, setOrganizationOpen] = useState(false);
 
   const handleAddLink = async () => {
     if (linkType === 'club' && !selectedClubId) return;
@@ -66,6 +71,8 @@ export function PersonLinksTab({ person }: PersonLinksTabProps) {
     setIsPrimary(false);
     setIsCreatingNew(false);
     setNewGroupName('');
+    setClubOpen(false);
+    setOrganizationOpen(false);
   };
 
   const handleGroupSelectionChange = (value: string) => {
@@ -188,18 +195,50 @@ export function PersonLinksTab({ person }: PersonLinksTabProps) {
             {linkType === 'club' ? (
               <div className="space-y-2">
                 <Label>Select Club</Label>
-                <Select value={selectedClubId} onValueChange={setSelectedClubId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a club" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clubs.map((club) => (
-                      <SelectItem key={club.id} value={club.id}>
-                        {club.club_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={clubOpen} onOpenChange={setClubOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={clubOpen}
+                      className="w-full justify-between font-normal"
+                    >
+                      {selectedClubId
+                        ? clubs.find((club) => club.id === selectedClubId)?.club_name
+                        : "Search clubs..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Type to search..." />
+                      <CommandList>
+                        <CommandEmpty>No club found.</CommandEmpty>
+                        <CommandGroup>
+                          {clubs.map((club) => (
+                            <CommandItem
+                              key={club.id}
+                              value={club.club_name}
+                              onSelect={() => {
+                                setSelectedClubId(club.id);
+                                setClubOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  selectedClubId === club.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <Building2 className="mr-2 h-4 w-4 text-muted-foreground" />
+                              {club.club_name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
             ) : isCreatingNew ? (
               <div className="space-y-2">
@@ -224,32 +263,79 @@ export function PersonLinksTab({ person }: PersonLinksTabProps) {
             ) : (
               <div className="space-y-2">
                 <Label>Select Organization</Label>
-                <Select value={selectedGroupName} onValueChange={handleGroupSelectionChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose an organization" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ownershipGroups.map((group) => (
-                      <SelectItem key={group.id} value={group.name}>
+                <Popover open={organizationOpen} onOpenChange={setOrganizationOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={organizationOpen}
+                      className="w-full justify-between font-normal"
+                    >
+                      {selectedGroupName ? (
                         <span className="flex items-center gap-2">
-                          {group.organization_type === 'association' ? (
-                            <Shield className="w-3 h-3 text-muted-foreground" />
-                          ) : (
-                            <Crown className="w-3 h-3 text-muted-foreground" />
-                          )}
-                          {group.name}
+                          {(() => {
+                            const group = ownershipGroups.find(g => g.name === selectedGroupName);
+                            return group?.organization_type === 'association' ? (
+                              <Shield className="w-4 h-4 text-muted-foreground" />
+                            ) : (
+                              <Crown className="w-4 h-4 text-muted-foreground" />
+                            );
+                          })()}
+                          {selectedGroupName}
                         </span>
-                      </SelectItem>
-                    ))}
-                    <SelectSeparator />
-                    <SelectItem value="__create_new__">
-                      <span className="flex items-center gap-2 text-primary">
-                        <Plus className="w-4 h-4" />
-                        Create New Organization
-                      </span>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                      ) : (
+                        "Search organizations..."
+                      )}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Type to search..." />
+                      <CommandList>
+                        <CommandEmpty>No organization found.</CommandEmpty>
+                        <CommandGroup>
+                          {ownershipGroups.map((group) => (
+                            <CommandItem
+                              key={group.id}
+                              value={group.name}
+                              onSelect={() => {
+                                setSelectedGroupName(group.name);
+                                setOrganizationOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  selectedGroupName === group.name ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {group.organization_type === 'association' ? (
+                                <Shield className="mr-2 h-4 w-4 text-muted-foreground" />
+                              ) : (
+                                <Crown className="mr-2 h-4 w-4 text-muted-foreground" />
+                              )}
+                              {group.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                        <CommandSeparator />
+                        <CommandGroup>
+                          <CommandItem
+                            onSelect={() => {
+                              setIsCreatingNew(true);
+                              setSelectedGroupName('');
+                              setOrganizationOpen(false);
+                            }}
+                          >
+                            <Plus className="mr-2 h-4 w-4 text-primary" />
+                            <span className="text-primary">Create New Organization</span>
+                          </CommandItem>
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
             )}
 
