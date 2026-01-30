@@ -1,89 +1,67 @@
 
+## Permettre de lier des Associations aux Personnes
 
-## Compléter le Formulaire "Add Organization"
+### Problème Identifié
 
-Le formulaire actuel n'a que 2 champs (Nom et Type). Je vais l'aligner sur le formulaire "Add Club" qui a une structure complète.
+Le formulaire actuel affiche "Ownership Group" comme option, mais ce terme n'est plus utilisé. Les organisations sont maintenant catégorisées en:
+- **Commercial** : Chaînes de clubs / groupes propriétaires
+- **Association** : Fédérations et organismes non-commerciaux
 
----
-
-### Structure du Nouveau Formulaire
-
-```text
-┌────────────────────────────────────────────────────┐
-│              Add Organization                       │
-├────────────────────────────────────────────────────┤
-│                                                    │
-│  Organization Name *                               │
-│  ┌──────────────────────────────────────────────┐  │
-│  │                                              │  │
-│  └──────────────────────────────────────────────┘  │
-│                                                    │
-│  Type                                              │
-│  ┌─────────────────────────────────────────────┐   │
-│  │ [Commercial]        [Association]           │   │
-│  └─────────────────────────────────────────────┘   │
-│                                                    │
-│  [Instagram Handle    ] [Website               ]   │
-│  [@handle             ] [https://              ]   │
-│                                                    │
-│  [Country             ] [Relationship Status   ]   │
-│  [South Africa        ] [Select status...      ]   │
-│                                                    │
-│  [Contact Name        ] [Contact Email         ]   │
-│  [                    ] [                      ]   │
-│                                                    │
-│  [Contact Phone       ]                            │
-│  [+27...              ]                            │
-│                                                    │
-│  Notes                                             │
-│  ┌──────────────────────────────────────────────┐  │
-│  │                                              │  │
-│  └──────────────────────────────────────────────┘  │
-│                                                    │
-│                      [Cancel]  [Create Organization]│
-└────────────────────────────────────────────────────┘
-```
+La confusion vient du fait que l'option "Ownership Group" ne montre pas clairement que les associations sont incluses.
 
 ---
 
-### Champs à Ajouter
+### Solution Proposée
 
-| Champ | Type | Exemple |
-|-------|------|---------|
-| `instagram_handle` | Text | @africapadel |
-| `website` | URL | https://africapadel.com |
-| `country` | Text | South Africa |
-| `relationship_status` | Select | Active / Prospect / Inactive |
-| `contact_name` | Text | John Smith |
-| `contact_email` | Email | john@company.com |
-| `contact_phone` | Tel | +27 82 123 4567 |
-| `notes` | Textarea | Notes diverses |
+**Fichier à modifier** : `src/components/people/PersonLinksTab.tsx`
 
----
+1. **Renommer le type dans le sélecteur** :
+   - "Ownership Group" → "Organization"
 
-### Fichier à Modifier
+2. **Améliorer la liste déroulante** :
+   - Afficher le type (Commercial/Association) à côté de chaque organisation
+   - Ajouter une icône distinctive (Crown pour Commercial, Shield pour Association)
 
-**`src/components/organizations/AddOrganizationDialog.tsx`**
-
-Transformer le formulaire minimal en formulaire complet :
-
-1. Ajouter `formData` state object (comme dans AddClubDialog)
-2. Ajouter les champs de formulaire en grille 2 colonnes
-3. Garder le sélecteur de type neumorphique existant
-4. Ajouter un Select pour `relationship_status`
-5. Ajouter un Textarea pour `notes`
-6. Passer toutes les valeurs au hook `createGroup.mutate()`
+3. **Mettre à jour l'affichage des liens existants** :
+   - Différencier visuellement les organisations commerciales des associations
 
 ---
 
-### Constantes pour Relationship Status
+### Détails Techniques
+
+**Changements dans PersonLinksTab.tsx** :
 
 ```typescript
-const RELATIONSHIP_STATUSES = [
-  { value: 'prospect', label: 'Prospect' },
-  { value: 'active', label: 'Active' },
-  { value: 'inactive', label: 'Inactive' },
-  { value: 'churned', label: 'Churned' },
-] as const;
+// Avant
+<SelectItem value="ownership_group">Ownership Group</SelectItem>
+
+// Après  
+<SelectItem value="ownership_group">Organization</SelectItem>
 ```
 
+**Améliorer le dropdown des organisations** :
+
+```typescript
+{ownershipGroups.map((group) => (
+  <SelectItem key={group.id} value={group.name}>
+    <span className="flex items-center gap-2">
+      {group.organization_type === 'association' ? (
+        <Shield className="w-3 h-3" />
+      ) : (
+        <Crown className="w-3 h-3" />
+      )}
+      {group.name}
+    </span>
+  </SelectItem>
+))}
+```
+
+**Affichage des liens** : Ajouter l'icône appropriée (Crown/Shield) selon le type d'organisation liée.
+
+---
+
+### Impact
+
+- Les utilisateurs verront clairement "Organization" au lieu de "Ownership Group"
+- Chaque organisation dans la liste affichera son type avec une icône
+- Aucun changement de base de données requis - les données existent déjà correctement
