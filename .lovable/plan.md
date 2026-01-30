@@ -1,153 +1,89 @@
 
 
-## Ajouter le Type d'Organisation (Commercial vs Association)
+## Compléter le Formulaire "Add Organization"
 
-### Aperçu
-Ajouter un champ `organization_type` pour catégoriser les organisations comme entités commerciales (chaînes de clubs) ou associations non-commerciales (fédérations, organismes sportifs).
-
-### Types d'Organisation
-
-| Type | Description | Exemples |
-|------|-------------|----------|
-| `commercial` | Chaînes de clubs, groupes propriétaires | Virgin Active, Africa Padel, Balwin |
-| `association` | Fédérations, organismes, non-profit | Padel Federation SA, World Padel Tour, Tennis SA |
+Le formulaire actuel n'a que 2 champs (Nom et Type). Je vais l'aligner sur le formulaire "Add Club" qui a une structure complète.
 
 ---
 
-### 1. Modification de la Base de Données
+### Structure du Nouveau Formulaire
 
-Ajouter une nouvelle colonne à la table `ownership_groups` :
-
-```sql
-ALTER TABLE ownership_groups 
-ADD COLUMN organization_type TEXT DEFAULT 'commercial';
-
-ALTER TABLE ownership_groups 
-ADD CONSTRAINT organization_type_check 
-CHECK (organization_type IN ('commercial', 'association'));
-```
-
----
-
-### 2. Dialogue de Création Amélioré
-
-Le dialogue `AddOrganizationDialog` sera transformé avec :
-
-**Sélecteur de Type Neumorphique :**
 ```text
 ┌────────────────────────────────────────────────────┐
 │              Add Organization                       │
 ├────────────────────────────────────────────────────┤
 │                                                    │
-│  Organization Name                                 │
+│  Organization Name *                               │
 │  ┌──────────────────────────────────────────────┐  │
-│  │ Virgin Active                                │  │
+│  │                                              │  │
 │  └──────────────────────────────────────────────┘  │
 │                                                    │
 │  Type                                              │
 │  ┌─────────────────────────────────────────────┐   │
-│  │ ┌─────────────────┐ ┌─────────────────────┐ │   │
-│  │ │ 👑 Commercial   │ │ 🛡 Association      │ │   │
-│  │ │   [SELECTED]    │ │                     │ │   │
-│  │ │ Club chains &   │ │ Federations &       │ │   │
-│  │ │ ownership groups│ │ governing bodies    │ │   │
-│  │ └─────────────────┘ └─────────────────────┘ │   │
+│  │ [Commercial]        [Association]           │   │
 │  └─────────────────────────────────────────────┘   │
-│                        (neu-pressed container)      │
+│                                                    │
+│  [Instagram Handle    ] [Website               ]   │
+│  [@handle             ] [https://              ]   │
+│                                                    │
+│  [Country             ] [Relationship Status   ]   │
+│  [South Africa        ] [Select status...      ]   │
+│                                                    │
+│  [Contact Name        ] [Contact Email         ]   │
+│  [                    ] [                      ]   │
+│                                                    │
+│  [Contact Phone       ]                            │
+│  [+27...              ]                            │
+│                                                    │
+│  Notes                                             │
+│  ┌──────────────────────────────────────────────┐  │
+│  │                                              │  │
+│  └──────────────────────────────────────────────┘  │
 │                                                    │
 │                      [Cancel]  [Create Organization]│
 └────────────────────────────────────────────────────┘
 ```
 
-**Design du Sélecteur :**
-- Conteneur parent avec style `neu-pressed` (effet enfoncé)
-- Deux cartes côte à côte
-- Carte sélectionnée : style `neu-subtle` (effet relevé) + bordure primary
-- Carte non-sélectionnée : apparence plate
-- Icône Crown (👑) pour Commercial, Shield (🛡) pour Association
-- Description courte sous chaque option
+---
+
+### Champs à Ajouter
+
+| Champ | Type | Exemple |
+|-------|------|---------|
+| `instagram_handle` | Text | @africapadel |
+| `website` | URL | https://africapadel.com |
+| `country` | Text | South Africa |
+| `relationship_status` | Select | Active / Prospect / Inactive |
+| `contact_name` | Text | John Smith |
+| `contact_email` | Email | john@company.com |
+| `contact_phone` | Tel | +27 82 123 4567 |
+| `notes` | Textarea | Notes diverses |
 
 ---
 
-### 3. Fichiers à Modifier
+### Fichier à Modifier
 
-| Fichier | Modifications |
-|---------|---------------|
-| **Migration SQL** | Ajouter colonne `organization_type` |
-| `src/hooks/useOwnershipGroups.ts` | Ajouter `organization_type` à l'interface et aux mutations |
-| `src/components/organizations/AddOrganizationDialog.tsx` | Ajouter sélecteur de type neumorphique |
-| `src/components/organizations/OrganizationCard.tsx` | Afficher badge de type avec icône différente |
-| `src/components/group/OwnershipGroupModal.tsx` | Permettre modification du type dans l'onglet Contacts |
-| `src/pages/Organizations.tsx` | Ajouter filtre par type (Tous / Commercial / Association) |
+**`src/components/organizations/AddOrganizationDialog.tsx`**
+
+Transformer le formulaire minimal en formulaire complet :
+
+1. Ajouter `formData` state object (comme dans AddClubDialog)
+2. Ajouter les champs de formulaire en grille 2 colonnes
+3. Garder le sélecteur de type neumorphique existant
+4. Ajouter un Select pour `relationship_status`
+5. Ajouter un Textarea pour `notes`
+6. Passer toutes les valeurs au hook `createGroup.mutate()`
 
 ---
 
-### 4. Détails Techniques
+### Constantes pour Relationship Status
 
-**Interface TypeScript mise à jour :**
 ```typescript
-interface OwnershipGroup {
-  // ... champs existants
-  organization_type: 'commercial' | 'association' | null;
-}
-```
-
-**Constantes pour les types :**
-```typescript
-const ORGANIZATION_TYPES = [
-  { 
-    value: 'commercial', 
-    label: 'Commercial', 
-    icon: Crown, 
-    description: 'Chaînes de clubs & groupes propriétaires' 
-  },
-  { 
-    value: 'association', 
-    label: 'Association', 
-    icon: Shield, 
-    description: 'Fédérations & organismes sportifs' 
-  },
+const RELATIONSHIP_STATUSES = [
+  { value: 'prospect', label: 'Prospect' },
+  { value: 'active', label: 'Active' },
+  { value: 'inactive', label: 'Inactive' },
+  { value: 'churned', label: 'Churned' },
 ] as const;
 ```
-
----
-
-### 5. Différenciation Visuelle des Cartes
-
-```text
-CARTE COMMERCIAL                   CARTE ASSOCIATION
-┌─────────────────────┐            ┌─────────────────────┐
-│ 👑 Africa Padel     │            │ 🛡 Padel Fed SA     │
-│ [Actif] [Commercial]│            │ [Actif] [Association]
-│ 5 clubs • SA • 2021 │            │ 120 membres • SA    │
-└─────────────────────┘            └─────────────────────┘
-```
-
-- **Commercial** : Icône Crown, badge orange/primary
-- **Association** : Icône Shield, badge bleu/slate
-
----
-
-### 6. Filtre sur la Page Organizations
-
-Ajouter un sélecteur de filtre à côté du tri existant :
-
-```text
-[🔽 Type: Tous ▾] [🔽 Trier par: Nom ▾]
-       │
-       ├── Tous
-       ├── Commercial
-       └── Associations
-```
-
----
-
-### Résultat Attendu
-
-Après implémentation :
-- L'utilisateur choisit le type lors de la création d'une organisation
-- Différenciation visuelle claire entre commercial et association
-- Filtrage par type sur la page Organizations
-- Les organisations existantes sont par défaut "commercial"
-- Le type peut être modifié dans le modal (onglet Contacts)
 
