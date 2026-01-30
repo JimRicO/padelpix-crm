@@ -1,64 +1,104 @@
 
+## Rendre les Liens Cliquables dans les Cartes Personnes
 
-## Ajouter la Recherche Autocomplete pour les Organisations
-
-Actuellement, le sélecteur d'organisations utilise un simple `Select` qui affiche toute la liste. Je vais le remplacer par un composant de recherche autocomplete (combobox) qui permet de taper pour filtrer.
+Actuellement, les liens vers les organisations et clubs sont affichés mais non interactifs. Cette modification permettra aux utilisateurs de cliquer sur un lien pour ouvrir directement la fiche détaillée correspondante.
 
 ---
 
-### Pattern Existant
+### Solution
 
-Le projet utilise déjà ce pattern dans `ClubInfoTab.tsx` pour sélectionner un groupe de propriété. Je vais réutiliser cette approche :
+**Fichier à modifier** : `src/components/people/PersonLinksTab.tsx`
 
+### Changements
+
+1. **Ajouter les imports nécessaires**
+   - `ClubDetailModal` pour afficher les détails des clubs
+   - `OwnershipGroupModal` pour afficher les détails des organisations
+   - Type `Club` pour typer correctement le state
+
+2. **Ajouter deux nouveaux états**
+   - `selectedClub`: pour stocker le club sélectionné (objet Club complet)
+   - `selectedOrganization`: pour stocker le nom de l'organisation sélectionnée (string)
+
+3. **Rendre les noms cliquables**
+   - Transformer le texte du nom en bouton avec style de lien
+   - Ajouter `cursor-pointer` et `hover:underline` pour indiquer l'interactivité
+   - Au clic, définir l'état correspondant pour ouvrir le modal
+
+4. **Ajouter les modals**
+   - `ClubDetailModal` contrôlé par `selectedClub`
+   - `OwnershipGroupModal` contrôlé par `selectedOrganization`
+
+---
+
+### Exemple de Code
+
+**Pour les liens clubs :**
 ```text
-┌─────────────────────────────────────────────┐
-│ 🔍 Type to search...                        │
-├─────────────────────────────────────────────┤
-│ 👑 Africa Padel Group                       │
-│ 🛡️ South African Padel Federation          │
-│ 👑 Urban Padel Holdings                     │
-│ ─────────────────────────────────────────── │
-│ ➕ Create New Organization                  │
-└─────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────┐
+│ 🏢  Club Padel Johannesburg    ⭐ Primary    🗑️ │
+│     └── Manager                                 │
+└─────────────────────────────────────────────────┘
+       ↑
+       Cliquable → Ouvre ClubDetailModal
+```
+
+**Pour les liens organisations :**
+```text
+┌─────────────────────────────────────────────────┐
+│ 👑  Africa Padel Group         ⭐ Primary    🗑️ │
+│     └── Director                                │
+└─────────────────────────────────────────────────┘
+       ↑
+       Cliquable → Ouvre OwnershipGroupModal
 ```
 
 ---
 
-### Fichier à Modifier
+### Détails Techniques
 
-**`src/components/people/PersonLinksTab.tsx`**
+```typescript
+// Nouveaux états
+const [selectedClub, setSelectedClub] = useState<Club | null>(null);
+const [selectedOrganization, setSelectedOrganization] = useState<string | null>(null);
+
+// Gestionnaire de clic pour club
+const handleClubClick = (clubId: string) => {
+  const club = clubs.find(c => c.id === clubId);
+  if (club) setSelectedClub(club);
+};
+
+// Gestionnaire de clic pour organisation
+const handleOrganizationClick = (groupName: string) => {
+  setSelectedOrganization(groupName);
+};
+```
+
+**Rendu du nom cliquable :**
+```tsx
+<span 
+  className="font-medium cursor-pointer hover:underline hover:text-primary"
+  onClick={(e) => {
+    e.stopPropagation();
+    if (link.link_type === 'club') {
+      handleClubClick(link.club_id!);
+    } else {
+      handleOrganizationClick(link.ownership_group_name!);
+    }
+  }}
+>
+  {link.link_type === 'club' 
+    ? getClubName(link.club_id) 
+    : link.ownership_group_name}
+</span>
+```
 
 ---
 
-### Changements Techniques
+### Résultat Attendu
 
-1. **Nouveaux imports**
-   - Ajouter `Popover`, `PopoverTrigger`, `PopoverContent`
-   - Ajouter `Command`, `CommandInput`, `CommandList`, `CommandEmpty`, `CommandGroup`, `CommandItem`
-   - Ajouter `Check`, `ChevronsUpDown` de lucide-react
-
-2. **Nouveau state**
-   - `organizationOpen` : boolean pour contrôler l'ouverture du popover
-   - `organizationSearch` : string pour la valeur de recherche (optionnel, car cmdk filtre automatiquement)
-
-3. **Remplacer le Select par un Combobox**
-   - Utiliser `Popover` + `Command` au lieu de `Select`
-   - `CommandInput` pour la zone de recherche
-   - `CommandList` avec `CommandGroup` pour les organisations filtrées
-   - `CommandEmpty` pour afficher un message quand aucun résultat
-   - Conserver l'option "Create New Organization" en bas de la liste
-
-4. **Appliquer le même pattern pour les clubs**
-   - Pour cohérence, remplacer aussi le sélecteur de clubs par un combobox searchable
-
----
-
-### Comportement Attendu
-
-- L'utilisateur clique sur le bouton combobox
-- Un popover s'ouvre avec un champ de recherche
-- En tapant, les organisations sont filtrées en temps réel (géré automatiquement par `cmdk`)
-- Chaque organisation affiche son icône (Crown/Shield) selon son type
-- L'option "Create New Organization" reste toujours visible en bas
-- Cliquer sur une organisation la sélectionne et ferme le popover
-
+- L'utilisateur voit les liens avec un style indiquant qu'ils sont cliquables
+- Au survol, le nom s'affiche souligné
+- Au clic sur un club → le modal Club s'ouvre
+- Au clic sur une organisation → le modal Organisation s'ouvre
+- Les deux modals sont indépendants du modal Person (superposition possible)
