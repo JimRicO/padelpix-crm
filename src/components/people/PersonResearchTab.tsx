@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -41,6 +42,7 @@ export function PersonResearchTab({ person }: PersonResearchTabProps) {
   const [isPolling, setIsPolling] = useState(false);
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [editableContext, setEditableContext] = useState<string>('');
 
   const { mutate: startResearch, isPending: isStarting } = useStartPersonResearch();
   const { data: status } = usePersonResearchStatus(jobId, isPolling);
@@ -120,7 +122,7 @@ export function PersonResearchTab({ person }: PersonResearchTabProps) {
 
   const handleStartResearch = () => {
     startResearch(
-      { personName: person.full_name, context: getContext() },
+      { personName: person.full_name, context: editableContext || undefined },
       {
         onSuccess: (data) => {
           if (data.job_id) {
@@ -131,6 +133,14 @@ export function PersonResearchTab({ person }: PersonResearchTabProps) {
       }
     );
   };
+
+  // Initialize editable context with auto-generated context
+  useEffect(() => {
+    const autoContext = getContext();
+    if (autoContext && !editableContext) {
+      setEditableContext(autoContext);
+    }
+  }, [links, clubs, ownershipGroups, person]);
 
   const handleReResearch = () => {
     setJobId(null);
@@ -627,12 +637,20 @@ export function PersonResearchTab({ person }: PersonResearchTabProps) {
             </p>
           </div>
           
-          {context && (
-            <div className="bg-muted rounded-lg p-3">
-              <p className="text-xs text-muted-foreground">Context:</p>
-              <p className="text-sm font-medium">{context}</p>
-            </div>
-          )}
+          <div className="bg-muted rounded-lg p-3 text-left space-y-2">
+            <label className="text-xs text-muted-foreground">
+              Context (optional - helps improve research accuracy):
+            </label>
+            <Textarea
+              value={editableContext}
+              onChange={(e) => setEditableContext(e.target.value)}
+              placeholder="Add context about this person, e.g. their role, company, LinkedIn URL..."
+              className="min-h-[80px] text-sm resize-none"
+            />
+            <p className="text-xs text-muted-foreground">
+              Pre-filled from linked organizations and profile data. Edit to add more details.
+            </p>
+          </div>
 
           <Button onClick={handleStartResearch} disabled={isStarting}>
             {isStarting ? (
