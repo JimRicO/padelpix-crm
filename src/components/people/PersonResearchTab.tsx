@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -22,7 +22,9 @@ import {
   ChevronDown,
   ExternalLink,
   Lightbulb,
-  User
+  User,
+  CheckCircle,
+  Clock
 } from 'lucide-react';
 import { useStartPersonResearch, usePersonResearchStatus, usePersonResearchResults } from '@/hooks/usePersonEnrichment';
 import { usePersonLinks } from '@/hooks/usePersonLinks';
@@ -38,6 +40,7 @@ export function PersonResearchTab({ person }: PersonResearchTabProps) {
   const [jobId, setJobId] = useState<string | null>(null);
   const [isPolling, setIsPolling] = useState(false);
   const [sourcesOpen, setSourcesOpen] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const { mutate: startResearch, isPending: isStarting } = useStartPersonResearch();
   const { data: status } = usePersonResearchStatus(jobId, isPolling);
@@ -125,6 +128,23 @@ export function PersonResearchTab({ person }: PersonResearchTabProps) {
   if (status?.is_complete && isPolling) {
     setIsPolling(false);
   }
+
+  // Track last updated time when status changes
+  useEffect(() => {
+    if (status) {
+      setLastUpdated(new Date());
+    }
+  }, [status]);
+
+  // Helper to format relative time
+  const getRelativeTime = (date: Date | null) => {
+    if (!date) return 'never';
+    const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
+    if (seconds < 5) return 'just now';
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.floor(seconds / 60);
+    return `${minutes}m ago`;
+  };
 
   const getConfidenceColor = (score: string | null) => {
     switch (score) {
@@ -491,15 +511,59 @@ export function PersonResearchTab({ person }: PersonResearchTabProps) {
     return (
       <Card>
         <CardContent className="pt-6">
-          <div className="text-center space-y-4">
+          <div className="text-center space-y-6">
+            {/* Pulsing search icon */}
             <div className="animate-pulse">
               <Search className="h-12 w-12 mx-auto text-primary" />
             </div>
+            
             <h3 className="font-medium">Researching {person.full_name}...</h3>
-            <Progress value={status.progress_percent || 0} className="w-full" />
-            <p className="text-sm text-muted-foreground">
-              Processing {status.processed_rows || 0} of {status.total_rows || 1} sources
-            </p>
+            
+            {/* Job created confirmation */}
+            {jobId && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-center gap-2 text-success">
+                  <CheckCircle className="h-4 w-4" />
+                  <span className="text-sm font-medium">Job created successfully</span>
+                </div>
+                <p className="text-xs text-muted-foreground font-mono">
+                  Job ID: {jobId.length > 25 ? `${jobId.slice(0, 25)}...` : jobId}
+                </p>
+              </div>
+            )}
+            
+            {/* Progress bar */}
+            <div className="space-y-2">
+              <Progress value={status.progress_percent || 0} className="w-full" />
+              <p className="text-sm text-muted-foreground">
+                {(status.progress_percent || 0).toFixed(0)}% complete
+              </p>
+            </div>
+            
+            {/* Status badge and details */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-center gap-2">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <Badge variant="secondary" className="capitalize">
+                  {status.status || 'pending'}
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Processing {status.processed_rows || 0} of {status.total_rows || 1} sources
+                <span className="animate-pulse">...</span>
+              </p>
+            </div>
+            
+            {/* Polling indicator */}
+            <div className="pt-2 border-t border-border">
+              <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                <RefreshCw className="h-3 w-3 animate-spin" />
+                <span>Checking for updates every 10 seconds</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Last checked: {getRelativeTime(lastUpdated)}
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
