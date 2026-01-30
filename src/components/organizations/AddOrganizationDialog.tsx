@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 interface AddOrganizationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onOrganizationCreated?: (organizationName: string) => void;
 }
 
 const RELATIONSHIP_STATUSES = [
@@ -34,7 +35,7 @@ const initialFormData = {
   notes: '',
 };
 
-export function AddOrganizationDialog({ open, onOpenChange }: AddOrganizationDialogProps) {
+export function AddOrganizationDialog({ open, onOpenChange, onOrganizationCreated }: AddOrganizationDialogProps) {
   const [formData, setFormData] = useState(initialFormData);
   const createGroup = useCreateOwnershipGroup();
 
@@ -53,7 +54,7 @@ export function AddOrganizationDialog({ open, onOpenChange }: AddOrganizationDia
     e.preventDefault();
     if (!formData.name.trim()) return;
 
-    await createGroup.mutateAsync({
+    const result = await createGroup.mutateAsync({
       name: formData.name.trim(),
       organization_type: formData.organization_type,
       instagram_handle: formData.instagram_handle.trim() || null,
@@ -65,6 +66,9 @@ export function AddOrganizationDialog({ open, onOpenChange }: AddOrganizationDia
       contact_phone: formData.contact_phone.trim() || null,
       notes: formData.notes.trim() || null,
     });
+
+    // Notify parent with the created organization name
+    onOrganizationCreated?.(result.name);
 
     setFormData(initialFormData);
     onOpenChange(false);
