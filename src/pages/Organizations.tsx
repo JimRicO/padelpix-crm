@@ -30,6 +30,13 @@ export default function Organizations() {
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'name' | 'clubs' | 'country'>('name');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
+  const [countryFilter, setCountryFilter] = useState<string>('all');
+
+  // Get unique countries for filter dropdown
+  const uniqueCountries = useMemo(() => {
+    const countries = [...new Set(groups.map(g => g.country || 'South Africa').filter(Boolean))];
+    return countries.sort((a, b) => a.localeCompare(b));
+  }, [groups]);
   
   const syncMutation = useSyncMissingOrganizations();
 
@@ -76,13 +83,18 @@ export default function Organizations() {
     return counts;
   }, [clubs]);
 
-  // Filter groups by search and type
+  // Filter groups by search, type and country
   const filteredGroups = useMemo(() => {
     let result = groups;
     
     // Apply type filter
     if (typeFilter !== 'all') {
       result = result.filter(group => (group.organization_type || 'commercial') === typeFilter);
+    }
+    
+    // Apply country filter
+    if (countryFilter && countryFilter !== 'all') {
+      result = result.filter(group => (group.country || 'South Africa') === countryFilter);
     }
     
     // Apply search filter
@@ -108,7 +120,7 @@ export default function Organizations() {
           return 0;
       }
     });
-  }, [groups, searchQuery, sortBy, typeFilter, clubCountByGroup]);
+  }, [groups, searchQuery, sortBy, typeFilter, countryFilter, clubCountByGroup]);
 
   // Count by type for filter badges
   const typeCounts = useMemo(() => {
@@ -281,6 +293,23 @@ export default function Organizations() {
                       </Badge>
                     </span>
                   </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Country Filter */}
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Country:</span>
+              <Select value={countryFilter} onValueChange={setCountryFilter}>
+                <SelectTrigger className="w-[160px] h-8">
+                  <SelectValue placeholder="All Countries" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Countries</SelectItem>
+                  {uniqueCountries.map(country => (
+                    <SelectItem key={country} value={country}>{country}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

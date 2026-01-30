@@ -10,7 +10,7 @@ import { PersonDetailModal } from '@/components/people/PersonDetailModal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Plus, Users, ArrowUpDown } from 'lucide-react';
+import { Search, Plus, Users, ArrowUpDown, Filter } from 'lucide-react';
 import type { Person } from '@/types/people';
 
 export default function People() {
@@ -21,9 +21,21 @@ export default function People() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [sortBy, setSortBy] = useState<'name' | 'country' | 'role'>('name');
+  const [countryFilter, setCountryFilter] = useState<string>('all');
+
+  // Get unique countries for filter dropdown
+  const uniqueCountries = useMemo(() => {
+    const countries = [...new Set(people.map(p => p.country || 'South Africa').filter(Boolean))];
+    return countries.sort((a, b) => a.localeCompare(b));
+  }, [people]);
 
   const filteredPeople = useMemo(() => {
     let result = people;
+    
+    // Apply country filter
+    if (countryFilter && countryFilter !== 'all') {
+      result = result.filter(person => (person.country || 'South Africa') === countryFilter);
+    }
     
     // Apply search filter
     if (searchQuery) {
@@ -50,7 +62,7 @@ export default function People() {
           return 0;
       }
     });
-  }, [people, searchQuery, sortBy]);
+  }, [people, searchQuery, sortBy, countryFilter]);
 
   if (authLoading) {
     return (
@@ -101,21 +113,41 @@ export default function People() {
       </header>
 
       <main className="p-6">
-        {/* Sort controls */}
-        {!isLoading && filteredPeople.length > 0 && (
-          <div className="flex items-center gap-2 mb-4">
-            <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Sort by:</span>
-            <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'name' | 'country' | 'role')}>
-              <SelectTrigger className="w-[160px] h-8">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="name">Name (A-Z)</SelectItem>
-                <SelectItem value="country">Country</SelectItem>
-                <SelectItem value="role">Role</SelectItem>
-              </SelectContent>
-            </Select>
+        {/* Filter and Sort controls */}
+        {!isLoading && people.length > 0 && (
+          <div className="flex items-center gap-4 mb-4">
+            {/* Country Filter */}
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Country:</span>
+              <Select value={countryFilter} onValueChange={setCountryFilter}>
+                <SelectTrigger className="w-[160px] h-8">
+                  <SelectValue placeholder="All Countries" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Countries</SelectItem>
+                  {uniqueCountries.map(country => (
+                    <SelectItem key={country} value={country}>{country}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Sort */}
+            <div className="flex items-center gap-2">
+              <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Sort by:</span>
+              <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'name' | 'country' | 'role')}>
+                <SelectTrigger className="w-[160px] h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name">Name (A-Z)</SelectItem>
+                  <SelectItem value="country">Country</SelectItem>
+                  <SelectItem value="role">Role</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         )}
         {isLoading ? (
