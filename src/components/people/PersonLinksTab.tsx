@@ -12,7 +12,9 @@ import { usePersonLinks, useCreatePersonLink, useDeletePersonLink } from '@/hook
 import { useClubs } from '@/hooks/useClubs';
 import { useOwnershipGroupsList, useCreateOwnershipGroup } from '@/hooks/useOwnershipGroups';
 import { cn } from '@/lib/utils';
-
+import { ClubDetailModal } from '@/components/club/ClubDetailModal';
+import { OwnershipGroupModal } from '@/components/group/OwnershipGroupModal';
+import type { Club } from '@/types/database';
 import type { Person } from '@/types/people';
 
 interface PersonLinksTabProps {
@@ -37,6 +39,8 @@ export function PersonLinksTab({ person }: PersonLinksTabProps) {
   const [newGroupName, setNewGroupName] = useState('');
   const [clubOpen, setClubOpen] = useState(false);
   const [organizationOpen, setOrganizationOpen] = useState(false);
+  const [selectedClub, setSelectedClub] = useState<Club | null>(null);
+  const [selectedOrganization, setSelectedOrganization] = useState<string | null>(null);
 
   const handleAddLink = async () => {
     if (linkType === 'club' && !selectedClubId) return;
@@ -137,7 +141,18 @@ export function PersonLinksTab({ person }: PersonLinksTabProps) {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-medium">
+                    <span 
+                      className="font-medium cursor-pointer hover:underline hover:text-primary transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (link.link_type === 'club' && link.club_id) {
+                          const club = clubs.find(c => c.id === link.club_id);
+                          if (club) setSelectedClub(club);
+                        } else if (link.ownership_group_name) {
+                          setSelectedOrganization(link.ownership_group_name);
+                        }
+                      }}
+                    >
                       {link.link_type === 'club'
                         ? getClubName(link.club_id)
                         : link.ownership_group_name}
@@ -381,6 +396,20 @@ export function PersonLinksTab({ person }: PersonLinksTabProps) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Club Detail Modal */}
+      <ClubDetailModal
+        club={selectedClub}
+        open={!!selectedClub}
+        onOpenChange={(open) => !open && setSelectedClub(null)}
+      />
+
+      {/* Organization Detail Modal */}
+      <OwnershipGroupModal
+        groupName={selectedOrganization}
+        isOpen={!!selectedOrganization}
+        onClose={() => setSelectedOrganization(null)}
+      />
     </div>
   );
 }
