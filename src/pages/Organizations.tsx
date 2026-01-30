@@ -145,7 +145,7 @@ export default function Organizations() {
     }
     if (typeFilter === 'association') {
       return {
-        title: 'No associations yet',
+        title: 'No non-commercial organizations yet',
         description: 'Add federations, governing bodies, or sports organizations',
       };
     }
@@ -287,7 +287,7 @@ export default function Organizations() {
                   <SelectItem value="association">
                     <span className="flex items-center gap-2">
                       <Shield className="w-3.5 h-3.5" />
-                      Association
+                      Non-commercial
                       <Badge variant="secondary" className="ml-auto text-xs">
                         {typeCounts.association}
                       </Badge>
