@@ -27,7 +27,7 @@ import {
   CheckCircle,
   Clock
 } from 'lucide-react';
-import { useStartPersonResearch, usePersonResearchStatus, usePersonResearchResults, usePersonEnrichmentData, useSaveEnrichmentData } from '@/hooks/usePersonEnrichment';
+import { useStartPersonResearch, usePersonResearchStatus, usePersonResearchResults, usePersonEnrichmentData, useSaveEnrichmentData, useSaveEnrichmentJobId } from '@/hooks/usePersonEnrichment';
 import { usePersonLinks } from '@/hooks/usePersonLinks';
 import { useClubs } from '@/hooks/useClubs';
 import { useOwnershipGroupsList } from '@/hooks/useOwnershipGroups';
@@ -51,12 +51,22 @@ export function PersonResearchTab({ person }: PersonResearchTabProps) {
     status?.is_complete ?? false
   );
 
-  // Load existing enrichment data from database
+  // Load existing enrichment data from database (including pending job)
   const { data: savedEnrichment, isLoading: isLoadingSaved } = usePersonEnrichmentData(person.id);
   const { mutate: saveEnrichmentData } = useSaveEnrichmentData();
+  const { mutate: saveJobId } = useSaveEnrichmentJobId();
 
   // Use fresh data if available, otherwise use saved data
   const enrichedPerson = freshEnrichedPerson || savedEnrichment?.enrichmentData;
+
+  // Resume polling if there's a pending job from the database
+  useEffect(() => {
+    if (savedEnrichment?.pendingJobId && savedEnrichment?.jobStatus === 'processing') {
+      console.log('Resuming polling for pending job:', savedEnrichment.pendingJobId);
+      setJobId(savedEnrichment.pendingJobId);
+      setIsPolling(true);
+    }
+  }, [savedEnrichment?.pendingJobId, savedEnrichment?.jobStatus]);
 
   // Auto-save when fresh results are fetched
   useEffect(() => {
@@ -128,6 +138,8 @@ export function PersonResearchTab({ person }: PersonResearchTabProps) {
           if (data.job_id) {
             setJobId(data.job_id);
             setIsPolling(true);
+            // Persist job ID to database so it survives navigation
+            saveJobId({ personId: person.id, jobId: data.job_id });
           }
         },
       }

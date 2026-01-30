@@ -437,6 +437,8 @@ export type Database = {
           email: string | null
           enriched_at: string | null
           enrichment_data: Json | null
+          enrichment_job_id: string | null
+          enrichment_status: string | null
           full_name: string
           id: string
           instagram_handle: string | null
@@ -457,6 +459,8 @@ export type Database = {
           email?: string | null
           enriched_at?: string | null
           enrichment_data?: Json | null
+          enrichment_job_id?: string | null
+          enrichment_status?: string | null
           full_name: string
           id?: string
           instagram_handle?: string | null
@@ -477,6 +481,8 @@ export type Database = {
           email?: string | null
           enriched_at?: string | null
           enrichment_data?: Json | null
+          enrichment_job_id?: string | null
+          enrichment_status?: string | null
           full_name?: string
           id?: string
           instagram_handle?: string | null
