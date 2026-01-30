@@ -26,7 +26,7 @@ import {
   CheckCircle,
   Clock
 } from 'lucide-react';
-import { useStartPersonResearch, usePersonResearchStatus, usePersonResearchResults } from '@/hooks/usePersonEnrichment';
+import { useStartPersonResearch, usePersonResearchStatus, usePersonResearchResults, usePersonEnrichmentData, useSaveEnrichmentData } from '@/hooks/usePersonEnrichment';
 import { usePersonLinks } from '@/hooks/usePersonLinks';
 import { useClubs } from '@/hooks/useClubs';
 import { useOwnershipGroupsList } from '@/hooks/useOwnershipGroups';
@@ -44,10 +44,24 @@ export function PersonResearchTab({ person }: PersonResearchTabProps) {
 
   const { mutate: startResearch, isPending: isStarting } = useStartPersonResearch();
   const { data: status } = usePersonResearchStatus(jobId, isPolling);
-  const { data: enrichedPerson, isLoading: isLoadingResults } = usePersonResearchResults(
+  const { data: freshEnrichedPerson, isLoading: isLoadingResults } = usePersonResearchResults(
     jobId,
     status?.is_complete ?? false
   );
+
+  // Load existing enrichment data from database
+  const { data: savedEnrichment, isLoading: isLoadingSaved } = usePersonEnrichmentData(person.id);
+  const { mutate: saveEnrichmentData } = useSaveEnrichmentData();
+
+  // Use fresh data if available, otherwise use saved data
+  const enrichedPerson = freshEnrichedPerson || savedEnrichment?.enrichmentData;
+
+  // Auto-save when fresh results are fetched
+  useEffect(() => {
+    if (freshEnrichedPerson && person.id) {
+      saveEnrichmentData({ personId: person.id, enrichmentData: freshEnrichedPerson });
+    }
+  }, [freshEnrichedPerson, person.id, saveEnrichmentData]);
 
   // Get linked organizations for context
   const { data: links = [] } = usePersonLinks(person.id);
@@ -155,10 +169,37 @@ export function PersonResearchTab({ person }: PersonResearchTabProps) {
     }
   };
 
+  // Show loading state for saved data
+  if (isLoadingSaved) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex items-start gap-4">
+            <Skeleton className="h-16 w-16 rounded-full" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-4 w-32" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   // Show results if available
   if (enrichedPerson) {
+    const enrichedAt = savedEnrichment?.enrichedAt;
+    
     return (
       <div className="space-y-4">
+        {/* Last researched indicator */}
+        {enrichedAt && (
+          <div className="flex items-center justify-end gap-2 text-xs text-muted-foreground">
+            <Clock className="h-3 w-3" />
+            <span>Last researched: {new Date(enrichedAt).toLocaleDateString()} at {new Date(enrichedAt).toLocaleTimeString()}</span>
+          </div>
+        )}
+        
         {/* Header Card */}
         <Card>
           <CardContent className="pt-6">
