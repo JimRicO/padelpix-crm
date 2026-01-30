@@ -1,127 +1,153 @@
 
-## Fix Organization Detail View - Display ALL Enriched Fields Correctly
 
-### Problem Analysis
-The current `OrganizationDetailView.tsx` is NOT matching the reference design and is missing/misrepresenting fields:
+## Ajouter le Type d'Organisation (Commercial vs Association)
 
-1. **Layout order is wrong** - Should follow the exact order from the reference image
-2. **Typography labels are wrong** - Shows "Body:" instead of "Primary:" 
-3. **Attitude & Aesthetics not showing** - These fields exist in the database but may not be rendering due to conditional logic or the user expects them in a different location
-4. **Section structure doesn't match** - The reference shows a cleaner, more compact layout
+### Aperçu
+Ajouter un champ `organization_type` pour catégoriser les organisations comme entités commerciales (chaînes de clubs) ou associations non-commerciales (fédérations, organismes sportifs).
 
-### Database Fields Available (from Africa Padel record)
-| Field | Value Present |
-|-------|--------------|
-| `logo_url` | Yes (SVG) |
-| `name` | "Africa Padel" |
-| `founding_year` | "2021" |
-| `website` | Yes |
-| `contact_phone` | "202023-07-18" |
-| `color_palette` | 5 colors: link, accent, primary, background, textPrimary |
-| `fonts` | heading + primary + list array |
-| `description` | Full description text |
-| `founder_info` | Full founder info |
-| `attitude` | Full attitude text |
-| `aesthetics` | Full aesthetics text |
-| `perplexity_description` | Full research summary |
-| `perplexity_citations` | Array of URLs |
+### Types d'Organisation
 
-### Solution: Restructure OrganizationDetailView to Match Reference
+| Type | Description | Exemples |
+|------|-------------|----------|
+| `commercial` | Chaînes de clubs, groupes propriétaires | Virgin Active, Africa Padel, Balwin |
+| `association` | Fédérations, organismes, non-profit | Padel Federation SA, World Padel Tour, Tennis SA |
 
-**File: `src/components/group/OrganizationDetailView.tsx`**
+---
 
-#### Changes Required:
+### 1. Modification de la Base de Données
 
-1. **Fix section order to match reference image:**
-   - Header (logo, name, Est. year, website)
-   - Phone number card (standalone, not in grid)
-   - Color Palette section
-   - Typography section (fix labels: "Primary:" and "Heading:")
-   - Description section
-   - Founder section
-   - Attitude & Aesthetics section (ensure these render)
-   - Research Summary section
-   - Recent Activities section
-   - Sources/Citations section
+Ajouter une nouvelle colonne à la table `ownership_groups` :
 
-2. **Fix Typography labels:**
-   ```tsx
-   // Current (wrong):
-   {fonts.heading && <Badge>Heading: {fonts.heading}</Badge>}
-   {fonts.primary && <Badge>Body: {fonts.primary}</Badge>}
-   
-   // Fixed:
-   {fonts.primary && <Badge>Primary: {fonts.primary}</Badge>}
-   {fonts.heading && <Badge>Heading: {fonts.heading}</Badge>}
-   ```
+```sql
+ALTER TABLE ownership_groups 
+ADD COLUMN organization_type TEXT DEFAULT 'commercial';
 
-3. **Fix Phone display styling:**
-   - Move phone out of the contact grid into its own prominent card (matching reference)
-   - Style it as a standalone `neu-pressed` card with phone icon
-
-4. **Ensure Attitude & Aesthetics always render:**
-   - Add dedicated sections for each (not combined into "Brand Identity")
-   - Style as full-width text blocks in `detail-section-content` containers
-
-5. **Complete Layout Structure:**
-
-```text
-+------------------------------------------------+
-| [Logo]  Africa Padel   | Est. 2021 |           |
-|         🌐 https://www.africapadel.com/        |
-+------------------------------------------------+
-| 📞 202023-07-18                                |
-+------------------------------------------------+
-| 🎨 Color Palette                               |
-| [■ link] [■ accent] [■ primary] [■ bg] [■ txt] |
-+------------------------------------------------+
-| T Typography                                    |
-| [Primary: Archivo...] [Heading: Archivo...]    |
-+------------------------------------------------+
-| 💬 Description                                  |
-| Africa Padel is the largest padel club...      |
-+------------------------------------------------+
-| 👤 Founder                                      |
-| Africa Padel was founded by James Baber...     |
-+------------------------------------------------+
-| ✨ Attitude                                     |
-| Energetic, inclusive, and community-focused... |
-+------------------------------------------------+
-| 👁 Aesthetics                                   |
-| Clean, modern design with a dark navy...       |
-+------------------------------------------------+
-| 🔬 Research Summary                             |
-| [Perplexity description text...]               |
-+------------------------------------------------+
-| 📊 Recent Activities                            |
-| [Activity cards...]                            |
-+------------------------------------------------+
-| 🔗 Sources (N)                                  |
-| [Collapsible citations...]                     |
-+------------------------------------------------+
+ALTER TABLE ownership_groups 
+ADD CONSTRAINT organization_type_check 
+CHECK (organization_type IN ('commercial', 'association'));
 ```
 
-### Technical Implementation
+---
 
-**1. Update OrganizationDetailView.tsx:**
+### 2. Dialogue de Création Amélioré
 
-- Reorder sections to match reference
-- Split Attitude and Aesthetics into separate sections with full text (not badges)
-- Fix Typography badge labels
-- Move Phone to standalone card
-- Ensure all fields render with appropriate fallbacks
+Le dialogue `AddOrganizationDialog` sera transformé avec :
 
-**2. Add new section handlers for:**
-- `attitude` - Full text in detail-section-content
-- `aesthetics` - Full text in detail-section-content
+**Sélecteur de Type Neumorphique :**
+```text
+┌────────────────────────────────────────────────────┐
+│              Add Organization                       │
+├────────────────────────────────────────────────────┤
+│                                                    │
+│  Organization Name                                 │
+│  ┌──────────────────────────────────────────────┐  │
+│  │ Virgin Active                                │  │
+│  └──────────────────────────────────────────────┘  │
+│                                                    │
+│  Type                                              │
+│  ┌─────────────────────────────────────────────┐   │
+│  │ ┌─────────────────┐ ┌─────────────────────┐ │   │
+│  │ │ 👑 Commercial   │ │ 🛡 Association      │ │   │
+│  │ │   [SELECTED]    │ │                     │ │   │
+│  │ │ Club chains &   │ │ Federations &       │ │   │
+│  │ │ ownership groups│ │ governing bodies    │ │   │
+│  │ └─────────────────┘ └─────────────────────┘ │   │
+│  └─────────────────────────────────────────────┘   │
+│                        (neu-pressed container)      │
+│                                                    │
+│                      [Cancel]  [Create Organization]│
+└────────────────────────────────────────────────────┘
+```
 
-### Files to Modify
-- `src/components/group/OrganizationDetailView.tsx` - Complete restructure to match reference design
+**Design du Sélecteur :**
+- Conteneur parent avec style `neu-pressed` (effet enfoncé)
+- Deux cartes côte à côte
+- Carte sélectionnée : style `neu-subtle` (effet relevé) + bordure primary
+- Carte non-sélectionnée : apparence plate
+- Icône Crown (👑) pour Commercial, Shield (🛡) pour Association
+- Description courte sous chaque option
 
-### Expected Outcome
-After this fix:
-- All enriched fields will display including Attitude and Aesthetics
-- Layout will match the reference image exactly
-- Typography labels will be correct ("Primary:" and "Heading:")
-- Phone number will be prominent as shown in reference
-- Color palette will show all 5+ colors with labels and hex values
+---
+
+### 3. Fichiers à Modifier
+
+| Fichier | Modifications |
+|---------|---------------|
+| **Migration SQL** | Ajouter colonne `organization_type` |
+| `src/hooks/useOwnershipGroups.ts` | Ajouter `organization_type` à l'interface et aux mutations |
+| `src/components/organizations/AddOrganizationDialog.tsx` | Ajouter sélecteur de type neumorphique |
+| `src/components/organizations/OrganizationCard.tsx` | Afficher badge de type avec icône différente |
+| `src/components/group/OwnershipGroupModal.tsx` | Permettre modification du type dans l'onglet Contacts |
+| `src/pages/Organizations.tsx` | Ajouter filtre par type (Tous / Commercial / Association) |
+
+---
+
+### 4. Détails Techniques
+
+**Interface TypeScript mise à jour :**
+```typescript
+interface OwnershipGroup {
+  // ... champs existants
+  organization_type: 'commercial' | 'association' | null;
+}
+```
+
+**Constantes pour les types :**
+```typescript
+const ORGANIZATION_TYPES = [
+  { 
+    value: 'commercial', 
+    label: 'Commercial', 
+    icon: Crown, 
+    description: 'Chaînes de clubs & groupes propriétaires' 
+  },
+  { 
+    value: 'association', 
+    label: 'Association', 
+    icon: Shield, 
+    description: 'Fédérations & organismes sportifs' 
+  },
+] as const;
+```
+
+---
+
+### 5. Différenciation Visuelle des Cartes
+
+```text
+CARTE COMMERCIAL                   CARTE ASSOCIATION
+┌─────────────────────┐            ┌─────────────────────┐
+│ 👑 Africa Padel     │            │ 🛡 Padel Fed SA     │
+│ [Actif] [Commercial]│            │ [Actif] [Association]
+│ 5 clubs • SA • 2021 │            │ 120 membres • SA    │
+└─────────────────────┘            └─────────────────────┘
+```
+
+- **Commercial** : Icône Crown, badge orange/primary
+- **Association** : Icône Shield, badge bleu/slate
+
+---
+
+### 6. Filtre sur la Page Organizations
+
+Ajouter un sélecteur de filtre à côté du tri existant :
+
+```text
+[🔽 Type: Tous ▾] [🔽 Trier par: Nom ▾]
+       │
+       ├── Tous
+       ├── Commercial
+       └── Associations
+```
+
+---
+
+### Résultat Attendu
+
+Après implémentation :
+- L'utilisateur choisit le type lors de la création d'une organisation
+- Différenciation visuelle claire entre commercial et association
+- Filtrage par type sur la page Organizations
+- Les organisations existantes sont par défaut "commercial"
+- Le type peut être modifié dans le modal (onglet Contacts)
+
