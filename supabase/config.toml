@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.get-enrichment-status]
 verify_jwt = false
+
+[functions.enrich-person]
+verify_jwt = false

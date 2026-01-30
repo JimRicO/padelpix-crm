@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { PersonInfoTab } from './PersonInfoTab';
 import { PersonLinksTab } from './PersonLinksTab';
 import { PersonSuggestionsTab } from './PersonSuggestionsTab';
+import { PersonResearchTab } from './PersonResearchTab';
 import { usePersonLinkSuggestions } from '@/hooks/usePersonLinks';
 import type { Person } from '@/types/people';
 
@@ -26,7 +27,7 @@ export function PersonDetailModal({ person, onClose }: PersonDetailModalProps) {
         </DialogHeader>
 
         <Tabs defaultValue="info" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="info">Info</TabsTrigger>
             <TabsTrigger value="links">Organizations</TabsTrigger>
             <TabsTrigger value="suggestions" className="relative">
@@ -40,6 +41,7 @@ export function PersonDetailModal({ person, onClose }: PersonDetailModalProps) {
                 </Badge>
               )}
             </TabsTrigger>
+            <TabsTrigger value="research">Research</TabsTrigger>
           </TabsList>
 
           <TabsContent value="info" className="mt-4">
@@ -52,6 +54,10 @@ export function PersonDetailModal({ person, onClose }: PersonDetailModalProps) {
 
           <TabsContent value="suggestions" className="mt-4">
             <PersonSuggestionsTab person={person} />
+          </TabsContent>
+
+          <TabsContent value="research" className="mt-4">
+            <PersonResearchTab person={person} />
           </TabsContent>
         </Tabs>
       </DialogContent>
