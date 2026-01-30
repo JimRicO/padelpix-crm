@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { EnrichedPerson } from '@/types/people';
@@ -116,5 +116,61 @@ export function usePersonResearchResults(jobId: string | null, enabled: boolean)
     },
     enabled: !!jobId && enabled,
     staleTime: Infinity, // Results don't change once fetched
+  });
+}
+
+// Hook to save enrichment data to the database
+export function useSaveEnrichmentData() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ personId, enrichmentData }: { personId: string; enrichmentData: EnrichedPerson }) => {
+      const { data, error } = await supabase
+        .from('people')
+        .update({
+          enrichment_data: JSON.parse(JSON.stringify(enrichmentData)),
+          enriched_at: new Date().toISOString(),
+        })
+        .eq('id', personId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['people'] });
+      queryClient.invalidateQueries({ queryKey: ['person-enrichment', variables.personId] });
+    },
+    onError: (error) => {
+      console.error('Failed to save enrichment data:', error);
+      toast.error('Failed to save research results');
+    },
+  });
+}
+
+// Hook to load existing enrichment data from the database
+export function usePersonEnrichmentData(personId: string) {
+  return useQuery({
+    queryKey: ['person-enrichment', personId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('people')
+        .select('enrichment_data, enriched_at')
+        .eq('id', personId)
+        .single();
+
+      if (error) throw error;
+      
+      if (data?.enrichment_data) {
+        return {
+          enrichmentData: data.enrichment_data as unknown as EnrichedPerson,
+          enrichedAt: data.enriched_at,
+        };
+      }
+      
+      return null;
+    },
+    enabled: !!personId,
   });
 }

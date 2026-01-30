@@ -435,6 +435,8 @@ export type Database = {
           created_at: string
           created_by: string | null
           email: string | null
+          enriched_at: string | null
+          enrichment_data: Json | null
           full_name: string
           id: string
           instagram_handle: string | null
@@ -453,6 +455,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           email?: string | null
+          enriched_at?: string | null
+          enrichment_data?: Json | null
           full_name: string
           id?: string
           instagram_handle?: string | null
@@ -471,6 +475,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           email?: string | null
+          enriched_at?: string | null
+          enrichment_data?: Json | null
           full_name?: string
           id?: string
           instagram_handle?: string | null
