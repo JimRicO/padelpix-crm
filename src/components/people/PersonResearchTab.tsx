@@ -51,23 +51,54 @@ export function PersonResearchTab({ person }: PersonResearchTabProps) {
   const { data: clubs = [] } = useClubs();
   const { data: ownershipGroups = [] } = useOwnershipGroupsList();
 
-  // Derive context from links
+  // Derive context from links - include all organizations and LinkedIn
   const getContext = () => {
+    const contextParts: string[] = [];
+
+    // Add role if available
+    if (person.role) {
+      contextParts.push(person.role);
+    }
+
+    // Add all linked organizations
     if (links.length > 0) {
-      const primaryLink = links.find(l => l.is_primary) || links[0];
-      if (primaryLink.link_type === 'club' && primaryLink.club_id) {
-        const club = clubs.find(c => c.id === primaryLink.club_id);
-        if (club) {
-          return `${primaryLink.role_at_entity || 'works at'} ${club.club_name}`;
+      const orgDescriptions = links.map(link => {
+        let orgName = '';
+        let orgWebsite = '';
+        
+        if (link.link_type === 'club' && link.club_id) {
+          const club = clubs.find(c => c.id === link.club_id);
+          if (club) {
+            orgName = club.club_name;
+            orgWebsite = club.website || '';
+          }
+        } else if (link.link_type === 'ownership_group' && link.ownership_group_name) {
+          const group = ownershipGroups.find(g => g.name === link.ownership_group_name);
+          if (group) {
+            orgName = group.name;
+            orgWebsite = group.website || '';
+          }
         }
-      } else if (primaryLink.link_type === 'ownership_group' && primaryLink.ownership_group_name) {
-        const group = ownershipGroups.find(g => g.name === primaryLink.ownership_group_name);
-        if (group) {
-          return `${primaryLink.role_at_entity || 'works at'} ${group.name}`;
+
+        if (orgName) {
+          const role = link.role_at_entity || 'works at';
+          const websitePart = orgWebsite ? ` (${orgWebsite})` : '';
+          return `${role} ${orgName}${websitePart}`;
         }
+        return null;
+      }).filter(Boolean);
+
+      if (orgDescriptions.length > 0) {
+        contextParts.push(orgDescriptions.join(', '));
       }
     }
-    return person.role || undefined;
+
+    // Add LinkedIn if available
+    if (person.linkedin) {
+      contextParts.push(`LinkedIn: ${person.linkedin}`);
+    }
+
+    return contextParts.length > 0 ? contextParts.join('. ') : undefined;
   };
 
   const handleStartResearch = () => {
