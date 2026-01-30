@@ -3,6 +3,21 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Json } from '@/integrations/supabase/types';
 
+export type OrganizationType = 'commercial' | 'association';
+
+export const ORGANIZATION_TYPES = [
+  { 
+    value: 'commercial' as const, 
+    label: 'Commercial', 
+    description: 'Club chains & ownership groups' 
+  },
+  { 
+    value: 'association' as const, 
+    label: 'Association', 
+    description: 'Federations & governing bodies' 
+  },
+] as const;
+
 export interface OwnershipGroup {
   id: string;
   name: string;
@@ -19,6 +34,7 @@ export interface OwnershipGroup {
   created_at: string | null;
   updated_at: string | null;
   created_by: string | null;
+  organization_type: OrganizationType | null;
   // Enrichment fields
   description: string | null;
   instagram_handle: string | null;
@@ -98,6 +114,7 @@ export function useCreateOwnershipGroup() {
         relationship_status: data.relationship_status,
         total_clubs: data.total_clubs,
         country: data.country,
+        organization_type: data.organization_type || 'commercial',
         created_by: user.id,
       };
 
@@ -188,6 +205,7 @@ export function useUpsertOwnershipGroup() {
           relationship_status: data.relationship_status,
           total_clubs: data.total_clubs,
           country: data.country,
+          organization_type: data.organization_type || 'commercial',
           created_by: user.id,
         };
         
