@@ -42,6 +42,13 @@ export function AddOrganizationDialog({ open, onOpenChange }: AddOrganizationDia
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleWebsiteBlur = () => {
+    const website = formData.website.trim();
+    if (website && !website.startsWith('http://') && !website.startsWith('https://')) {
+      setFormData(prev => ({ ...prev, website: `https://${website}` }));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) return;
@@ -150,10 +157,10 @@ export function AddOrganizationDialog({ open, onOpenChange }: AddOrganizationDia
               <Label htmlFor="website">Website</Label>
               <Input
                 id="website"
-                type="url"
                 value={formData.website}
                 onChange={(e) => updateField('website', e.target.value)}
-                placeholder="https://"
+                onBlur={handleWebsiteBlur}
+                placeholder="example.com"
               />
             </div>
           </div>
