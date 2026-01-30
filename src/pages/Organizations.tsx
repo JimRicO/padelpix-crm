@@ -258,48 +258,10 @@ export default function Organizations() {
         {/* Filter and Sort controls */}
         {!groupsLoading && groups.length > 0 && (
           <div className="flex items-center gap-4 mb-4">
-            {/* Type Filter */}
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Type:</span>
-              <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as TypeFilter)}>
-                <SelectTrigger className="w-[180px] h-8">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">
-                    <span className="flex items-center gap-2">
-                      All
-                      <Badge variant="secondary" className="ml-auto text-xs">
-                        {typeCounts.all}
-                      </Badge>
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="commercial">
-                    <span className="flex items-center gap-2">
-                      <Crown className="w-3.5 h-3.5" />
-                      Commercial
-                      <Badge variant="secondary" className="ml-auto text-xs">
-                        {typeCounts.commercial}
-                      </Badge>
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="association">
-                    <span className="flex items-center gap-2">
-                      <Shield className="w-3.5 h-3.5" />
-                      Non-commercial
-                      <Badge variant="secondary" className="ml-auto text-xs">
-                        {typeCounts.association}
-                      </Badge>
-                    </span>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <Filter className="w-4 h-4 text-muted-foreground" />
 
             {/* Country Filter */}
             <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">Country:</span>
               <Select value={countryFilter} onValueChange={setCountryFilter}>
                 <SelectTrigger className="w-[160px] h-8">
@@ -310,6 +272,25 @@ export default function Organizations() {
                   {uniqueCountries.map(country => (
                     <SelectItem key={country} value={country}>{country}</SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Non-commercial Filter */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Non-commercial:</span>
+              <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as TypeFilter)}>
+                <SelectTrigger className="w-[140px] h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="association">
+                    <span className="flex items-center gap-2">
+                      <Shield className="w-3.5 h-3.5" />
+                      Only
+                    </span>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
