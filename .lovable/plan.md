@@ -1,104 +1,124 @@
 
-## Rendre les Liens Cliquables dans les Cartes Personnes
 
-Actuellement, les liens vers les organisations et clubs sont affichés mais non interactifs. Cette modification permettra aux utilisateurs de cliquer sur un lien pour ouvrir directement la fiche détaillée correspondante.
+## Améliorer la Création d'Organisation depuis la Carte Personne
 
----
-
-### Solution
-
-**Fichier à modifier** : `src/components/people/PersonLinksTab.tsx`
-
-### Changements
-
-1. **Ajouter les imports nécessaires**
-   - `ClubDetailModal` pour afficher les détails des clubs
-   - `OwnershipGroupModal` pour afficher les détails des organisations
-   - Type `Club` pour typer correctement le state
-
-2. **Ajouter deux nouveaux états**
-   - `selectedClub`: pour stocker le club sélectionné (objet Club complet)
-   - `selectedOrganization`: pour stocker le nom de l'organisation sélectionnée (string)
-
-3. **Rendre les noms cliquables**
-   - Transformer le texte du nom en bouton avec style de lien
-   - Ajouter `cursor-pointer` et `hover:underline` pour indiquer l'interactivité
-   - Au clic, définir l'état correspondant pour ouvrir le modal
-
-4. **Ajouter les modals**
-   - `ClubDetailModal` contrôlé par `selectedClub`
-   - `OwnershipGroupModal` contrôlé par `selectedOrganization`
+Actuellement, quand un utilisateur clique sur "Create New Organization" dans le formulaire de lien, il ne peut entrer qu'un nom. Cette modification permettra d'ouvrir le formulaire complet de création d'organisation directement depuis la carte personne.
 
 ---
 
-### Exemple de Code
+### Approche Choisie
 
-**Pour les liens clubs :**
-```text
-┌─────────────────────────────────────────────────┐
-│ 🏢  Club Padel Johannesburg    ⭐ Primary    🗑️ │
-│     └── Manager                                 │
-└─────────────────────────────────────────────────┘
-       ↑
-       Cliquable → Ouvre ClubDetailModal
-```
-
-**Pour les liens organisations :**
-```text
-┌─────────────────────────────────────────────────┐
-│ 👑  Africa Padel Group         ⭐ Primary    🗑️ │
-│     └── Director                                │
-└─────────────────────────────────────────────────┘
-       ↑
-       Cliquable → Ouvre OwnershipGroupModal
-```
+Plutôt que de dupliquer le formulaire, je vais **réutiliser le composant `AddOrganizationDialog` existant** et le modifier légèrement pour qu'il puisse retourner l'organisation créée au composant parent.
 
 ---
 
-### Détails Techniques
+### Fichiers à Modifier
+
+| Fichier | Modification |
+|---------|-------------|
+| `src/components/organizations/AddOrganizationDialog.tsx` | Ajouter un callback `onOrganizationCreated` optionnel |
+| `src/components/people/PersonLinksTab.tsx` | Remplacer le formulaire inline par l'ouverture du dialog complet |
+
+---
+
+### Changements Détaillés
+
+#### 1. AddOrganizationDialog.tsx
+
+Ajouter une prop optionnelle pour notifier le parent quand une organisation est créée :
 
 ```typescript
-// Nouveaux états
-const [selectedClub, setSelectedClub] = useState<Club | null>(null);
-const [selectedOrganization, setSelectedOrganization] = useState<string | null>(null);
+interface AddOrganizationDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onOrganizationCreated?: (organizationName: string) => void; // Nouvelle prop
+}
+```
 
-// Gestionnaire de clic pour club
-const handleClubClick = (clubId: string) => {
-  const club = clubs.find(c => c.id === clubId);
-  if (club) setSelectedClub(club);
-};
+Dans `handleSubmit`, appeler ce callback après la création réussie :
 
-// Gestionnaire de clic pour organisation
-const handleOrganizationClick = (groupName: string) => {
-  setSelectedOrganization(groupName);
+```typescript
+const handleSubmit = async (e: React.FormEvent) => {
+  // ... existing code ...
+  
+  const result = await createGroup.mutateAsync({ ... });
+  
+  // Notifier le parent avec le nom de l'organisation créée
+  onOrganizationCreated?.(result.name);
+  
+  setFormData(initialFormData);
+  onOpenChange(false);
 };
 ```
 
-**Rendu du nom cliquable :**
-```tsx
-<span 
-  className="font-medium cursor-pointer hover:underline hover:text-primary"
-  onClick={(e) => {
-    e.stopPropagation();
-    if (link.link_type === 'club') {
-      handleClubClick(link.club_id!);
-    } else {
-      handleOrganizationClick(link.ownership_group_name!);
-    }
-  }}
->
-  {link.link_type === 'club' 
-    ? getClubName(link.club_id) 
-    : link.ownership_group_name}
-</span>
+#### 2. PersonLinksTab.tsx
+
+**Supprimer** :
+- L'état `isCreatingNew` et `newGroupName`
+- La logique de création inline dans `handleAddLink`
+- Le rendu conditionnel du formulaire inline (lignes 258-277)
+
+**Ajouter** :
+- Import de `AddOrganizationDialog`
+- État `showCreateOrgDialog` pour contrôler le dialog
+- Callback `handleOrganizationCreated` qui :
+  - Ferme le dialog de création
+  - Sélectionne automatiquement la nouvelle organisation dans le combobox
+
+---
+
+### Flux Utilisateur Amélioré
+
+```text
+┌─────────────────────────────────────────────────────────┐
+│ Add Organization Link                                    │
+├─────────────────────────────────────────────────────────┤
+│ Link Type: [Organization ▼]                              │
+│                                                          │
+│ Select Organization: [Search organizations... ▼]         │
+│   ┌─────────────────────────────────────────────────┐   │
+│   │ 🔍 Type to search...                            │   │
+│   ├─────────────────────────────────────────────────┤   │
+│   │ 👑 Africa Padel Group                           │   │
+│   │ 🛡️ SA Padel Federation                         │   │
+│   │ ─────────────────────────────────────────────── │   │
+│   │ ➕ Create New Organization ◄── Clic ici         │   │
+│   └─────────────────────────────────────────────────┘   │
+│                                                          │
+└─────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────┐
+│ Add Organization (Dialog complet)                        │
+├─────────────────────────────────────────────────────────┤
+│ Organization Name *: [                              ]    │
+│                                                          │
+│ Type:  [👑 Commercial] [🛡️ Association]                 │
+│                                                          │
+│ Instagram: [@handle    ]  Website: [example.com     ]   │
+│ Country:   [South Africa]  Status:  [Select...     ▼]   │
+│ Contact:   [John Smith  ]  Email:   [email@...      ]   │
+│ Phone:     [+27...      ]                               │
+│ Notes:     [                                        ]   │
+│                                                          │
+│                        [Cancel] [Create Organization]    │
+└─────────────────────────────────────────────────────────┘
+                           │
+                           ▼ (Après création)
+┌─────────────────────────────────────────────────────────┐
+│ Add Organization Link                                    │
+│                                                          │
+│ Select Organization: [👑 Nouvelle Organisation ▼] ◄──── │
+│                       Automatiquement sélectionnée       │
+└─────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-### Résultat Attendu
+### Avantages
 
-- L'utilisateur voit les liens avec un style indiquant qu'ils sont cliquables
-- Au survol, le nom s'affiche souligné
-- Au clic sur un club → le modal Club s'ouvre
-- Au clic sur une organisation → le modal Organisation s'ouvre
-- Les deux modals sont indépendants du modal Person (superposition possible)
+1. **Cohérence** : Le même formulaire de création est utilisé partout
+2. **Fonctionnalités complètes** : Accès à tous les champs (type, contacts, etc.)
+3. **Moins de code** : Suppression du formulaire inline dupliqué
+4. **Meilleure UX** : L'organisation est auto-sélectionnée après création
+
