@@ -54,12 +54,6 @@ export function usePersonResearchStatus(jobId: string | null, enabled: boolean) 
     queryFn: async () => {
       if (!jobId) throw new Error('No job ID');
 
-      const { data, error } = await supabase.functions.invoke('enrich-person', {
-        body: {},
-        headers: {},
-      });
-
-      // Use GET request with query params
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/enrich-person?action=status&job_id=${jobId}`,
         {
