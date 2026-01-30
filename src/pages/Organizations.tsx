@@ -276,21 +276,17 @@ export default function Organizations() {
               </Select>
             </div>
 
-            {/* Non-commercial Filter */}
+            {/* Type Filter */}
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Non-commercial:</span>
+              <span className="text-sm text-muted-foreground">Type:</span>
               <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as TypeFilter)}>
-                <SelectTrigger className="w-[140px] h-8">
+                <SelectTrigger className="w-[150px] h-8">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="association">
-                    <span className="flex items-center gap-2">
-                      <Shield className="w-3.5 h-3.5" />
-                      Only
-                    </span>
-                  </SelectItem>
+                  <SelectItem value="commercial">Commercial</SelectItem>
+                  <SelectItem value="association">Association</SelectItem>
                 </SelectContent>
               </Select>
             </div>
