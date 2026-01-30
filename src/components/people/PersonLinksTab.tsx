@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, Building2, Users, Star } from 'lucide-react';
+import { Plus, Trash2, Building2, Users, Star, Crown, Shield } from 'lucide-react';
 import { usePersonLinks, useCreatePersonLink, useDeletePersonLink } from '@/hooks/usePersonLinks';
 import { useClubs } from '@/hooks/useClubs';
 import { useOwnershipGroupsList, useCreateOwnershipGroup } from '@/hooks/useOwnershipGroups';
@@ -118,7 +118,14 @@ export function PersonLinksTab({ person }: PersonLinksTabProps) {
                   {link.link_type === 'club' ? (
                     <Building2 className="w-4 h-4" />
                   ) : (
-                    <Users className="w-4 h-4" />
+                    (() => {
+                      const group = ownershipGroups.find(g => g.name === link.ownership_group_name);
+                      return group?.organization_type === 'association' ? (
+                        <Shield className="w-4 h-4" />
+                      ) : (
+                        <Crown className="w-4 h-4" />
+                      );
+                    })()
                   )}
                 </div>
                 <div>
@@ -173,7 +180,7 @@ export function PersonLinksTab({ person }: PersonLinksTabProps) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="club">Club</SelectItem>
-                  <SelectItem value="ownership_group">Ownership Group</SelectItem>
+                  <SelectItem value="ownership_group">Organization</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -216,22 +223,29 @@ export function PersonLinksTab({ person }: PersonLinksTabProps) {
               </div>
             ) : (
               <div className="space-y-2">
-                <Label>Select Ownership Group</Label>
+                <Label>Select Organization</Label>
                 <Select value={selectedGroupName} onValueChange={handleGroupSelectionChange}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Choose an ownership group" />
+                    <SelectValue placeholder="Choose an organization" />
                   </SelectTrigger>
                   <SelectContent>
                     {ownershipGroups.map((group) => (
                       <SelectItem key={group.id} value={group.name}>
-                        {group.name}
+                        <span className="flex items-center gap-2">
+                          {group.organization_type === 'association' ? (
+                            <Shield className="w-3 h-3 text-muted-foreground" />
+                          ) : (
+                            <Crown className="w-3 h-3 text-muted-foreground" />
+                          )}
+                          {group.name}
+                        </span>
                       </SelectItem>
                     ))}
                     <SelectSeparator />
                     <SelectItem value="__create_new__">
                       <span className="flex items-center gap-2 text-primary">
                         <Plus className="w-4 h-4" />
-                        Create New Group
+                        Create New Organization
                       </span>
                     </SelectItem>
                   </SelectContent>
