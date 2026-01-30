@@ -130,6 +130,8 @@ export function useSaveEnrichmentData() {
         .update({
           enrichment_data: JSON.parse(JSON.stringify(enrichmentData)),
           enriched_at: new Date().toISOString(),
+          enrichment_job_id: null, // Clear job ID when results are saved
+          enrichment_status: 'complete',
         })
         .eq('id', personId)
         .select()
@@ -141,6 +143,7 @@ export function useSaveEnrichmentData() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['people'] });
       queryClient.invalidateQueries({ queryKey: ['person-enrichment', variables.personId] });
+      toast.success('Research completed and saved!');
     },
     onError: (error) => {
       console.error('Failed to save enrichment data:', error);
@@ -149,27 +152,78 @@ export function useSaveEnrichmentData() {
   });
 }
 
-// Hook to load existing enrichment data from the database
+// Hook to save job ID when research starts
+export function useSaveEnrichmentJobId() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ personId, jobId }: { personId: string; jobId: string }) => {
+      const { data, error } = await supabase
+        .from('people')
+        .update({
+          enrichment_job_id: jobId,
+          enrichment_status: 'processing',
+        })
+        .eq('id', personId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['person-enrichment', variables.personId] });
+    },
+    onError: (error) => {
+      console.error('Failed to save job ID:', error);
+    },
+  });
+}
+
+// Hook to clear job tracking (on error or cancel)
+export function useClearEnrichmentJob() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (personId: string) => {
+      const { data, error } = await supabase
+        .from('people')
+        .update({
+          enrichment_job_id: null,
+          enrichment_status: null,
+        })
+        .eq('id', personId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_, personId) => {
+      queryClient.invalidateQueries({ queryKey: ['person-enrichment', personId] });
+    },
+  });
+}
+
+// Hook to load existing enrichment data from the database (including pending job)
 export function usePersonEnrichmentData(personId: string) {
   return useQuery({
     queryKey: ['person-enrichment', personId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('people')
-        .select('enrichment_data, enriched_at')
+        .select('enrichment_data, enriched_at, enrichment_job_id, enrichment_status')
         .eq('id', personId)
         .single();
 
       if (error) throw error;
       
-      if (data?.enrichment_data) {
-        return {
-          enrichmentData: data.enrichment_data as unknown as EnrichedPerson,
-          enrichedAt: data.enriched_at,
-        };
-      }
-      
-      return null;
+      return {
+        enrichmentData: data?.enrichment_data as unknown as EnrichedPerson | null,
+        enrichedAt: data?.enriched_at,
+        pendingJobId: data?.enrichment_job_id,
+        jobStatus: data?.enrichment_status,
+      };
     },
     enabled: !!personId,
   });
