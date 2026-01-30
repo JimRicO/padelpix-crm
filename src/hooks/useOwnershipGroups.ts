@@ -164,6 +164,30 @@ export function useUpdateOwnershipGroup() {
   });
 }
 
+export function useDeleteOwnershipGroup() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('ownership_groups')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      return id;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ownership-groups'] });
+      toast({ title: 'Organization deleted successfully' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Failed to delete organization', description: error.message, variant: 'destructive' });
+    },
+  });
+}
+
 export function useUpsertOwnershipGroup() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
