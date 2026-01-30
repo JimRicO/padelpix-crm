@@ -78,7 +78,7 @@ export function OrganizationCard({ group, clubCount, onClick }: OrganizationCard
 
   return (
     <Card 
-      className="cursor-pointer border-l-4"
+      className="cursor-pointer border-l-4 hover:shadow-md transition-shadow"
       style={{ borderLeftColor: group.brand_color || 'hsl(var(--primary))' }}
       onClick={onClick}
     >
@@ -103,7 +103,7 @@ export function OrganizationCard({ group, clubCount, onClick }: OrganizationCard
           )}
 
           <div className="flex-1 min-w-0">
-            {/* Header: Name, Status, Type Badge, Enrich Button */}
+            {/* Header: Name, Status, Type Badge */}
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               <h3 className="card-title">{group.name}</h3>
               <Badge variant="outline" className={STATUS_COLORS[status]}>
@@ -113,10 +113,9 @@ export function OrganizationCard({ group, clubCount, onClick }: OrganizationCard
                 <TypeIcon className="w-3 h-3 mr-1" />
                 {typeConfig.label}
               </Badge>
-              {enrichmentStatus && ENRICHMENT_STATUS_DISPLAY[enrichmentStatus] && (
-                <Badge variant="outline" className={ENRICHMENT_STATUS_DISPLAY[enrichmentStatus].className}>
-                  <Sparkles className="w-3 h-3 mr-1" />
-                  {ENRICHMENT_STATUS_DISPLAY[enrichmentStatus].label}
+              {enrichmentStatus === 'completed' && (
+                <Badge variant="outline" className="bg-green-500/10 text-green-600">
+                  <Check className="w-3 h-3" />
                 </Badge>
               )}
               <div className="ml-auto">
@@ -139,7 +138,7 @@ export function OrganizationCard({ group, clubCount, onClick }: OrganizationCard
               </div>
             </div>
 
-            {/* Club count, country, founding year */}
+            {/* Compact meta row: clubs, country, year */}
             <div className="card-meta-row">
               <div className="card-meta">
                 <Building2 className="card-icon-sm" />
@@ -158,110 +157,16 @@ export function OrganizationCard({ group, clubCount, onClick }: OrganizationCard
                   <span className="text-muted-foreground">Est. {group.founding_year}</span>
                 </div>
               )}
-            </div>
-
-            {/* Address */}
-            {group.address && (
-              <div className="flex items-start gap-1 text-xs text-muted-foreground mt-1">
-                <MapPin className="card-icon-sm mt-0.5 shrink-0" />
-                <span className="line-clamp-1">{group.address}</span>
-              </div>
-            )}
-
-            {/* Contact: Email, Phone, Website */}
-            {(group.contact_name || group.contact_email || group.contact_phone || group.website) && (
-              <div className="flex flex-wrap gap-2 text-xs text-muted-foreground mt-1">
-                {group.contact_name && (
-                  <span>{group.contact_name}</span>
-                )}
-                {group.contact_email && (
-                  <span className="card-meta">
-                    <Mail className="card-icon-sm" />
-                    {group.contact_email}
-                  </span>
-                )}
-                {group.contact_phone && (
-                  <span className="card-meta">
-                    <Phone className="card-icon-sm" />
-                    {group.contact_phone}
-                  </span>
-                )}
-                {group.website && (
-                  <span className="card-meta">
-                    <Globe className="card-icon-sm" />
-                    {new URL(group.website).hostname}
-                  </span>
-                )}
-              </div>
-            )}
-
-            {/* Instagram & Bio */}
-            {group.instagram_handle && (
-              <div className="mt-1 space-y-0.5">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              {group.instagram_handle && (
+                <div className="card-meta">
                   <Instagram className="card-icon-sm" />
                   <span>@{group.instagram_handle.replace('@', '')}</span>
                   {group.instagram_followers && (
-                    <span className="font-medium">{formatFollowers(group.instagram_followers)} followers</span>
+                    <span className="font-medium ml-1">{formatFollowers(group.instagram_followers)}</span>
                   )}
                 </div>
-                {group.instagram_bio && (
-                  <p className="text-xs text-muted-foreground italic line-clamp-2 pl-5">
-                    "{group.instagram_bio}"
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Description */}
-            {group.description && (
-              <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
-                {group.description}
-              </p>
-            )}
-
-            {/* Founder Info */}
-            {group.founder_info && (
-              <div className="flex items-start gap-1 text-xs text-muted-foreground mt-2">
-                <User className="card-icon-sm mt-0.5 shrink-0" />
-                <span className="line-clamp-2">{group.founder_info}</span>
-              </div>
-            )}
-
-            {/* Color Palette */}
-            {colorPalette && Object.keys(colorPalette).length > 0 && (
-              <div className="flex items-center gap-1 mt-2">
-                <span className="text-xs text-muted-foreground">Colors:</span>
-                <div className="flex gap-1 flex-wrap">
-                  {Object.entries(colorPalette).map(([name, color]) => 
-                    color && (
-                      <div 
-                        key={name}
-                        className="w-4 h-4 rounded border"
-                        style={{ backgroundColor: color }}
-                        title={name.charAt(0).toUpperCase() + name.slice(1)}
-                      />
-                    )
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Attitude/Aesthetics tags */}
-            {(group.attitude || group.aesthetics) && (
-              <div className="flex flex-wrap gap-1 mt-2">
-                {group.attitude && (
-                  <Badge variant="secondary" className="text-xs py-0 px-1.5">
-                    {group.attitude}
-                  </Badge>
-                )}
-                {group.aesthetics && (
-                  <Badge variant="secondary" className="text-xs py-0 px-1.5">
-                    {group.aesthetics}
-                  </Badge>
-                )}
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </CardContent>
