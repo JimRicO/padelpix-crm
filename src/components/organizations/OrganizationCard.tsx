@@ -1,9 +1,20 @@
+import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Crown, Building2, Globe, Mail, MapPin, Sparkles, Loader2, Instagram, Check, Phone, User, Shield } from 'lucide-react';
+import { Crown, Building2, MapPin, Sparkles, Loader2, Instagram, Check, Shield, Trash2 } from 'lucide-react';
 import { useStartEnrichment } from '@/hooks/useEnrichmentStatus';
-import type { OwnershipGroup } from '@/hooks/useOwnershipGroups';
+import { useDeleteOwnershipGroup, type OwnershipGroup } from '@/hooks/useOwnershipGroups';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface OrganizationCardProps {
   group: OwnershipGroup;
@@ -50,7 +61,9 @@ const TYPE_CONFIG = {
 };
 
 export function OrganizationCard({ group, clubCount, onClick }: OrganizationCardProps) {
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const startEnrichment = useStartEnrichment();
+  const deleteGroup = useDeleteOwnershipGroup();
   const status = group.relationship_status || 'active';
   const enrichmentStatus = group.enrichment_status;
   const isEnriching = startEnrichment.isPending || enrichmentStatus === 'pending' || enrichmentStatus === 'processing';
@@ -68,6 +81,16 @@ export function OrganizationCard({ group, clubCount, onClick }: OrganizationCard
       website: group.website || undefined,
       instagramHandle: group.instagram_handle || undefined,
     });
+  };
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDelete = () => {
+    deleteGroup.mutate(group.id);
+    setShowDeleteDialog(false);
   };
 
   const formatFollowers = (count: number): string => {
@@ -118,7 +141,7 @@ export function OrganizationCard({ group, clubCount, onClick }: OrganizationCard
                   <Check className="w-3 h-3" />
                 </Badge>
               )}
-              <div className="ml-auto">
+              <div className="ml-auto flex items-center gap-1">
                 <Button
                   variant="outline"
                   size="sm"
@@ -134,6 +157,14 @@ export function OrganizationCard({ group, clubCount, onClick }: OrganizationCard
                     <Sparkles className="w-3 h-3 mr-1" />
                   )}
                   {enrichmentStatus === 'completed' ? 'Enriched' : 'Enrich'}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleDelete}
+                  className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                >
+                  <Trash2 className="w-4 h-4" />
                 </Button>
               </div>
             </div>
@@ -170,6 +201,23 @@ export function OrganizationCard({ group, clubCount, onClick }: OrganizationCard
           </div>
         </div>
       </CardContent>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Organization</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{group.name}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
