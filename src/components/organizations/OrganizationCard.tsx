@@ -1,7 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Crown, Building2, Globe, Mail, MapPin, Sparkles, Loader2, Instagram, Check, Phone, User } from 'lucide-react';
+import { Crown, Building2, Globe, Mail, MapPin, Sparkles, Loader2, Instagram, Check, Phone, User, Shield } from 'lucide-react';
 import { useStartEnrichment } from '@/hooks/useEnrichmentStatus';
 import type { OwnershipGroup } from '@/hooks/useOwnershipGroups';
 
@@ -36,11 +36,27 @@ const ENRICHMENT_STATUS_DISPLAY: Record<string, { label: string; className: stri
   failed: { label: 'Failed', className: 'bg-red-500/10 text-red-600' },
 };
 
+const TYPE_CONFIG = {
+  commercial: {
+    icon: Crown,
+    label: 'Commercial',
+    badgeClass: 'bg-primary/10 text-primary',
+  },
+  association: {
+    icon: Shield,
+    label: 'Association',
+    badgeClass: 'bg-slate-500/10 text-slate-600',
+  },
+};
+
 export function OrganizationCard({ group, clubCount, onClick }: OrganizationCardProps) {
   const startEnrichment = useStartEnrichment();
   const status = group.relationship_status || 'active';
   const enrichmentStatus = group.enrichment_status;
   const isEnriching = startEnrichment.isPending || enrichmentStatus === 'pending' || enrichmentStatus === 'processing';
+  const orgType = group.organization_type || 'commercial';
+  const typeConfig = TYPE_CONFIG[orgType];
+  const TypeIcon = typeConfig.icon;
 
   const colorPalette = group.color_palette as Record<string, string> | null;
 
@@ -79,7 +95,7 @@ export function OrganizationCard({ group, clubCount, onClick }: OrganizationCard
               className="card-avatar flex items-center justify-center"
               style={{ backgroundColor: `${group.brand_color || 'hsl(var(--primary))'}20` }}
             >
-              <Crown 
+              <TypeIcon 
                 className="w-5 h-5" 
                 style={{ color: group.brand_color || 'hsl(var(--primary))' }}
               />
@@ -87,11 +103,15 @@ export function OrganizationCard({ group, clubCount, onClick }: OrganizationCard
           )}
 
           <div className="flex-1 min-w-0">
-            {/* Header: Name, Status, Enrich Button */}
+            {/* Header: Name, Status, Type Badge, Enrich Button */}
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               <h3 className="card-title">{group.name}</h3>
               <Badge variant="outline" className={STATUS_COLORS[status]}>
                 {STATUS_LABELS[status]}
+              </Badge>
+              <Badge variant="outline" className={typeConfig.badgeClass}>
+                <TypeIcon className="w-3 h-3 mr-1" />
+                {typeConfig.label}
               </Badge>
               {enrichmentStatus && ENRICHMENT_STATUS_DISPLAY[enrichmentStatus] && (
                 <Badge variant="outline" className={ENRICHMENT_STATUS_DISPLAY[enrichmentStatus].className}>

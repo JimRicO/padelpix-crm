@@ -345,6 +345,7 @@ export type Database = {
           logo_url: string | null
           name: string
           notes: string | null
+          organization_type: string | null
           perplexity_citations: string[] | null
           perplexity_description: string | null
           recent_activities: Json | null
@@ -379,6 +380,7 @@ export type Database = {
           logo_url?: string | null
           name: string
           notes?: string | null
+          organization_type?: string | null
           perplexity_citations?: string[] | null
           perplexity_description?: string | null
           recent_activities?: Json | null
@@ -413,6 +415,7 @@ export type Database = {
           logo_url?: string | null
           name?: string
           notes?: string | null
+          organization_type?: string | null
           perplexity_citations?: string[] | null
           perplexity_description?: string | null
           recent_activities?: Json | null
