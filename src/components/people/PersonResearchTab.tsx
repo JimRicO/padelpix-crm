@@ -502,11 +502,22 @@ export function PersonResearchTab({ person }: PersonResearchTabProps) {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {enrichedPerson.quotes.map((quote, idx) => (
-                  <blockquote key={idx} className="text-sm italic border-l-2 border-muted pl-3">
-                    "{quote}"
-                  </blockquote>
-                ))}
+                {enrichedPerson.quotes.map((quote, idx) => {
+                  // Handle both string quotes and object quotes with {quote, source_url}
+                  const quoteText = typeof quote === 'string' ? quote : (quote as { quote: string; source_url?: string }).quote;
+                  const sourceUrl = typeof quote === 'object' ? (quote as { quote: string; source_url?: string }).source_url : null;
+                  
+                  return (
+                    <blockquote key={idx} className="text-sm italic border-l-2 border-muted pl-3">
+                      "{quoteText}"
+                      {sourceUrl && (
+                        <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="ml-2 not-italic">
+                          <ExternalLink className="h-3 w-3 inline text-muted-foreground hover:text-foreground" />
+                        </a>
+                      )}
+                    </blockquote>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
