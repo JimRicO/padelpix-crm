@@ -9,6 +9,7 @@ import { Search, LogOut, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
+  { label: 'Agenda', path: '/agenda' },
   { label: 'Clubs', path: '/' },
   { label: 'People', path: '/people' },
   { label: 'Organizations', path: '/organizations' },
