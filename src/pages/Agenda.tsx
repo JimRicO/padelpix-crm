@@ -1,10 +1,12 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, isToday, isTomorrow, isPast, startOfDay, compareAsc } from 'date-fns';
-import { Plus, Calendar } from 'lucide-react';
+import { Plus, Calendar, List } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { EventDateGroup } from '@/components/agenda/EventDateGroup';
+import { CalendarView } from '@/components/agenda/CalendarView';
 import { AddEventDialog } from '@/components/agenda/AddEventDialog';
 import { useAgendaEvents, useDeleteAgendaEvent } from '@/hooks/useAgendaEvents';
 import { useAuth } from '@/hooks/useAuth';
@@ -22,6 +24,10 @@ export default function Agenda() {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [addEventOpen, setAddEventOpen] = useState(false);
+  const [prefilledDate, setPrefilledDate] = useState<Date | undefined>();
+  const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
+  // Default to February 2026
+  const [currentMonth, setCurrentMonth] = useState(new Date(2026, 1, 1));
 
   const { data: events = [], isLoading } = useAgendaEvents();
   const deleteEvent = useDeleteAgendaEvent();
@@ -38,7 +44,7 @@ export default function Agenda() {
     );
   }, [events, searchQuery]);
 
-  // Group events by date
+  // Group events by date for list view
   const groupedEvents = useMemo(() => {
     const groups: Record<string, GroupedEvents> = {};
 
@@ -89,7 +95,19 @@ export default function Agenda() {
     navigate('/');
   };
 
-  // Redirect to auth if not logged in - using useEffect to avoid hooks order issues
+  const handleAddEventFromCalendar = (date: Date) => {
+    setPrefilledDate(date);
+    setAddEventOpen(true);
+  };
+
+  const handleDialogClose = (open: boolean) => {
+    setAddEventOpen(open);
+    if (!open) {
+      setPrefilledDate(undefined);
+    }
+  };
+
+  // Redirect to auth if not logged in
   useEffect(() => {
     if (!user) {
       navigate('/auth');
@@ -116,43 +134,88 @@ export default function Agenda() {
       />
 
       <main className="p-6">
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-muted-foreground">Loading events...</div>
+        {/* View Toggle Tabs */}
+        <Tabs
+          value={viewMode}
+          onValueChange={(v) => setViewMode(v as 'calendar' | 'list')}
+          className="w-full"
+        >
+          <div className="flex justify-center mb-6">
+            <TabsList>
+              <TabsTrigger value="calendar" className="gap-1.5">
+                <Calendar className="w-4 h-4" />
+                Calendar
+              </TabsTrigger>
+              <TabsTrigger value="list" className="gap-1.5">
+                <List className="w-4 h-4" />
+                List
+              </TabsTrigger>
+            </TabsList>
           </div>
-        ) : groupedEvents.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <Calendar className="w-12 h-12 text-muted-foreground mb-4" />
-            <h3 className="font-medium text-lg mb-1">No events yet</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              {searchQuery
-                ? 'No events match your search'
-                : 'Create your first event to get started'}
-            </p>
-            {!searchQuery && (
-              <Button onClick={() => setAddEventOpen(true)}>
-                <Plus className="w-4 h-4 mr-1" />
-                Add Event
-              </Button>
-            )}
-          </div>
-        ) : (
-          <div className="max-w-3xl mx-auto space-y-2">
-            {groupedEvents.map((group) => (
-              <EventDateGroup
-                key={group.label}
-                label={group.label}
-                events={group.events!}
-                defaultOpen={!group.isPast}
+
+          {/* Calendar View */}
+          <TabsContent value="calendar">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-muted-foreground">Loading events...</div>
+              </div>
+            ) : (
+              <CalendarView
+                currentMonth={currentMonth}
+                onMonthChange={setCurrentMonth}
+                events={filteredEvents}
                 onDeleteEvent={handleDeleteEvent}
                 onClubClick={handleClubClick}
+                onAddEvent={handleAddEventFromCalendar}
               />
-            ))}
-          </div>
-        )}
+            )}
+          </TabsContent>
+
+          {/* List View */}
+          <TabsContent value="list">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-muted-foreground">Loading events...</div>
+              </div>
+            ) : groupedEvents.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <Calendar className="w-12 h-12 text-muted-foreground mb-4" />
+                <h3 className="font-medium text-lg mb-1">No events yet</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {searchQuery
+                    ? 'No events match your search'
+                    : 'Create your first event to get started'}
+                </p>
+                {!searchQuery && (
+                  <Button onClick={() => setAddEventOpen(true)}>
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add Event
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="max-w-3xl mx-auto space-y-2">
+                {groupedEvents.map((group) => (
+                  <EventDateGroup
+                    key={group.label}
+                    label={group.label}
+                    events={group.events!}
+                    defaultOpen={!group.isPast}
+                    onDeleteEvent={handleDeleteEvent}
+                    onClubClick={handleClubClick}
+                  />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </main>
 
-      <AddEventDialog open={addEventOpen} onOpenChange={setAddEventOpen} />
+      <AddEventDialog
+        open={addEventOpen}
+        onOpenChange={handleDialogClose}
+        prefilledDate={prefilledDate}
+      />
     </div>
   );
 }

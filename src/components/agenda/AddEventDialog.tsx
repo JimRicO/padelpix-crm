@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -18,14 +18,22 @@ import { toast } from 'sonner';
 interface AddEventDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  prefilledDate?: Date;
 }
 
-export function AddEventDialog({ open, onOpenChange }: AddEventDialogProps) {
-  const [date, setDate] = useState<Date>();
+export function AddEventDialog({ open, onOpenChange, prefilledDate }: AddEventDialogProps) {
+  const [date, setDate] = useState<Date | undefined>(prefilledDate);
   const [time, setTime] = useState('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [clubId, setClubId] = useState<string>('');
+
+  // Update date when prefilledDate changes
+  useEffect(() => {
+    if (prefilledDate) {
+      setDate(prefilledDate);
+    }
+  }, [prefilledDate]);
 
   const { data: clubs = [] } = useClubs();
   const createEvent = useCreateAgendaEvent();
