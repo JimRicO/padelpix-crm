@@ -8,9 +8,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { EventDateGroup } from '@/components/agenda/EventDateGroup';
 import { CalendarView } from '@/components/agenda/CalendarView';
 import { AddEventDialog } from '@/components/agenda/AddEventDialog';
-import { useAgendaEvents, useDeleteAgendaEvent } from '@/hooks/useAgendaEvents';
+import { useAgendaEvents } from '@/hooks/useAgendaEvents';
 import { useAuth } from '@/hooks/useAuth';
-import { toast } from 'sonner';
 
 interface GroupedEvents {
   label: string;
@@ -30,7 +29,6 @@ export default function Agenda() {
   const [currentMonth, setCurrentMonth] = useState(new Date(2026, 1, 1));
 
   const { data: events = [], isLoading } = useAgendaEvents();
-  const deleteEvent = useDeleteAgendaEvent();
 
   // Filter events based on search
   const filteredEvents = useMemo(() => {
@@ -81,15 +79,6 @@ export default function Agenda() {
       return compareAsc(a.date, b.date);
     });
   }, [filteredEvents]);
-
-  const handleDeleteEvent = async (id: string) => {
-    try {
-      await deleteEvent.mutateAsync(id);
-      toast.success('Event deleted');
-    } catch {
-      toast.error('Failed to delete event');
-    }
-  };
 
   const handleClubClick = (clubId: string) => {
     navigate('/');
@@ -164,7 +153,6 @@ export default function Agenda() {
                 currentMonth={currentMonth}
                 onMonthChange={setCurrentMonth}
                 events={filteredEvents}
-                onDeleteEvent={handleDeleteEvent}
                 onClubClick={handleClubClick}
                 onAddEvent={handleAddEventFromCalendar}
               />
@@ -201,7 +189,6 @@ export default function Agenda() {
                     label={group.label}
                     events={group.events!}
                     defaultOpen={!group.isPast}
-                    onDeleteEvent={handleDeleteEvent}
                     onClubClick={handleClubClick}
                   />
                 ))}
