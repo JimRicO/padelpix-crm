@@ -214,19 +214,29 @@ export function EventDetailModal({ event, open, onOpenChange, onClubClick }: Eve
                 </div>
 
                 {/* Description with Markdown */}
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description (optional)</Label>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="description">Description</Label>
+                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Optional · Markdown supported</span>
+                  </div>
                   <Textarea
                     id="description"
                     value={formData.description}
                     onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Add notes or details (supports markdown)"
+                    placeholder="Add notes or details..."
                     rows={4}
+                    className="neu-pressed"
                   />
                   {formData.description && (
-                    <div className="space-y-1">
-                      <span className="text-xs text-muted-foreground">Preview:</span>
-                      <MarkdownPreview content={formData.description} />
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <div className="h-px flex-1 bg-border" />
+                        <span className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">Preview</span>
+                        <div className="h-px flex-1 bg-border" />
+                      </div>
+                      <div className="p-3 rounded-lg bg-muted/50 border border-border/50">
+                        <MarkdownPreview content={formData.description} />
+                      </div>
                     </div>
                   )}
                 </div>
