@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,13 +50,9 @@ export function PageHeader({
                 key={item.path}
                 variant={isActive ? 'secondary' : 'ghost'} 
                 size="sm" 
-                asChild={!isActive}
+                asChild
               >
-                {isActive ? (
-                  <span>{item.label}</span>
-                ) : (
-                  <a href={item.path}>{item.label}</a>
-                )}
+                <Link to={item.path}>{item.label}</Link>
               </Button>
             );
           })}
