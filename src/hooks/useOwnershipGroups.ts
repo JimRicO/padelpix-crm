@@ -305,6 +305,7 @@ interface BulkOrganizationData {
   website?: string;
   instagram_handle?: string;
   country?: string;
+  address?: string;
   contact_name?: string;
   contact_email?: string;
   contact_phone?: string;
@@ -346,6 +347,7 @@ export function useBulkCreateOrganizations() {
         website: org.website,
         instagram_handle: org.instagram_handle,
         country: org.country || 'South Africa',
+        address: org.address,
         contact_name: org.contact_name,
         contact_email: org.contact_email,
         contact_phone: org.contact_phone,
