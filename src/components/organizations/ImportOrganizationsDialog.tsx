@@ -21,6 +21,7 @@ interface ParsedOrganization {
   website?: string;
   instagram_handle?: string;
   country?: string;
+  address?: string;
   contact_name?: string;
   contact_email?: string;
   contact_phone?: string;
@@ -35,15 +36,84 @@ const EXAMPLE_JSON = `[
     "organization_type": "commercial",
     "website": "https://africapadel.com",
     "country": "South Africa",
-    "contact_name": "John Doe",
     "contact_email": "john@africapadel.com"
   },
   {
     "name": "Padel SA Federation",
     "organization_type": "association",
+    "address": "123 Main St, Cape Town",
     "country": "South Africa"
   }
 ]`;
+
+// Helper to extract country from address
+const extractCountryFromAddress = (address: string): string | null => {
+  const countryPatterns: Record<string, string> = {
+    'switzerland': 'Switzerland',
+    'spain': 'Spain',
+    'argentina': 'Argentina',
+    'united states': 'United States',
+    'usa': 'United States',
+    'italy': 'Italy',
+    'france': 'France',
+    'brazil': 'Brazil',
+    'mexico': 'Mexico',
+    'méxico': 'Mexico',
+    'united kingdom': 'United Kingdom',
+    'uk': 'United Kingdom',
+    'south africa': 'South Africa',
+  };
+  
+  const lower = address.toLowerCase();
+  for (const [pattern, country] of Object.entries(countryPatterns)) {
+    if (lower.includes(pattern)) {
+      return country;
+    }
+  }
+  return null;
+};
+
+// Transform the nested format to flat format
+const transformNestedFormat = (data: unknown): ParsedOrganization[] => {
+  const result: ParsedOrganization[] = [];
+  
+  if (typeof data !== 'object' || data === null) {
+    return result;
+  }
+  
+  const obj = data as Record<string, unknown>;
+  
+  // Check for international_organizations and national_organizations arrays
+  const arrays = ['international_organizations', 'national_organizations'];
+  
+  for (const key of arrays) {
+    const arr = obj[key];
+    if (Array.isArray(arr)) {
+      for (const item of arr) {
+        if (typeof item === 'object' && item !== null) {
+          const org = item as Record<string, unknown>;
+          const contacts = (org.contact_details || {}) as Record<string, unknown>;
+          
+          const address = typeof org.headquarters_address === 'string' ? org.headquarters_address : undefined;
+          const country = address ? extractCountryFromAddress(address) : null;
+          
+          result.push({
+            name: typeof org.official_name === 'string' ? org.official_name : '',
+            organization_type: 'association',
+            website: typeof contacts.website === 'string' ? contacts.website : undefined,
+            address,
+            country: country || 'South Africa',
+            contact_email: typeof contacts.email_address === 'string' ? contacts.email_address : undefined,
+            contact_phone: typeof contacts.phone_number === 'string' ? contacts.phone_number : undefined,
+            relationship_status: 'prospect',
+          });
+        }
+      }
+    }
+  }
+  
+  return result;
+};
 
 export function ImportOrganizationsDialog({ open, onOpenChange }: ImportOrganizationsDialogProps) {
   const [rawData, setRawData] = useState('');
@@ -56,6 +126,15 @@ export function ImportOrganizationsDialog({ open, onOpenChange }: ImportOrganiza
   const parseJSON = (text: string): ParsedOrganization[] => {
     const parsed = JSON.parse(text);
     
+    // Handle nested format with international_organizations/national_organizations
+    if (!Array.isArray(parsed) && typeof parsed === 'object') {
+      const transformed = transformNestedFormat(parsed);
+      if (transformed.length > 0) {
+        return transformed;
+      }
+      throw new Error('JSON must be an array of organizations or contain international_organizations/national_organizations');
+    }
+
     if (!Array.isArray(parsed)) {
       throw new Error('JSON must be an array of organizations');
     }
@@ -71,6 +150,7 @@ export function ImportOrganizationsDialog({ open, onOpenChange }: ImportOrganiza
         website: item.website?.trim() || undefined,
         instagram_handle: item.instagram_handle?.trim() || undefined,
         country: item.country?.trim() || 'South Africa',
+        address: item.address?.trim() || undefined,
         contact_name: item.contact_name?.trim() || undefined,
         contact_email: item.contact_email?.trim() || undefined,
         contact_phone: item.contact_phone?.trim() || undefined,
@@ -156,13 +236,14 @@ export function ImportOrganizationsDialog({ open, onOpenChange }: ImportOrganiza
             <div className="bg-muted/50 rounded-lg p-4 space-y-2">
               <h4 className="font-medium text-sm">Supported Fields</h4>
               <div className="flex flex-wrap gap-1.5">
-                {['name*', 'organization_type', 'website', 'instagram_handle', 'country', 'contact_name', 'contact_email', 'contact_phone', 'notes', 'relationship_status', 'total_clubs'].map(field => (
+                {['name*', 'organization_type', 'website', 'instagram_handle', 'country', 'address', 'contact_name', 'contact_email', 'contact_phone', 'notes', 'relationship_status', 'total_clubs'].map(field => (
                   <Badge key={field} variant="secondary" className="text-xs">
                     {field}
                   </Badge>
                 ))}
               </div>
               <p className="text-xs text-muted-foreground mt-2">
+                * Required field. Also supports nested format with international_organizations/national_organizations arrays.
                 * Required field. organization_type can be "commercial" or "association"
               </p>
             </div>
