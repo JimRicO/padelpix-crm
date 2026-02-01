@@ -1,138 +1,126 @@
 
-
-## Plan: Create Agenda Feature
+## Plan: Add Monthly Calendar View to Agenda
 
 ### Overview
-Add a calendar-based agenda view to the CRM that displays scheduled events, both manually created and automatically generated when clubs move through the pipeline. The Agenda will become the first navigation item, providing quick visibility into upcoming activities.
+Transform the Agenda page from a simple list view to a full monthly calendar view that defaults to February 2026. Users will be able to see events displayed on specific days, navigate between months, and quickly see their schedule at a glance.
 
 ### What You'll Get
-- **Agenda Page** (`/agenda`): A dedicated view showing events grouped by date (Today, Tomorrow, then by specific day)
-- **Add Event Modal**: Create manual events with optional club linking
-- **Automatic Pipeline Events**: When a club's stage changes, an event is auto-created
-- **Visual Distinction**: System-generated events styled in gray, manual events in normal styling
+- **Monthly Calendar Grid**: A visual calendar showing the current month with events displayed on their dates
+- **View Toggle**: Ability to switch between "Calendar" and "List" views using tabs
+- **Month Navigation**: Previous/Next buttons to move between months
+- **Event Indicators**: Small dots or badges on calendar days that have events
+- **Day Click**: Clicking a day shows the events for that day in a side panel or popover
+- **Today Highlight**: Current day visually distinguished
+- **February 2026 Default**: Calendar opens to February 2026 as requested
 
 ---
 
 ### Implementation Steps
 
-#### Phase 1: Database Setup
+#### Phase 1: Create Calendar View Component
 
-**Create `agenda_events` table:**
-| Column | Type | Notes |
-|--------|------|-------|
-| id | uuid | Primary key, auto-generated |
-| event_date | date | Required |
-| event_time | time | Optional |
-| title | text | Required |
-| description | text | Optional |
-| event_type | text | 'manual' or 'system' |
-| club_id | uuid | Optional, foreign key to clubs |
-| created_by | uuid | User reference |
-| created_at | timestamp | Default now() |
+**New file: `src/components/agenda/CalendarView.tsx`**
 
-**Row Level Security:**
-- Users can only view/create/update/delete their own events
-- System events also check that the linked club belongs to the user
+This component renders a monthly calendar grid:
 
----
+| Feature | Details |
+|---------|---------|
+| Month header | Shows "February 2026" with navigation arrows |
+| Day grid | 7 columns (Sun-Sat), 5-6 rows for weeks |
+| Day cells | Show date number + event count badge |
+| Today styling | Highlighted background/border |
+| Event dots | Small indicators for days with events |
+| Click handler | Opens day's events in a popover/panel |
 
-#### Phase 2: Frontend Implementation
+Uses existing `date-fns` functions:
+- `startOfMonth`, `endOfMonth`, `startOfWeek`, `endOfWeek`
+- `eachDayOfInterval`, `isSameMonth`, `isSameDay`, `format`
+- `addMonths`, `subMonths` for navigation
 
-**Files to create:**
+#### Phase 2: Create Day Events Popover
 
-1. **`src/pages/Agenda.tsx`**
-   - Page layout with PageHeader (consistent with Clubs/People/Organizations)
-   - "Add Event" button in header actions
-   - Events grouped by date sections:
-     - "Today" (expanded)
-     - "Tomorrow" (expanded)
-     - Future dates grouped by day (expanded)
-     - Past dates (collapsed by default)
-   - Empty state when no events
+**New file: `src/components/agenda/DayEventsPopover.tsx`**
 
-2. **`src/hooks/useAgendaEvents.ts`**
-   - `useAgendaEvents()` - Fetch all events with optional club data
-   - `useCreateAgendaEvent()` - Create new manual event
-   - `useUpdateAgendaEvent()` - Edit existing event
-   - `useDeleteAgendaEvent()` - Remove event
+When clicking a day in the calendar:
+- Shows a popover with events for that day
+- Lists events with time, title, and linked club
+- Includes "Add Event" button pre-filled with selected date
+- Uses existing `EventCard` styling
 
-3. **`src/components/agenda/AddEventDialog.tsx`**
-   - Modal with form fields:
-     - Date picker (required) - using existing Calendar + Popover pattern
-     - Time picker (optional) - simple time input
-     - Title (required)
-     - Description (optional) - Textarea with markdown preview
-     - Club selector (optional) - Dropdown of user's clubs
+#### Phase 3: Update Agenda Page with View Toggle
 
-4. **`src/components/agenda/EventCard.tsx`**
-   - Display individual event with time, title, description
-   - Show linked club name with click-through option
-   - Styled differently for system vs manual events
+**Modify: `src/pages/Agenda.tsx`**
 
-5. **`src/components/agenda/EventDateGroup.tsx`**
-   - Collapsible section for each date
-   - Shows date header with event count
-   - Contains list of EventCard components
+Add view switching:
+- Add `viewMode` state: `'calendar' | 'list'`
+- Add `currentMonth` state initialized to `new Date(2026, 1, 1)` (February 2026)
+- Add Tabs component in the main area
+- Render `CalendarView` or existing list based on selection
 
-**Files to modify:**
-
-1. **`src/App.tsx`**
-   - Add route: `/agenda` -> `Agenda` page
-
-2. **`src/components/layout/PageHeader.tsx`**
-   - Add "Agenda" as first navigation item
-
----
-
-#### Phase 3: Database Trigger for Pipeline Changes
-
-**Create trigger function `log_pipeline_stage_change()`:**
+Layout structure:
 ```text
-When clubs.pipeline_stage is updated:
-  - Insert into agenda_events
-  - event_date = current_date
-  - event_type = 'system'
-  - title = "[Club Name] moved to [New Stage Name]"
-  - club_id = the club's id
-  - created_by = the club's created_by (owner)
++----------------------------------+
+| PageHeader (search, Add Event)   |
++----------------------------------+
+| [Calendar] [List]   <- Feb 2026 ->|
++----------------------------------+
+|  Sun Mon Tue Wed Thu Fri Sat     |
+|  --------------------------------|
+|  ...     1   2   3   4   5   6   |
+|          *       *               | <- dots for events
+|  7   8   9  10  11  12  13       |
+|  ...                             |
++----------------------------------+
 ```
 
-**Create trigger on clubs table:**
-- Fires AFTER UPDATE
-- Only when pipeline_stage column actually changes
+#### Phase 4: Styling Details
+
+**Calendar Grid Styling:**
+- Uses CSS Grid: 7 columns
+- Day cells: `aspect-square` for consistent sizing
+- Muted colors for days outside current month
+- Primary background for "today"
+- Hover state for interactive days
+
+**Event Indicators:**
+- Small colored dots (max 3 visible, then "+X more")
+- System events: gray dot
+- Manual events: primary color dot
 
 ---
 
 ### Technical Approach
 
-**Date Grouping Logic:**
+**Calendar Date Calculation:**
 ```text
-1. Group events by event_date
-2. Label groups:
-   - If date === today: "Today"
-   - If date === tomorrow: "Tomorrow"
-   - Else: format as "Wednesday, 5 February 2025"
-3. Sort: Past dates at bottom (collapsed), Today first, then future dates
+1. Get first day of current month
+2. Get start of week containing that day
+3. Get last day of current month
+4. Get end of week containing that day
+5. Generate array of all days in range
+6. Render in 7-column grid
 ```
 
-**Stage Name Formatting:**
-The trigger will convert pipeline stage values like `dm_sent` to readable format "DM Sent" for the event title.
+**Event Grouping by Day:**
+```text
+1. Filter events by current month
+2. Group by date key (yyyy-MM-dd)
+3. For each day cell, look up events by date key
+4. Show count/dots accordingly
+```
 
-**Club Selector:**
-Uses existing `useClubs()` hook to populate dropdown, reusing the Select component pattern from AddClubDialog.
+**Responsive Design:**
+- On mobile: smaller day cells
+- Day numbers remain visible, event count as single number
+- Popover adapts to available space
 
 ---
 
-### UI/UX Details
+### Files Summary
 
-**Event Card Styling:**
-- System events: `bg-muted/50 text-muted-foreground border-dashed`
-- Manual events: Standard card styling with neumorphic shadow
-- Time displayed in badge format when set
-- Club name shown as clickable link
+**Create:**
+- `src/components/agenda/CalendarView.tsx` - Monthly calendar grid
+- `src/components/agenda/DayEventsPopover.tsx` - Events display for selected day
 
-**Collapsible Sections:**
-- Uses existing Collapsible component
-- ChevronDown/ChevronRight icons for expand/collapse state
-- Past dates collapsed by default with "Past Events" label
-
+**Modify:**
+- `src/pages/Agenda.tsx` - Add view toggle and calendar state
