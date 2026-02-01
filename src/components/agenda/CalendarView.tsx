@@ -22,7 +22,6 @@ interface CalendarViewProps {
   currentMonth: Date;
   onMonthChange: (date: Date) => void;
   events: AgendaEvent[];
-  onDeleteEvent?: (id: string) => void;
   onClubClick?: (clubId: string) => void;
   onAddEvent?: (date: Date) => void;
 }
@@ -33,7 +32,6 @@ export function CalendarView({
   currentMonth,
   onMonthChange,
   events,
-  onDeleteEvent,
   onClubClick,
   onAddEvent,
 }: CalendarViewProps) {
@@ -120,7 +118,6 @@ export function CalendarView({
               key={dateKey}
               date={day}
               events={dayEvents}
-              onDeleteEvent={onDeleteEvent}
               onClubClick={onClubClick}
               onAddEvent={onAddEvent}
             >

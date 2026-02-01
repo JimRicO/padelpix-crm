@@ -1,18 +1,15 @@
-import { Clock, Building2, Trash2 } from 'lucide-react';
+import { Clock, Building2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
 import { cn } from '@/lib/utils';
 import type { AgendaEvent } from '@/hooks/useAgendaEvents';
 
 interface EventCardProps {
   event: AgendaEvent;
-  onDelete?: (id: string) => void;
-  onClubClick?: (clubId: string) => void;
+  onClick?: () => void;
 }
 
-export function EventCard({ event, onDelete, onClubClick }: EventCardProps) {
+export function EventCard({ event, onClick }: EventCardProps) {
   const isSystem = event.event_type === 'system';
 
   const formatTime = (time: string | null) => {
@@ -30,12 +27,13 @@ export function EventCard({ event, onDelete, onClubClick }: EventCardProps) {
   return (
     <Card 
       className={cn(
-        'transition-all',
+        'transition-all cursor-pointer hover:scale-[1.01]',
         isSystem && 'bg-muted/50 border-dashed border border-muted-foreground/20 shadow-none'
       )}
+      onClick={onClick}
     >
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-3">
+      <CardContent className="p-3">
+        <div className="flex items-start gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap mb-1">
               {event.event_time && (
@@ -52,42 +50,19 @@ export function EventCard({ event, onDelete, onClubClick }: EventCardProps) {
             </div>
             
             <h4 className={cn(
-              'font-medium text-sm',
+              'font-medium text-sm truncate',
               isSystem && 'text-muted-foreground'
             )}>
               {event.title}
             </h4>
             
-            {event.description && (
-              <div className={cn(
-                'mt-2 text-xs',
-                isSystem && 'text-muted-foreground'
-              )}>
-                <MarkdownRenderer content={event.description} />
+            {event.clubs && (
+              <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Building2 className="w-3 h-3" />
+                <span className="truncate">{event.clubs.club_name}</span>
               </div>
             )}
-            
-            {event.clubs && (
-              <button
-                onClick={() => onClubClick?.(event.clubs!.id)}
-                className="mt-2 flex items-center gap-1.5 text-xs text-primary hover:underline"
-              >
-                <Building2 className="w-3 h-3" />
-                {event.clubs.club_name}
-              </button>
-            )}
           </div>
-          
-          {!isSystem && onDelete && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-destructive"
-              onClick={() => onDelete(event.id)}
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          )}
         </div>
       </CardContent>
     </Card>
