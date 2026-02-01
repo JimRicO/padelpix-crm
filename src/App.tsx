@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import People from "./pages/People";
 import Organizations from "./pages/Organizations";
+import Events from "./pages/Events";
 import Agenda from "./pages/Agenda";
 import NotFound from "./pages/NotFound";
 
@@ -25,6 +26,7 @@ const App = () => (
             <Route path="/agenda" element={<Agenda />} />
             <Route path="/people" element={<People />} />
             <Route path="/organizations" element={<Organizations />} />
+            <Route path="/events" element={<Events />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
