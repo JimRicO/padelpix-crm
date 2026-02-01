@@ -298,3 +298,79 @@ export function useSyncMissingOrganizations() {
     },
   });
 }
+
+interface BulkOrganizationData {
+  name: string;
+  organization_type?: OrganizationType;
+  website?: string;
+  instagram_handle?: string;
+  country?: string;
+  contact_name?: string;
+  contact_email?: string;
+  contact_phone?: string;
+  notes?: string;
+  relationship_status?: string;
+  total_clubs?: number;
+}
+
+export function useBulkCreateOrganizations() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (organizations: BulkOrganizationData[]) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      if (organizations.length === 0) {
+        return { created: 0, skipped: 0 };
+      }
+
+      // Get existing organization names to avoid duplicates
+      const { data: existing } = await supabase
+        .from('ownership_groups')
+        .select('name');
+      
+      const existingNames = new Set((existing || []).map(o => o.name.toLowerCase()));
+      
+      const newOrgs = organizations.filter(org => !existingNames.has(org.name.toLowerCase()));
+      const skipped = organizations.length - newOrgs.length;
+
+      if (newOrgs.length === 0) {
+        return { created: 0, skipped };
+      }
+
+      const recordsToInsert = newOrgs.map(org => ({
+        name: org.name,
+        organization_type: org.organization_type || 'commercial',
+        website: org.website,
+        instagram_handle: org.instagram_handle,
+        country: org.country || 'South Africa',
+        contact_name: org.contact_name,
+        contact_email: org.contact_email,
+        contact_phone: org.contact_phone,
+        notes: org.notes,
+        relationship_status: org.relationship_status || 'prospect',
+        total_clubs: org.total_clubs,
+        created_by: user.id,
+      }));
+
+      const { error } = await supabase
+        .from('ownership_groups')
+        .insert(recordsToInsert);
+
+      if (error) throw error;
+      return { created: newOrgs.length, skipped };
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['ownership-groups'] });
+      const msg = result.skipped > 0 
+        ? `Created ${result.created} organization${result.created !== 1 ? 's' : ''}, skipped ${result.skipped} duplicate${result.skipped !== 1 ? 's' : ''}`
+        : `Created ${result.created} organization${result.created !== 1 ? 's' : ''}`;
+      toast({ title: 'Import complete', description: msg });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Failed to import organizations', description: error.message, variant: 'destructive' });
+    },
+  });
+}
