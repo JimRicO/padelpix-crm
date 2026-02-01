@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format, isToday, isTomorrow, isPast, startOfDay, compareAsc } from 'date-fns';
 import { Plus, Calendar } from 'lucide-react';
@@ -25,12 +25,6 @@ export default function Agenda() {
 
   const { data: events = [], isLoading } = useAgendaEvents();
   const deleteEvent = useDeleteAgendaEvent();
-
-  // Redirect to auth if not logged in
-  if (!user) {
-    navigate('/auth');
-    return null;
-  }
 
   // Filter events based on search
   const filteredEvents = useMemo(() => {
@@ -92,9 +86,20 @@ export default function Agenda() {
   };
 
   const handleClubClick = (clubId: string) => {
-    // Navigate to clubs page - could open modal in future
     navigate('/');
   };
+
+  // Redirect to auth if not logged in - using useEffect to avoid hooks order issues
+  useEffect(() => {
+    if (!user) {
+      navigate('/auth');
+    }
+  }, [user, navigate]);
+
+  // Show nothing while redirecting
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-background">
