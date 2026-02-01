@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useMemo } from 'react';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { format, isToday, isTomorrow, isPast, startOfDay, compareAsc } from 'date-fns';
 import { Plus, Calendar, List } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -21,7 +21,7 @@ interface GroupedEvents {
 
 export default function Agenda() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [addEventOpen, setAddEventOpen] = useState(false);
   const [prefilledDate, setPrefilledDate] = useState<Date | undefined>();
@@ -107,16 +107,16 @@ export default function Agenda() {
     }
   };
 
-  // Redirect to auth if not logged in
-  useEffect(() => {
-    if (!user) {
-      navigate('/auth');
-    }
-  }, [user, navigate]);
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
 
-  // Show nothing while redirecting
   if (!user) {
-    return null;
+    return <Navigate to="/auth" replace />;
   }
 
   return (
