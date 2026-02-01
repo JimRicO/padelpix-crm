@@ -26,7 +26,7 @@ export function AddEventDialog({ open, onOpenChange, prefilledDate }: AddEventDi
   const [time, setTime] = useState('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [clubId, setClubId] = useState<string>('');
+  const [clubId, setClubId] = useState<string>('none');
 
   // Update date when prefilledDate changes
   useEffect(() => {
@@ -43,7 +43,7 @@ export function AddEventDialog({ open, onOpenChange, prefilledDate }: AddEventDi
     setTime('');
     setTitle('');
     setDescription('');
-    setClubId('');
+    setClubId('none');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -60,7 +60,7 @@ export function AddEventDialog({ open, onOpenChange, prefilledDate }: AddEventDi
         event_time: time || null,
         title: title.trim(),
         description: description.trim() || null,
-        club_id: clubId || null,
+        club_id: clubId === 'none' ? null : clubId,
       });
 
       toast.success('Event created');
@@ -156,7 +156,7 @@ export function AddEventDialog({ open, onOpenChange, prefilledDate }: AddEventDi
                 <SelectValue placeholder="Select a club" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">None</SelectItem>
+                <SelectItem value="none">None</SelectItem>
                 {clubs.map((club) => (
                   <SelectItem key={club.id} value={club.id}>
                     {club.club_name}
