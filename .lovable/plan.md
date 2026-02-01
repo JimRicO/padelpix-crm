@@ -1,107 +1,63 @@
 
 
-## Enhance Research Progress UI with Better Feedback
+## Plan: Add Markdown Support for Notes
 
-The current progress state shows a basic progress bar but lacks clear visual confirmation that the task is actively running. This plan will add more reassuring feedback elements.
+### Overview
+Add automatic markdown rendering for all notes fields across the application. Users will be able to write notes using markdown syntax (bold, italic, lists, links, etc.) and see them properly formatted when displayed.
 
----
+### What You'll Get
+- **Rich text display**: Notes will render with proper formatting for headers, bold, italic, lists, links, code blocks, etc.
+- **Consistent experience**: All notes across Clubs, People, and Organizations will support markdown
+- **Easy editing**: The text input remains plain text - just write markdown naturally
 
-### Current State (lines 489-506)
+### Example
+When you type:
+```
+**Important:** Follow up next week
 
-The progress UI currently shows:
-- A pulsing search icon
-- "Researching [name]..."
-- A progress bar
-- "Processing X of Y sources"
+- Call about partnership
+- Send pricing sheet
 
-### Proposed Enhancements
-
-| Element | Purpose |
-|---------|---------|
-| Green checkmark badge | Confirms connection to API is working |
-| Job ID display | Technical confirmation the job was created |
-| Status text with timestamp | Shows the current processing phase |
-| "Last updated" indicator | Confirms polling is actively happening |
-| Animated dots | Visual movement to show activity |
-
----
-
-### Updated Progress Card Design
-
-```text
-┌──────────────────────────────────────────────────────┐
-│                                                      │
-│        🔍 (pulsing)                                  │
-│                                                      │
-│   Researching Chris Klein...                         │
-│                                                      │
-│   ✓ Job created successfully                         │
-│   Job ID: API_PEOPLE_1769765...                      │
-│                                                      │
-│   [████████████░░░░░░░░░░░░░] 60%                    │
-│                                                      │
-│   ⏳ Status: processing                              │
-│   Processing 3 of 5 sources...                       │
-│                                                      │
-│   🔄 Checking for updates every 10 seconds           │
-│   Last checked: just now                             │
-│                                                      │
-└──────────────────────────────────────────────────────┘
+Check their [website](https://example.com)
 ```
 
----
-
-### Technical Implementation
-
-**File to modify:** `src/components/people/PersonResearchTab.tsx`
-
-1. **Add state for tracking last update time:**
-   ```typescript
-   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-   ```
-
-2. **Update effect to track polling:**
-   ```typescript
-   useEffect(() => {
-     if (status) {
-       setLastUpdated(new Date());
-     }
-   }, [status]);
-   ```
-
-3. **Enhance progress card UI (lines 489-506):**
-   - Add a green checkmark badge confirming job creation
-   - Display truncated job ID for reference
-   - Show current status phase (e.g., "processing", "pending")
-   - Add "Last checked" timestamp with relative time
-   - Add subtle animated indicator showing active polling
-
-4. **Import additional icons:**
-   - `CheckCircle` for success confirmation
-   - `Clock` for last updated indicator
+It will display with proper formatting: bold text, bullet points, and clickable links.
 
 ---
 
-### Visual Feedback Elements
+### Technical Details
 
-| Feedback | Implementation |
-|----------|----------------|
-| Job created confirmation | Green badge with checkmark icon |
-| Active status | Badge showing current status with appropriate color |
-| Progress details | Enhanced text with row counts |
-| Polling indicator | Rotating refresh icon + "Last checked: X seconds ago" |
-| Animated activity | Subtle animation on status elements |
+#### 1. Install Markdown Library
+Add `react-markdown` package to parse and render markdown content safely.
 
----
+#### 2. Enable Typography Plugin
+Update `tailwind.config.ts` to include the typography plugin (already installed as a dev dependency). This provides the `prose` CSS classes for beautiful text styling.
 
-### Code Changes Summary
+```text
+plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")]
+```
 
-**Lines 489-506** will be expanded to include:
-- Success confirmation badge
-- Job ID reference (truncated)
-- Status badge with color coding
-- Last updated timestamp
-- Polling indicator animation
+#### 3. Create Reusable Markdown Component
+Create a new `MarkdownRenderer` component at `src/components/ui/markdown-renderer.tsx` that:
+- Uses `react-markdown` to parse markdown
+- Applies Tailwind typography classes
+- Handles dark mode styling
+- Opens links in new tabs safely
 
-This provides users with multiple visual confirmations that the research is actively running and the system is responsive.
+#### 4. Update Display Components
+Replace plain text rendering with the new `MarkdownRenderer` in these locations:
+
+| File | Field | Change |
+|------|-------|--------|
+| `ClubInfoTab.tsx` | notes | Add read-only markdown preview below Textarea |
+| `PersonInfoTab.tsx` | notes | Add read-only markdown preview below Textarea |
+| `OwnershipGroupModal.tsx` | notes | Add read-only markdown preview below Textarea |
+| `ClubTasksTab.tsx` | task.description | Replace plain `<p>` with MarkdownRenderer |
+| `OrganizationDetailView.tsx` | description, founder_info, attitude, aesthetics, perplexity_description | Replace plain `<p>` with MarkdownRenderer |
+
+#### 5. UX Pattern for Editable Notes
+For editable notes fields, implement a preview section that shows how the markdown will render:
+- Keep the `Textarea` for editing (users type markdown syntax)
+- Add a "Preview" section below that renders the markdown
+- Use a subtle visual distinction (muted background) for the preview area
 
