@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { label: 'Clubs', path: '/' },
   { label: 'People', path: '/people' },
   { label: 'Organizations', path: '/organizations' },
+  { label: 'Events', path: '/events' },
 ];
 
 interface PageHeaderProps {
