@@ -8,9 +8,10 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Building2, RefreshCw, ArrowUpDown, Filter } from 'lucide-react';
+import { Plus, Building2, RefreshCw, ArrowUpDown, Filter, Upload } from 'lucide-react';
 import { OrganizationCard } from '@/components/organizations/OrganizationCard';
 import { AddOrganizationDialog } from '@/components/organizations/AddOrganizationDialog';
+import { ImportOrganizationsDialog } from '@/components/organizations/ImportOrganizationsDialog';
 import { OwnershipGroupModal } from '@/components/group/OwnershipGroupModal';
 
 type TypeFilter = 'all' | OrganizationType;
@@ -25,6 +26,7 @@ export default function Organizations() {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'name' | 'clubs' | 'country'>('name');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
@@ -185,6 +187,10 @@ export default function Organizations() {
                 </Badge>
               </Button>
             )}
+            <Button variant="outline" size="sm" onClick={() => setShowImportDialog(true)}>
+              <Upload className="w-4 h-4 mr-2" />
+              Import JSON
+            </Button>
             <Button size="sm" onClick={() => setShowAddDialog(true)}>
               <Plus className="w-4 h-4 mr-2" />
               Add Organization
@@ -280,6 +286,11 @@ export default function Organizations() {
       <AddOrganizationDialog 
         open={showAddDialog} 
         onOpenChange={setShowAddDialog} 
+      />
+
+      <ImportOrganizationsDialog
+        open={showImportDialog}
+        onOpenChange={setShowImportDialog}
       />
       
       <OwnershipGroupModal
