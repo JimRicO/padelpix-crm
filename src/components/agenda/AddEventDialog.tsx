@@ -9,7 +9,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MarkdownPreview } from '@/components/ui/markdown-renderer';
 import { useClubs } from '@/hooks/useClubs';
 import { useCreateAgendaEvent } from '@/hooks/useAgendaEvents';
 import { cn } from '@/lib/utils';
@@ -79,44 +78,45 @@ export function AddEventDialog({ open, onOpenChange, prefilledDate }: AddEventDi
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Date Picker */}
-          <div className="space-y-2">
-            <Label htmlFor="date">Date *</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  id="date"
-                  variant="outline"
-                  className={cn(
-                    'w-full justify-start text-left font-normal',
-                    !date && 'text-muted-foreground'
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date ? format(date, 'PPP') : 'Pick a date'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={setDate}
-                  initialFocus
-                  className="pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
+          {/* Date & Time Row */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="date">Date *</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    id="date"
+                    variant="outline"
+                    className={cn(
+                      'w-full justify-start text-left font-normal',
+                      !date && 'text-muted-foreground'
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {date ? format(date, 'MMM d, yyyy') : 'Pick a date'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={setDate}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
 
-          {/* Time Picker */}
-          <div className="space-y-2">
-            <Label htmlFor="time">Time (optional)</Label>
-            <Input
-              id="time"
-              type="time"
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-            />
+            <div className="space-y-2">
+              <Label htmlFor="time">Time</Label>
+              <Input
+                id="time"
+                type="time"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+              />
+            </div>
           </div>
 
           {/* Title */}
@@ -130,22 +130,17 @@ export function AddEventDialog({ open, onOpenChange, prefilledDate }: AddEventDi
             />
           </div>
 
-          {/* Description */}
+          {/* Notes */}
           <div className="space-y-2">
-            <Label htmlFor="description">Description (optional)</Label>
+            <Label htmlFor="notes">Notes</Label>
             <Textarea
-              id="description"
+              id="notes"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Add notes or details (supports markdown)"
+              placeholder="Add any details..."
               rows={3}
+              className="neu-pressed"
             />
-            {description && (
-              <div className="mt-2">
-                <Label className="text-xs text-muted-foreground">Preview</Label>
-                <MarkdownPreview content={description} />
-              </div>
-            )}
           </div>
 
           {/* Club Selector */}
