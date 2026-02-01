@@ -162,44 +162,46 @@ export function EventDetailModal({ event, open, onOpenChange, onClubClick }: Eve
             ) : (
               /* Editable form for manual events */
               <div className="space-y-4">
-                {/* Date Picker */}
-                <div className="space-y-2">
-                  <Label htmlFor="date">Date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        id="date"
-                        variant="outline"
-                        className={cn(
-                          'w-full justify-start text-left font-normal',
-                          !formData.date && 'text-muted-foreground'
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {formData.date ? format(formData.date, 'PPP') : 'Pick a date'}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={formData.date}
-                        onSelect={(date) => date && setFormData(prev => ({ ...prev, date }))}
-                        initialFocus
-                        className="pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
+                {/* Date & Time Row */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="date">Date</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          id="date"
+                          variant="outline"
+                          className={cn(
+                            'w-full justify-start text-left font-normal',
+                            !formData.date && 'text-muted-foreground'
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {formData.date ? format(formData.date, 'MMM d, yyyy') : 'Pick a date'}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={formData.date}
+                          onSelect={(date) => date && setFormData(prev => ({ ...prev, date }))}
+                          initialFocus
+                          className="pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
 
-                {/* Time Picker */}
-                <div className="space-y-2">
-                  <Label htmlFor="time">Time (optional)</Label>
-                  <Input
-                    id="time"
-                    type="time"
-                    value={formData.time}
-                    onChange={(e) => setFormData(prev => ({ ...prev, time: e.target.value }))}
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="time">Time</Label>
+                    <Input
+                      id="time"
+                      type="time"
+                      value={formData.time}
+                      onChange={(e) => setFormData(prev => ({ ...prev, time: e.target.value }))}
+                      placeholder="Optional"
+                    />
+                  </div>
                 </div>
 
                 {/* Title */}
@@ -213,32 +215,17 @@ export function EventDetailModal({ event, open, onOpenChange, onClubClick }: Eve
                   />
                 </div>
 
-                {/* Description with Markdown */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="description">Description</Label>
-                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Optional · Markdown supported</span>
-                  </div>
+                {/* Notes - simple textarea */}
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Notes</Label>
                   <Textarea
-                    id="description"
+                    id="notes"
                     value={formData.description}
                     onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Add notes or details..."
-                    rows={4}
+                    placeholder="Add any details..."
+                    rows={3}
                     className="neu-pressed"
                   />
-                  {formData.description && (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <div className="h-px flex-1 bg-border" />
-                        <span className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">Preview</span>
-                        <div className="h-px flex-1 bg-border" />
-                      </div>
-                      <div className="p-3 rounded-lg bg-muted/50 border border-border/50">
-                        <MarkdownPreview content={formData.description} />
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 {/* Club Selector */}
