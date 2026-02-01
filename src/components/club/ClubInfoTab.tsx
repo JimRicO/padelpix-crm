@@ -13,6 +13,7 @@ import { Instagram, Globe, Phone, Mail, MapPin, Trash2, Save, ExternalLink, User
 import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { MarkdownPreview } from '@/components/ui/markdown-renderer';
 
 interface ClubInfoTabProps {
   club: Club;
@@ -614,7 +615,14 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
             value={formData.notes}
             onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
             rows={3}
+            placeholder="Supports **markdown** formatting..."
           />
+          {formData.notes && (
+            <div className="space-y-1">
+              <span className="text-xs text-muted-foreground">Preview:</span>
+              <MarkdownPreview content={formData.notes} />
+            </div>
+          )}
         </div>
       </div>
 

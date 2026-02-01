@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { useUpdatePerson, useDeletePerson } from '@/hooks/usePeople';
 import { CONTACT_METHODS } from '@/types/people';
 import type { Person } from '@/types/people';
+import { MarkdownPreview } from '@/components/ui/markdown-renderer';
 
 interface PersonInfoTabProps {
   person: Person;
@@ -330,7 +331,14 @@ export function PersonInfoTab({ person, onClose }: PersonInfoTabProps) {
           value={formData.notes}
           onChange={(e) => handleChange('notes', e.target.value)}
           rows={3}
+          placeholder="Supports **markdown** formatting..."
         />
+        {formData.notes && (
+          <div className="space-y-1">
+            <span className="text-xs text-muted-foreground">Preview:</span>
+            <MarkdownPreview content={formData.notes} />
+          </div>
+        )}
       </div>
 
       {/* Actions */}

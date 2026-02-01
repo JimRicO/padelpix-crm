@@ -19,6 +19,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import type { OwnershipGroup } from '@/hooks/useOwnershipGroups';
+import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
 
 interface OrganizationDetailViewProps {
   group: OwnershipGroup;
@@ -155,9 +156,7 @@ export function OrganizationDetailView({ group, clubCount }: OrganizationDetailV
               Description
             </h3>
             <div className="detail-section-content">
-              <p className="text-sm text-foreground leading-relaxed">
-                {group.description}
-              </p>
+              <MarkdownRenderer content={group.description} className="text-sm" />
             </div>
           </div>
         )}
@@ -170,7 +169,7 @@ export function OrganizationDetailView({ group, clubCount }: OrganizationDetailV
               Founder
             </h3>
             <div className="detail-section-content">
-              <p className="text-sm text-foreground leading-relaxed">{group.founder_info}</p>
+              <MarkdownRenderer content={group.founder_info} className="text-sm" />
             </div>
           </div>
         )}
@@ -183,7 +182,7 @@ export function OrganizationDetailView({ group, clubCount }: OrganizationDetailV
               Attitude
             </h3>
             <div className="detail-section-content">
-              <p className="text-sm text-foreground leading-relaxed">{group.attitude}</p>
+              <MarkdownRenderer content={group.attitude} className="text-sm" />
             </div>
           </div>
         )}
@@ -196,7 +195,7 @@ export function OrganizationDetailView({ group, clubCount }: OrganizationDetailV
               Aesthetics
             </h3>
             <div className="detail-section-content">
-              <p className="text-sm text-foreground leading-relaxed">{group.aesthetics}</p>
+              <MarkdownRenderer content={group.aesthetics} className="text-sm" />
             </div>
           </div>
         )}
@@ -252,9 +251,7 @@ export function OrganizationDetailView({ group, clubCount }: OrganizationDetailV
               Research Summary
             </h3>
             <div className="detail-section-content bg-primary/5">
-              <p className="text-sm text-foreground leading-relaxed">
-                {group.perplexity_description}
-              </p>
+              <MarkdownRenderer content={group.perplexity_description} className="text-sm" />
             </div>
           </div>
         )}
