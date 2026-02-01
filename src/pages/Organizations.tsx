@@ -1,16 +1,14 @@
 import { useState, useMemo } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useOwnershipGroupsList, useSyncMissingOrganizations, ORGANIZATION_TYPES, type OrganizationType } from '@/hooks/useOwnershipGroups';
+import { useOwnershipGroupsList, useSyncMissingOrganizations, type OrganizationType } from '@/hooks/useOwnershipGroups';
 import { useClubs } from '@/hooks/useClubs';
 import { useEnrichmentPolling } from '@/hooks/useEnrichmentStatus';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Search, Plus, LogOut, User, Building2, RefreshCw, ArrowUpDown, Filter, Crown, Shield } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, Building2, RefreshCw, ArrowUpDown, Filter } from 'lucide-react';
 import { OrganizationCard } from '@/components/organizations/OrganizationCard';
 import { AddOrganizationDialog } from '@/components/organizations/AddOrganizationDialog';
 import { OwnershipGroupModal } from '@/components/group/OwnershipGroupModal';
@@ -18,7 +16,7 @@ import { OwnershipGroupModal } from '@/components/group/OwnershipGroupModal';
 type TypeFilter = 'all' | OrganizationType;
 
 export default function Organizations() {
-  const { user, loading, signOut } = useAuth();
+  const { user, loading } = useAuth();
   const { data: groups = [], isLoading: groupsLoading } = useOwnershipGroupsList();
   const { data: clubs = [] } = useClubs();
   
@@ -122,20 +120,6 @@ export default function Organizations() {
     });
   }, [groups, searchQuery, sortBy, typeFilter, countryFilter, clubCountByGroup]);
 
-  // Count by type for filter badges
-  const typeCounts = useMemo(() => {
-    return {
-      all: groups.length,
-      commercial: groups.filter(g => (g.organization_type || 'commercial') === 'commercial').length,
-      association: groups.filter(g => g.organization_type === 'association').length,
-    };
-  }, [groups]);
-
-  const getUserInitials = () => {
-    const email = user?.email || '';
-    return email.slice(0, 2).toUpperCase();
-  };
-
   const getEmptyStateMessage = () => {
     if (searchQuery) {
       return {
@@ -177,81 +161,37 @@ export default function Organizations() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="h-16 border-b bg-card px-6 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <h1 className="text-xl font-bold text-primary">PadelPix</h1>
-          <span className="text-sm text-muted-foreground">CRM</span>
-          <div className="ml-4 flex gap-2">
-            <Button variant="ghost" size="sm" asChild>
-              <a href="/">Clubs</a>
-            </Button>
-            <Button variant="ghost" size="sm" asChild>
-              <a href="/people">People</a>
-            </Button>
-            <Button variant="secondary" size="sm">Organizations</Button>
-          </div>
-        </div>
-
-        <div className="flex-1 max-w-md">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input 
-              placeholder="Search organizations..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {missingOrgs.length > 0 && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleSync}
-              disabled={syncMutation.isPending}
-            >
-              {syncMutation.isPending ? (
-                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <RefreshCw className="w-4 h-4 mr-2" />
-              )}
-              Sync Missing
-              <Badge variant="secondary" className="ml-2">
-                {missingOrgs.length}
-              </Badge>
-            </Button>
-          )}
-          <Button size="sm" onClick={() => setShowAddDialog(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Organization
-          </Button>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <Avatar className="w-8 h-8">
-                  <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                    {getUserInitials()}
-                  </AvatarFallback>
-                </Avatar>
+      <PageHeader
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="Search organizations..."
+        actions={
+          <>
+            {missingOrgs.length > 0 && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleSync}
+                disabled={syncMutation.isPending}
+              >
+                {syncMutation.isPending ? (
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                )}
+                Sync Missing
+                <Badge variant="secondary" className="ml-2">
+                  {missingOrgs.length}
+                </Badge>
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem className="gap-2">
-                <User className="w-4 h-4" />
-                {user?.email}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => signOut()} className="gap-2 text-destructive">
-                <LogOut className="w-4 h-4" />
-                Sign Out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </header>
+            )}
+            <Button size="sm" onClick={() => setShowAddDialog(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Organization
+            </Button>
+          </>
+        }
+      />
 
       {/* Content */}
       <main className="p-6">

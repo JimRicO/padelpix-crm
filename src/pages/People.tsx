@@ -3,14 +3,13 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { usePeople } from '@/hooks/usePeople';
 import { usePersonLinks, usePersonLinkSuggestions } from '@/hooks/usePersonLinks';
-import { Header } from '@/components/layout/Header';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { PersonCard } from '@/components/people/PersonCard';
 import { AddPersonDialog } from '@/components/people/AddPersonDialog';
 import { PersonDetailModal } from '@/components/people/PersonDetailModal';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Plus, Users, ArrowUpDown, Filter } from 'lucide-react';
+import { Plus, Users, ArrowUpDown, Filter } from 'lucide-react';
 import type { Person } from '@/types/people';
 
 export default function People() {
@@ -78,39 +77,17 @@ export default function People() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="h-16 border-b bg-card px-6 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <h1 className="text-xl font-bold text-primary">PadelPix</h1>
-          <span className="text-sm text-muted-foreground">CRM</span>
-          <div className="ml-4 flex gap-2">
-            <Button variant="ghost" size="sm" asChild>
-              <a href="/">Clubs</a>
-            </Button>
-            <Button variant="secondary" size="sm">
-              People
-            </Button>
-          </div>
-        </div>
-
-        <div className="flex-1 max-w-md">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Search people..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
+      <PageHeader
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="Search people..."
+        actions={
           <Button size="sm" onClick={() => setShowAddDialog(true)}>
             <Plus className="w-4 h-4 mr-2" />
             Add Person
           </Button>
-        </div>
-      </header>
+        }
+      />
 
       <main className="p-6">
         {/* Filter and Sort controls */}
