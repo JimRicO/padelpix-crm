@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { format, isToday, isTomorrow, isPast, startOfDay, compareAsc } from 'date-fns';
+import { format, isToday, isTomorrow, isPast, startOfDay, compareAsc, eachDayOfInterval, parseISO } from 'date-fns';
 import { Plus, Calendar, List } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -8,13 +8,14 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { EventDateGroup } from '@/components/agenda/EventDateGroup';
 import { CalendarView } from '@/components/agenda/CalendarView';
 import { AddEventDialog } from '@/components/agenda/AddEventDialog';
-import { useAgendaEvents } from '@/hooks/useAgendaEvents';
+import { useAgendaEvents, type AgendaEvent } from '@/hooks/useAgendaEvents';
+import { useEvents } from '@/hooks/useEvents';
 import { useAuth } from '@/hooks/useAuth';
 
 interface GroupedEvents {
   label: string;
   date: Date;
-  events: ReturnType<typeof useAgendaEvents>['data'];
+  events: AgendaEvent[];
   isPast: boolean;
 }
 
@@ -28,19 +29,62 @@ export default function Agenda() {
   // Default to February 2026
   const [currentMonth, setCurrentMonth] = useState(new Date(2026, 1, 1));
 
-  const { data: events = [], isLoading } = useAgendaEvents();
+  const { data: agendaEvents = [], isLoading: agendaLoading } = useAgendaEvents();
+  const { data: industryEvents = [], isLoading: eventsLoading } = useEvents();
+
+  const isLoading = agendaLoading || eventsLoading;
+
+  // Convert industry events to agenda format (expand multi-day events)
+  const convertedIndustryEvents = useMemo((): AgendaEvent[] => {
+    const converted: AgendaEvent[] = [];
+
+    industryEvents.forEach((event) => {
+      const startDate = parseISO(event.start_date);
+      const endDate = event.end_date ? parseISO(event.end_date) : startDate;
+
+      // Create an entry for each day of the event
+      const days = eachDayOfInterval({ start: startDate, end: endDate });
+
+      days.forEach((day, index) => {
+        const isMultiDay = days.length > 1;
+        const dayLabel = isMultiDay ? ` (Day ${index + 1}/${days.length})` : '';
+
+        converted.push({
+          id: `industry-${event.id}-${format(day, 'yyyy-MM-dd')}`,
+          event_date: format(day, 'yyyy-MM-dd'),
+          event_time: null,
+          title: `${event.name}${dayLabel}`,
+          description: [event.location, event.city, event.country].filter(Boolean).join(', ') || event.description,
+          event_type: 'industry' as any, // Special type for styling
+          club_id: null,
+          created_by: event.created_by,
+          created_at: event.created_at,
+          clubs: null,
+          // Store original event data for reference
+          _industryEvent: event,
+        } as AgendaEvent & { _industryEvent?: typeof event });
+      });
+    });
+
+    return converted;
+  }, [industryEvents]);
+
+  // Merge agenda events with industry events
+  const allEvents = useMemo(() => {
+    return [...agendaEvents, ...convertedIndustryEvents];
+  }, [agendaEvents, convertedIndustryEvents]);
 
   // Filter events based on search
   const filteredEvents = useMemo(() => {
-    if (!searchQuery.trim()) return events;
+    if (!searchQuery.trim()) return allEvents;
     const query = searchQuery.toLowerCase();
-    return events.filter(
+    return allEvents.filter(
       (event) =>
         event.title.toLowerCase().includes(query) ||
         event.description?.toLowerCase().includes(query) ||
         event.clubs?.club_name.toLowerCase().includes(query)
     );
-  }, [events, searchQuery]);
+  }, [allEvents, searchQuery]);
 
   // Group events by date for list view
   const groupedEvents = useMemo(() => {

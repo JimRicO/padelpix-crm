@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { CalendarIcon, Clock, Building2, Trash2, Save, X } from 'lucide-react';
+import { CalendarIcon, Clock, Building2, Trash2, Save, X, MapPin, ExternalLink, PartyPopper } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,13 +21,14 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 interface EventDetailModalProps {
-  event: AgendaEvent | null;
+  event: (AgendaEvent & { _industryEvent?: any }) | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onClubClick?: (clubId: string) => void;
 }
 
 export function EventDetailModal({ event, open, onOpenChange, onClubClick }: EventDetailModalProps) {
+  const navigate = useNavigate();
   const { data: clubs = [] } = useClubs();
   const updateEvent = useUpdateAgendaEvent();
   const deleteEvent = useDeleteAgendaEvent();
@@ -42,7 +44,6 @@ export function EventDetailModal({ event, open, onOpenChange, onClubClick }: Eve
   const [formData, setFormData] = useState(getInitialFormData);
   const [initialFormData, setInitialFormData] = useState(getInitialFormData);
 
-  // Reset form when event changes
   useEffect(() => {
     if (event) {
       const data = getInitialFormData();
@@ -54,6 +55,8 @@ export function EventDetailModal({ event, open, onOpenChange, onClubClick }: Eve
   if (!event) return null;
 
   const isSystem = event.event_type === 'system';
+  const isIndustry = (event.event_type as string) === 'industry';
+  const industryEvent = event._industryEvent;
   const hasChanges = JSON.stringify(formData) !== JSON.stringify(initialFormData);
 
   const formatTime = (time: string | null) => {
@@ -113,8 +116,12 @@ export function EventDetailModal({ event, open, onOpenChange, onClubClick }: Eve
       <DialogContent className="max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
-            <CalendarIcon className="w-5 h-5 text-primary" />
-            {isSystem ? 'Event Details' : 'Edit Event'}
+            {isIndustry ? (
+              <PartyPopper className="w-5 h-5 text-pink-500" />
+            ) : (
+              <CalendarIcon className="w-5 h-5 text-primary" />
+            )}
+            {isIndustry ? 'Industry Event' : isSystem ? 'Event Details' : 'Edit Event'}
           </DialogTitle>
         </DialogHeader>
 
@@ -141,10 +148,64 @@ export function EventDetailModal({ event, open, onOpenChange, onClubClick }: Eve
                   {event.clubs.club_name}
                 </Badge>
               )}
+              {isIndustry && (
+                <Badge variant="outline" className="gap-1 bg-pink-500/10 text-pink-600 border-pink-500/20">
+                  <PartyPopper className="w-3 h-3" />
+                  Industry Event
+                </Badge>
+              )}
             </div>
 
+            {/* Industry event - show info and link to Events page */}
+            {isIndustry && industryEvent && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">Event</Label>
+                  <p className="text-sm font-medium">{industryEvent.name}</p>
+                </div>
+
+                {industryEvent.location && (
+                  <div className="space-y-2">
+                    <Label className="text-muted-foreground">Venue</Label>
+                    <p className="text-sm flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5" />
+                      {industryEvent.location}
+                    </p>
+                  </div>
+                )}
+
+                {(industryEvent.city || industryEvent.country) && (
+                  <div className="space-y-2">
+                    <Label className="text-muted-foreground">Location</Label>
+                    <p className="text-sm">
+                      {[industryEvent.city, industryEvent.country].filter(Boolean).join(', ')}
+                    </p>
+                  </div>
+                )}
+
+                {industryEvent.description && (
+                  <div className="space-y-2">
+                    <Label className="text-muted-foreground">Description</Label>
+                    <p className="text-sm text-muted-foreground">{industryEvent.description}</p>
+                  </div>
+                )}
+
+                <Button
+                  variant="outline"
+                  className="w-full mt-4"
+                  onClick={() => {
+                    onOpenChange(false);
+                    navigate('/events');
+                  }}
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  View in Events
+                </Button>
+              </div>
+            )}
+
             {/* System event - read only */}
-            {isSystem ? (
+            {isSystem && !isIndustry && (
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label className="text-muted-foreground">Title</Label>
@@ -159,8 +220,10 @@ export function EventDetailModal({ event, open, onOpenChange, onClubClick }: Eve
                   </div>
                 )}
               </div>
-            ) : (
-              /* Editable form for manual events */
+            )}
+
+            {/* Editable form for manual events */}
+            {!isSystem && !isIndustry && (
               <div className="space-y-4">
                 {/* Date & Time Row */}
                 <div className="grid grid-cols-2 gap-3">
@@ -215,7 +278,7 @@ export function EventDetailModal({ event, open, onOpenChange, onClubClick }: Eve
                   />
                 </div>
 
-                {/* Notes - simple textarea */}
+                {/* Notes */}
                 <div className="space-y-2">
                   <Label htmlFor="notes">Notes</Label>
                   <Textarea
@@ -253,8 +316,8 @@ export function EventDetailModal({ event, open, onOpenChange, onClubClick }: Eve
           </div>
         </ScrollArea>
 
-        {/* Footer Actions */}
-        {!isSystem && (
+        {/* Footer Actions for manual events */}
+        {!isSystem && !isIndustry && (
           <div className="flex justify-between pt-4 border-t flex-shrink-0">
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -290,7 +353,17 @@ export function EventDetailModal({ event, open, onOpenChange, onClubClick }: Eve
         )}
 
         {/* Close for system events */}
-        {isSystem && (
+        {isSystem && !isIndustry && (
+          <div className="flex justify-end pt-4 border-t flex-shrink-0">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              <X className="w-4 h-4 mr-2" />
+              Close
+            </Button>
+          </div>
+        )}
+
+        {/* Close for industry events */}
+        {isIndustry && (
           <div className="flex justify-end pt-4 border-t flex-shrink-0">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               <X className="w-4 h-4 mr-2" />
