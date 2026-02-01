@@ -1,0 +1,106 @@
+import { ReactNode } from 'react';
+import { useLocation } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Search, LogOut, User } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+const NAV_ITEMS = [
+  { label: 'Clubs', path: '/' },
+  { label: 'People', path: '/people' },
+  { label: 'Organizations', path: '/organizations' },
+];
+
+interface PageHeaderProps {
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
+  searchPlaceholder?: string;
+  actions?: ReactNode;
+}
+
+export function PageHeader({ 
+  searchQuery, 
+  onSearchChange, 
+  searchPlaceholder = 'Search...',
+  actions,
+}: PageHeaderProps) {
+  const { user, signOut } = useAuth();
+  const location = useLocation();
+
+  const getUserInitials = () => {
+    const email = user?.email || '';
+    return email.slice(0, 2).toUpperCase();
+  };
+
+  return (
+    <header className="h-16 border-b bg-card px-6 flex items-center justify-between gap-4">
+      {/* Left: Logo + Navigation */}
+      <div className="flex items-center gap-3">
+        <h1 className="text-xl font-bold text-primary">PadelPix</h1>
+        <span className="text-sm text-muted-foreground">CRM</span>
+        <nav className="ml-4 flex gap-2">
+          {NAV_ITEMS.map((item) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <Button 
+                key={item.path}
+                variant={isActive ? 'secondary' : 'ghost'} 
+                size="sm" 
+                asChild={!isActive}
+              >
+                {isActive ? (
+                  <span>{item.label}</span>
+                ) : (
+                  <a href={item.path}>{item.label}</a>
+                )}
+              </Button>
+            );
+          })}
+        </nav>
+      </div>
+
+      {/* Center: Search */}
+      <div className="flex-1 max-w-md">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input 
+            placeholder={searchPlaceholder}
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+      </div>
+
+      {/* Right: Actions + User Menu */}
+      <div className="flex items-center gap-2">
+        {actions}
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="rounded-full">
+              <Avatar className="w-8 h-8">
+                <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                  {getUserInitials()}
+                </AvatarFallback>
+              </Avatar>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem className="gap-2">
+              <User className="w-4 h-4" />
+              {user?.email}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => signOut()} className="gap-2 text-destructive">
+              <LogOut className="w-4 h-4" />
+              Sign Out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </header>
+  );
+}
