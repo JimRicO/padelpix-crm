@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { Club } from '@/types/database';
 import { getTaskAutoStatus, getTasksSummary, TaskAutoStatus } from '@/utils/taskAutoCheck';
 import { Progress } from '@/components/ui/progress';
+import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
 
 interface ClubTasksTabProps {
   clubId: string;
@@ -222,7 +223,9 @@ function TaskItem({ task, club, onToggle }: TaskItemProps) {
         </div>
         
         {task.description && (
-          <p className="text-xs text-muted-foreground mt-0.5">{task.description}</p>
+          <div className="mt-0.5">
+            <MarkdownRenderer content={task.description} className="text-xs text-muted-foreground" />
+          </div>
         )}
 
         {/* Show missing fields when expanded */}

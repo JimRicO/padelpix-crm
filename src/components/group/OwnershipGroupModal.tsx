@@ -12,6 +12,7 @@ import { Crown, Building2, Mail, Phone, Globe, Palette, Loader2, Upload, Link, X
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { OrganizationDetailView } from './OrganizationDetailView';
+import { MarkdownPreview } from '@/components/ui/markdown-renderer';
 
 interface OwnershipGroupModalProps {
   groupName: string | null;
@@ -426,10 +427,16 @@ export function OwnershipGroupModal({
                       <Textarea
                         value={formData.notes}
                         onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                        placeholder="Add notes about the partnership, key contacts, or relationship history..."
+                        placeholder="Supports **markdown** formatting..."
                         rows={4}
                         className="resize-none"
                       />
+                      {formData.notes && (
+                        <div className="space-y-1">
+                          <span className="text-xs text-muted-foreground">Preview:</span>
+                          <MarkdownPreview content={formData.notes} />
+                        </div>
+                      )}
                     </div>
                   </div>
 
