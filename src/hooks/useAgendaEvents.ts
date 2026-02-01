@@ -42,7 +42,7 @@ export function useAgendaEvents() {
     queryKey: ['agenda-events', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('agenda_events')
+        .from('agenda_events' as any)
         .select(`
           *,
           clubs:club_id (
@@ -54,7 +54,7 @@ export function useAgendaEvents() {
         .order('event_time', { ascending: true, nullsFirst: false });
 
       if (error) throw error;
-      return data as AgendaEvent[];
+      return data as unknown as AgendaEvent[];
     },
     enabled: !!user,
   });
@@ -69,7 +69,7 @@ export function useCreateAgendaEvent() {
       if (!user) throw new Error('User not authenticated');
 
       const { data, error } = await supabase
-        .from('agenda_events')
+        .from('agenda_events' as any)
         .insert({
           ...input,
           event_type: 'manual',
@@ -93,7 +93,7 @@ export function useUpdateAgendaEvent() {
   return useMutation({
     mutationFn: async ({ id, ...input }: UpdateAgendaEventInput) => {
       const { data, error } = await supabase
-        .from('agenda_events')
+        .from('agenda_events' as any)
         .update(input)
         .eq('id', id)
         .select()
@@ -114,7 +114,7 @@ export function useDeleteAgendaEvent() {
   return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from('agenda_events')
+        .from('agenda_events' as any)
         .delete()
         .eq('id', id);
 
