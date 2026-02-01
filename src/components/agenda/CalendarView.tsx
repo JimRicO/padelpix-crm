@@ -112,6 +112,7 @@ export function CalendarView({
           const hasEvents = dayEvents.length > 0;
           const manualEvents = dayEvents.filter((e) => e.event_type === 'manual');
           const systemEvents = dayEvents.filter((e) => e.event_type === 'system');
+          const industryEvents = dayEvents.filter((e) => (e.event_type as string) === 'industry');
 
           return (
             <DayEventsPopover
@@ -145,6 +146,9 @@ export function CalendarView({
                     {manualEvents.length > 0 && (
                       <span className="w-1.5 h-1.5 rounded-full bg-primary" />
                     )}
+                    {industryEvents.length > 0 && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-pink-500" />
+                    )}
                     {systemEvents.length > 0 && (
                       <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50" />
                     )}
@@ -166,6 +170,10 @@ export function CalendarView({
         <div className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-primary" />
           <span>Manual events</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-pink-500" />
+          <span>Industry events</span>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-muted-foreground/50" />

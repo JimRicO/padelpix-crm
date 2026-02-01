@@ -1,4 +1,4 @@
-import { Clock, Building2 } from 'lucide-react';
+import { Clock, Building2, MapPin, PartyPopper } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -11,6 +11,7 @@ interface EventCardProps {
 
 export function EventCard({ event, onClick }: EventCardProps) {
   const isSystem = event.event_type === 'system';
+  const isIndustry = (event.event_type as string) === 'industry';
 
   const formatTime = (time: string | null) => {
     if (!time) return null;
@@ -28,7 +29,8 @@ export function EventCard({ event, onClick }: EventCardProps) {
     <Card 
       className={cn(
         'transition-all cursor-pointer hover:scale-[1.01]',
-        isSystem && 'bg-muted/50 border-dashed border border-muted-foreground/20 shadow-none'
+        isSystem && 'bg-muted/50 border-dashed border border-muted-foreground/20 shadow-none',
+        isIndustry && 'border-l-4 border-l-pink-500 bg-pink-500/5'
       )}
       onClick={onClick}
     >
@@ -47,6 +49,12 @@ export function EventCard({ event, onClick }: EventCardProps) {
                   Auto
                 </Badge>
               )}
+              {isIndustry && (
+                <Badge variant="outline" className="text-xs bg-pink-500/10 text-pink-600 border-pink-500/20">
+                  <PartyPopper className="w-3 h-3 mr-1" />
+                  Event
+                </Badge>
+              )}
             </div>
             
             <h4 className={cn(
@@ -60,6 +68,13 @@ export function EventCard({ event, onClick }: EventCardProps) {
               <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Building2 className="w-3 h-3" />
                 <span className="truncate">{event.clubs.club_name}</span>
+              </div>
+            )}
+
+            {isIndustry && event.description && (
+              <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                <MapPin className="w-3 h-3" />
+                <span className="truncate">{event.description}</span>
               </div>
             )}
           </div>
