@@ -1,11 +1,12 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Search, LogOut, User } from 'lucide-react';
+import { Search, LogOut, User, Sparkles } from 'lucide-react';
+import { SmartImportDialog } from '@/components/import/SmartImportDialog';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
@@ -31,6 +32,7 @@ export function PageHeader({
 }: PageHeaderProps) {
   const { user, signOut } = useAuth();
   const location = useLocation();
+  const [smartImportOpen, setSmartImportOpen] = useState(false);
 
   const getUserInitials = () => {
     const email = user?.email || '';
@@ -75,6 +77,16 @@ export function PageHeader({
 
       {/* Right: Actions + User Menu */}
       <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setSmartImportOpen(true)}
+          className="gap-2"
+        >
+          <Sparkles className="w-4 h-4" />
+          Smart Import
+        </Button>
+        
         {actions}
         
         <DropdownMenu>
@@ -99,6 +111,11 @@ export function PageHeader({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      <SmartImportDialog 
+        open={smartImportOpen} 
+        onOpenChange={setSmartImportOpen} 
+      />
     </header>
   );
 }

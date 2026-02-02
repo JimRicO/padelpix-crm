@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.enrich-person]
 verify_jwt = false
+
+[functions.normalize-data]
+verify_jwt = false

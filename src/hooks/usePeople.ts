@@ -107,3 +107,59 @@ export function useDeletePerson() {
     },
   });
 }
+
+interface BulkPersonData {
+  full_name: string;
+  role?: string;
+  email?: string;
+  phone?: string;
+  country?: string;
+  instagram_handle?: string;
+  linkedin?: string;
+  notes?: string;
+  profile_image?: string;
+  contact_date?: string;
+  contact_method?: string;
+}
+
+export function useBulkCreatePeople() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async (people: BulkPersonData[]) => {
+      if (!user) throw new Error('Not authenticated');
+      if (people.length === 0) return { created: 0 };
+
+      const peopleWithUser = people.map(person => ({
+        full_name: person.full_name,
+        role: person.role,
+        email: person.email,
+        phone: person.phone,
+        country: person.country || 'South Africa',
+        instagram_handle: person.instagram_handle,
+        linkedin: person.linkedin,
+        notes: person.notes,
+        profile_image: person.profile_image,
+        contact_date: person.contact_date,
+        contact_method: person.contact_method,
+        created_by: user.id,
+      }));
+
+      const { data, error } = await supabase
+        .from('people')
+        .insert(peopleWithUser)
+        .select();
+
+      if (error) throw error;
+      return { created: data.length, data };
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['people'] });
+      toast.success(`${result.created} people imported successfully`);
+    },
+    onError: (error) => {
+      toast.error('Failed to import people: ' + error.message);
+    },
+  });
+}
