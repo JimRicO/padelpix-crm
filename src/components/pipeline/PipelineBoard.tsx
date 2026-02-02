@@ -99,7 +99,9 @@ export function PipelineBoard({ onClubClick, searchQuery }: PipelineBoardProps) 
         club.club_name.toLowerCase().includes(query) ||
         club.instagram_handle?.toLowerCase().includes(query) ||
         club.city?.toLowerCase().includes(query) ||
-        club.country?.toLowerCase().includes(query)
+        club.country?.toLowerCase().includes(query) ||
+        club.address?.toLowerCase().includes(query) ||
+        club.suburb?.toLowerCase().includes(query)
       );
     }
     
