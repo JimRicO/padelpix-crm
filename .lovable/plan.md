@@ -1,126 +1,234 @@
 
-## Plan: Add Monthly Calendar View to Agenda
 
-### Overview
-Transform the Agenda page from a simple list view to a full monthly calendar view that defaults to February 2026. Users will be able to see events displayed on specific days, navigate between months, and quickly see their schedule at a glance.
+# Smart AI-Powered Data Normalizer with Anthropic Claude Haiku
 
-### What You'll Get
-- **Monthly Calendar Grid**: A visual calendar showing the current month with events displayed on their dates
-- **View Toggle**: Ability to switch between "Calendar" and "List" views using tabs
-- **Month Navigation**: Previous/Next buttons to move between months
-- **Event Indicators**: Small dots or badges on calendar days that have events
-- **Day Click**: Clicking a day shows the events for that day in a side panel or popover
-- **Today Highlight**: Current day visually distinguished
-- **February 2026 Default**: Calendar opens to February 2026 as requested
+## Overview
+Build a unified import tool that uses **Claude Haiku** (via Anthropic's API directly) to automatically detect data types (clubs, organizations, or people) and intelligently transform any input data into the correct CRM schema.
 
 ---
 
-### Implementation Steps
+## Prerequisites
 
-#### Phase 1: Create Calendar View Component
-
-**New file: `src/components/agenda/CalendarView.tsx`**
-
-This component renders a monthly calendar grid:
-
-| Feature | Details |
-|---------|---------|
-| Month header | Shows "February 2026" with navigation arrows |
-| Day grid | 7 columns (Sun-Sat), 5-6 rows for weeks |
-| Day cells | Show date number + event count badge |
-| Today styling | Highlighted background/border |
-| Event dots | Small indicators for days with events |
-| Click handler | Opens day's events in a popover/panel |
-
-Uses existing `date-fns` functions:
-- `startOfMonth`, `endOfMonth`, `startOfWeek`, `endOfWeek`
-- `eachDayOfInterval`, `isSameMonth`, `isSameDay`, `format`
-- `addMonths`, `subMonths` for navigation
-
-#### Phase 2: Create Day Events Popover
-
-**New file: `src/components/agenda/DayEventsPopover.tsx`**
-
-When clicking a day in the calendar:
-- Shows a popover with events for that day
-- Lists events with time, title, and linked club
-- Includes "Add Event" button pre-filled with selected date
-- Uses existing `EventCard` styling
-
-#### Phase 3: Update Agenda Page with View Toggle
-
-**Modify: `src/pages/Agenda.tsx`**
-
-Add view switching:
-- Add `viewMode` state: `'calendar' | 'list'`
-- Add `currentMonth` state initialized to `new Date(2026, 1, 1)` (February 2026)
-- Add Tabs component in the main area
-- Render `CalendarView` or existing list based on selection
-
-Layout structure:
-```text
-+----------------------------------+
-| PageHeader (search, Add Event)   |
-+----------------------------------+
-| [Calendar] [List]   <- Feb 2026 ->|
-+----------------------------------+
-|  Sun Mon Tue Wed Thu Fri Sat     |
-|  --------------------------------|
-|  ...     1   2   3   4   5   6   |
-|          *       *               | <- dots for events
-|  7   8   9  10  11  12  13       |
-|  ...                             |
-+----------------------------------+
-```
-
-#### Phase 4: Styling Details
-
-**Calendar Grid Styling:**
-- Uses CSS Grid: 7 columns
-- Day cells: `aspect-square` for consistent sizing
-- Muted colors for days outside current month
-- Primary background for "today"
-- Hover state for interactive days
-
-**Event Indicators:**
-- Small colored dots (max 3 visible, then "+X more")
-- System events: gray dot
-- Manual events: primary color dot
+You'll need to add your Anthropic API key first. I'll prompt you to add the `ANTHROPIC_API_KEY` secret before implementing the feature.
 
 ---
 
-### Technical Approach
+## How It Works
 
-**Calendar Date Calculation:**
 ```text
-1. Get first day of current month
-2. Get start of week containing that day
-3. Get last day of current month
-4. Get end of week containing that day
-5. Generate array of all days in range
-6. Render in 7-column grid
++------------------+     +----------------------+     +------------------+     +------------------+
+|   Paste/Upload   | --> |   Claude Haiku API   | --> |  Preview & Edit  | --> |  Import to DB    |
+|  (JSON/CSV/Text) |     | (Anthropic Direct)   |     |  (Review Results)|     |  (Bulk Create)   |
++------------------+     +----------------------+     +------------------+     +------------------+
 ```
 
-**Event Grouping by Day:**
-```text
-1. Filter events by current month
-2. Group by date key (yyyy-MM-dd)
-3. For each day cell, look up events by date key
-4. Show count/dots accordingly
-```
-
-**Responsive Design:**
-- On mobile: smaller day cells
-- Day numbers remain visible, event count as single number
-- Popover adapts to available space
+1. **Paste or upload** any data (JSON, CSV, or raw text)
+2. **Claude Haiku analyzes** the data and determines:
+   - Entity type (club, organization, or person)
+   - Field mappings to your CRM schema
+3. **Preview** the transformed data with detected entity type
+4. **Import** directly to the appropriate database table
 
 ---
 
-### Files Summary
+## Implementation Plan
 
-**Create:**
-- `src/components/agenda/CalendarView.tsx` - Monthly calendar grid
-- `src/components/agenda/DayEventsPopover.tsx` - Events display for selected day
+### Phase 1: Add Anthropic API Key Secret
+- Prompt you to add `ANTHROPIC_API_KEY` to the project secrets
 
-**Modify:**
-- `src/pages/Agenda.tsx` - Add view toggle and calendar state
+### Phase 2: Create Edge Function for Normalization
+
+**File: `supabase/functions/normalize-data/index.ts`**
+
+The edge function will:
+- Accept raw input data (JSON, CSV, or text)
+- Call Anthropic's Claude Haiku API directly using the model `claude-haiku-4-5-20251001`
+- Return normalized data with entity type and field mappings
+
+```text
+API Call:
+POST https://api.anthropic.com/v1/messages
+Headers:
+  - x-api-key: ANTHROPIC_API_KEY
+  - anthropic-version: 2023-06-01
+  - Content-Type: application/json
+```
+
+### Phase 3: Create Frontend Components
+
+**File: `src/components/import/SmartImportDialog.tsx`**
+
+A 3-step wizard:
+1. **Input Step**: Paste data or upload file, detect format (JSON/CSV/Text)
+2. **Processing Step**: Send to Claude Haiku, show loading state
+3. **Preview Step**: Show detected entity type, field mappings, and transformed records
+
+**File: `src/hooks/useSmartImport.ts`**
+
+Custom hook for:
+- Calling the normalize-data edge function
+- Managing import state
+- Handling bulk create for each entity type
+
+### Phase 4: Add Bulk Create for People
+
+**Modify: `src/hooks/usePeople.ts`**
+
+Add `useBulkCreatePeople` mutation (similar to existing bulk create hooks for clubs and organizations)
+
+### Phase 5: Integration
+
+**Modify: `src/components/layout/PageHeader.tsx`**
+
+Add a "Smart Import" button accessible from all pages
+
+---
+
+## Files to Create/Modify
+
+| File | Action | Purpose |
+|---|---|---|
+| `supabase/functions/normalize-data/index.ts` | Create | Claude Haiku normalization edge function |
+| `supabase/config.toml` | Modify | Register new edge function |
+| `src/components/import/SmartImportDialog.tsx` | Create | Main smart import UI component |
+| `src/hooks/useSmartImport.ts` | Create | Import logic and state management |
+| `src/hooks/usePeople.ts` | Modify | Add useBulkCreatePeople hook |
+| `src/components/layout/PageHeader.tsx` | Modify | Add Smart Import button |
+
+---
+
+## Edge Function Details
+
+### Anthropic API Call Structure
+
+```typescript
+const response = await fetch('https://api.anthropic.com/v1/messages', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'x-api-key': ANTHROPIC_API_KEY,
+    'anthropic-version': '2023-06-01'
+  },
+  body: JSON.stringify({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 4096,
+    messages: [{
+      role: 'user',
+      content: `Transform the following input data...`
+    }]
+  })
+});
+```
+
+### Schema Definitions for AI
+
+| Entity Type | Key Fields |
+|---|---|
+| **Club** | club_name, instagram_handle, city, country, address, phone, email, website, google_maps_url, number_of_courts |
+| **Organization** | name, organization_type, country, website, contact_name, contact_email, contact_phone, address |
+| **Person** | full_name, role, email, phone, country, instagram_handle, linkedin, notes |
+
+### Entity Detection Logic
+
+The AI prompt will guide Claude to detect entity type based on:
+
+| Signals for Club | Signals for Organization | Signals for Person |
+|---|---|---|
+| "courts", "venue", "location" | "federation", "association" | "name" with role/title |
+| Address with facility details | "member clubs", "governing body" | Email with person format |
+| Instagram handle patterns | Business structure hints | LinkedIn profile |
+| Google Maps/Business Profile | Organization type hints | Contact method fields |
+
+---
+
+## Response Format from Edge Function
+
+```json
+{
+  "success": true,
+  "entity_type": "club",
+  "confidence": "high",
+  "records": [
+    {
+      "club_name": "Padel Haus Williamsburg",
+      "website": "http://padel.haus/",
+      "google_maps_url": "https://maps.google.com/...",
+      "address": "307 Kent Ave, Brooklyn, NY 11249, USA",
+      "phone": "(917) 970-0036",
+      "country": "United States"
+    }
+  ],
+  "field_mappings": {
+    "Name": "club_name",
+    "Website": "website",
+    "Google Business Profile": "google_maps_url",
+    "Address": "address",
+    "Phone Number": "phone"
+  },
+  "unmapped_fields": ["Rating", "Reviews Count", "organization.name"],
+  "warnings": ["Country auto-detected from address"]
+}
+```
+
+---
+
+## UI Design
+
+### Step 1: Input
+
+```text
++----------------------------------------------------------+
+|  Smart Import (AI-Powered)                          [X]  |
++----------------------------------------------------------+
+|                                                          |
+|  Paste or Upload Data                                    |
+|  ┌────────────────────────────────────────────────────┐  |
+|  │                                                    │  |
+|  │  Paste JSON, CSV, or any structured data here...  │  |
+|  │                                                    │  |
+|  └────────────────────────────────────────────────────┘  |
+|                                                          |
+|  [Upload File]  Supports: JSON, CSV, TXT                 |
+|                                                          |
+|                              [Analyze with AI]           |
++----------------------------------------------------------+
+```
+
+### Step 2: Preview
+
+```text
++----------------------------------------------------------+
+|  Smart Import (AI-Powered)                          [X]  |
++----------------------------------------------------------+
+|                                                          |
+|  Detected: CLUBS (5 records)               [Override]    |
+|  Confidence: High                                        |
+|                                                          |
+|  Field Mappings:                                         |
+|  ┌────────────────────────────────────────────────────┐  |
+|  │  Name → club_name                              OK  │  |
+|  │  Website → website                             OK  │  |
+|  │  Phone Number → phone                          OK  │  |
+|  │  Rating → (not mapped)                         --  │  |
+|  └────────────────────────────────────────────────────┘  |
+|                                                          |
+|  Preview (first 5):                                      |
+|  ┌────────────────────────────────────────────────────┐  |
+|  │  Padel Haus Williamsburg                           │  |
+|  │  Reserve Padel NYC                                 │  |
+|  │  Mink Padel                                        │  |
+|  └────────────────────────────────────────────────────┘  |
+|                                                          |
+|  [Back]                            [Import 5 Clubs]      |
++----------------------------------------------------------+
+```
+
+---
+
+## Error Handling
+
+- **Rate limits**: Show friendly retry message
+- **API errors**: Display error with raw response for debugging
+- **Invalid response from Claude**: Fall back to manual import dialog
+- **Empty results**: Show guidance on data format
+
