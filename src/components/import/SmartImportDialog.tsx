@@ -170,7 +170,7 @@ Examples:
 
         {/* Step 3: Preview */}
         {step === 'preview' && result && (
-          <div className="flex flex-col min-h-0 overflow-hidden">
+          <div className="flex flex-col h-[500px]">
             {/* Detection summary */}
             <div className="flex items-center justify-between bg-muted/50 rounded-lg p-4 flex-shrink-0">
               <div className="flex items-center gap-3">
@@ -213,7 +213,7 @@ Examples:
             </div>
 
             {/* Scrollable content area */}
-            <ScrollArea className="flex-1 min-h-0 my-4 pr-2">
+            <ScrollArea className="flex-1 my-4 pr-2">
               <div className="space-y-4">
                 {/* Warnings */}
                 {result.warnings.length > 0 && (
