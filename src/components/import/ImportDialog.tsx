@@ -513,22 +513,79 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
     .filter(c => c.club_name);
   };
 
+  // Extract country from address string (similar to organizations import)
+  const extractCountryFromAddress = (address: string | undefined): string | undefined => {
+    if (!address) return undefined;
+    const lower = address.toLowerCase();
+    
+    const countryPatterns: Array<{ pattern: RegExp; country: string }> = [
+      { pattern: /\bsouth\s*africa\b/i, country: 'South Africa' },
+      { pattern: /\bspain\b/i, country: 'Spain' },
+      { pattern: /\bswitzerland\b/i, country: 'Switzerland' },
+      { pattern: /\bargentina\b/i, country: 'Argentina' },
+      { pattern: /\bunited\s*states\b|\busa\b|\bu\.s\.a?\b/i, country: 'United States' },
+      { pattern: /\bitaly\b/i, country: 'Italy' },
+      { pattern: /\bfrance\b/i, country: 'France' },
+      { pattern: /\bbrazil\b/i, country: 'Brazil' },
+      { pattern: /\bmexico\b/i, country: 'Mexico' },
+      { pattern: /\bunited\s*kingdom\b|\buk\b|\bu\.k\b/i, country: 'United Kingdom' },
+      { pattern: /\bgermany\b/i, country: 'Germany' },
+      { pattern: /\bportugal\b/i, country: 'Portugal' },
+      { pattern: /\bnetherlands\b/i, country: 'Netherlands' },
+      { pattern: /\bbelgium\b/i, country: 'Belgium' },
+      { pattern: /\bsweden\b/i, country: 'Sweden' },
+      { pattern: /\bdenmark\b/i, country: 'Denmark' },
+      { pattern: /\bnorway\b/i, country: 'Norway' },
+      { pattern: /\baustralia\b/i, country: 'Australia' },
+      { pattern: /\bdubai\b|\buae\b|\bunited\s*arab\s*emirates\b/i, country: 'United Arab Emirates' },
+      { pattern: /\bqatar\b/i, country: 'Qatar' },
+      { pattern: /\bsaudi\s*arabia\b/i, country: 'Saudi Arabia' },
+    ];
+    
+    for (const { pattern, country } of countryPatterns) {
+      if (pattern.test(lower)) return country;
+    }
+    return undefined;
+  };
+
+  // Transform nested JSON formats (e.g., { locations: [...] }, { data: { clubs: [...] } })
+  const flattenNestedClubsJson = (data: unknown): unknown[] => {
+    if (Array.isArray(data)) {
+      return data;
+    }
+    
+    if (typeof data !== 'object' || data === null) {
+      throw new Error('Invalid JSON structure');
+    }
+
+    const obj = data as Record<string, unknown>;
+    
+    // Common wrapper keys for club data
+    const wrapperKeys = [
+      'padel_clubs', 'clubs', 'locations', 'venues', 'facilities', 
+      'data', 'results', 'items', 'records'
+    ];
+    
+    for (const key of wrapperKeys) {
+      if (obj[key] && Array.isArray(obj[key])) {
+        return obj[key] as unknown[];
+      }
+    }
+    
+    // Check for nested data object
+    if (obj.data && typeof obj.data === 'object' && !Array.isArray(obj.data)) {
+      return flattenNestedClubsJson(obj.data);
+    }
+    
+    // Single object - wrap in array
+    return [obj];
+  };
+
   const parseJSON = (text: string): ParsedClub[] => {
     const data = JSON.parse(text);
     
-    // Handle nested structures like { padel_clubs: [...] } or { clubs: [...] }
-    let clubs: unknown[];
-    if (Array.isArray(data)) {
-      clubs = data;
-    } else if (data.padel_clubs && Array.isArray(data.padel_clubs)) {
-      clubs = data.padel_clubs;
-    } else if (data.clubs && Array.isArray(data.clubs)) {
-      clubs = data.clubs;
-    } else if (typeof data === 'object') {
-      clubs = [data];
-    } else {
-      throw new Error('Invalid JSON structure');
-    }
+    // Handle nested structures
+    const clubs = flattenNestedClubsJson(data);
 
     // Analyze JSON keys for feedback
     if (clubs.length > 0) {
@@ -559,37 +616,58 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
         return undefined;
       };
 
-      const address = item.address as string | undefined;
+      // Handle nested contact_details (like organization format)
+      const contactDetails = item.contact_details as Record<string, unknown> | undefined;
+      const getContactField = (field: string): string | undefined => {
+        // First check top-level, then nested contact_details
+        const topLevel = item[field] as string | undefined;
+        if (topLevel) return topLevel;
+        if (contactDetails && contactDetails[field]) {
+          return contactDetails[field] as string;
+        }
+        return undefined;
+      };
+
+      // Extract address with fallbacks (headquarters_address, location, etc.)
+      const address = (item.address || item.headquarters_address || item.location || item.full_address) as string | undefined;
       const city = item.city as string | undefined;
-      const country = item.country as string | undefined;
+      // Try to extract country from address if not provided
+      let country = item.country as string | undefined;
+      if (!country && address) {
+        country = extractCountryFromAddress(address);
+      }
+
+      // Support official_name pattern (like organizations)
+      const clubName = (item.club_name || item.clubName || item.name || item.official_name || item.venue_name || item.facility_name || '') as string;
 
       const club: ParsedClub = {
-        club_name: (item.club_name || item.clubName || item.name || '') as string,
-        instagram_handle: cleanInstagramHandle((item.instagram_handle || item.instagram || item.ig) as string | undefined),
+        club_name: clubName,
+        instagram_handle: cleanInstagramHandle((item.instagram_handle || item.instagram || item.ig || getContactField('instagram')) as string | undefined),
         city,
         country,
-        website: (item.website || item.url) as string | undefined,
-        whatsapp: (item.whatsapp || item.whatsapp_number) as string | undefined,
-        phone: item.phone as string | undefined,
-        email: item.email as string | undefined,
+        website: (item.website || item.url || getContactField('website')) as string | undefined,
+        whatsapp: (item.whatsapp || item.whatsapp_number || getContactField('whatsapp')) as string | undefined,
+        phone: (item.phone || item.phone_number || getContactField('phone_number') || getContactField('phone')) as string | undefined,
+        email: (item.email || item.email_address || getContactField('email_address') || getContactField('email')) as string | undefined,
         number_of_courts: parseInt(String(item.number_of_courts || item.courts || item.numCourts || ''), 10) || undefined,
         address,
-        contact_name: (item.owner_or_manager_name || item.contact_name || item.owner || item.manager) as string | undefined,
+        contact_name: (item.owner_or_manager_name || item.contact_name || item.owner || item.manager || getContactField('contact_name')) as string | undefined,
         coaches,
         suburb: item.suburb as string | undefined,
         // New fields
-        business_description: (item.business_description || item.description) as string | undefined,
+        business_description: (item.business_description || item.description || item.about) as string | undefined,
         google_maps_url: (item.google_maps_url || item.google_maps || item.maps_url) as string | undefined,
-        facebook: (item.facebook || item.fb) as string | undefined,
-        twitter: (item.twitter || item.x) as string | undefined,
-        insta_url: (item.insta_url || item.instagram_url) as string | undefined,
+        facebook: (item.facebook || item.fb || getContactField('facebook')) as string | undefined,
+        twitter: (item.twitter || item.x || getContactField('twitter')) as string | undefined,
+        linkedin: (item.linkedin || getContactField('linkedin')) as string | undefined,
+        insta_url: (item.insta_url || item.instagram_url || getContactField('instagram_url')) as string | undefined,
         insta_bio: (item.insta_bio || item.instagram_bio || item.bio) as string | undefined,
         insta_followers: parseInt(String(item.insta_followers || item.instagram_followers || item.followers || ''), 10) || undefined,
         avg_likes: parseInt(String(item.avg_likes || item.average_likes || item.likes || ''), 10) || undefined,
         avg_comments: parseInt(String(item.avg_comments || item.average_comments || item.comments || ''), 10) || undefined,
         avg_video_views: parseInt(String(item.avg_video_views || item.average_video_views || item.video_views || ''), 10) || undefined,
         top_hashtags: parseArrayField(item.top_hashtags || item.hashtags),
-        key_individuals: parseArrayField(item.key_individuals || item.contacts),
+        key_individuals: parseArrayField(item.key_individuals || item.contacts || item.staff || item.team),
       };
 
       if (!club.contact_name && club.key_individuals?.length) {
