@@ -142,6 +142,7 @@ export type Database = {
           insta_followers: number | null
           insta_url: string | null
           instagram_handle: string | null
+          instagram_profile_pic_url: string | null
           key_individuals: string[] | null
           linkedin: string | null
           logo: string | null
@@ -156,6 +157,7 @@ export type Database = {
           phone: string | null
           pipeline_stage: Database["public"]["Enums"]["pipeline_stage"] | null
           priority: Database["public"]["Enums"]["priority_level"] | null
+          recent_activities: Json | null
           response_time_hours: number | null
           suburb: string | null
           tier: Database["public"]["Enums"]["club_tier"] | null
@@ -205,6 +207,7 @@ export type Database = {
           insta_followers?: number | null
           insta_url?: string | null
           instagram_handle?: string | null
+          instagram_profile_pic_url?: string | null
           key_individuals?: string[] | null
           linkedin?: string | null
           logo?: string | null
@@ -219,6 +222,7 @@ export type Database = {
           phone?: string | null
           pipeline_stage?: Database["public"]["Enums"]["pipeline_stage"] | null
           priority?: Database["public"]["Enums"]["priority_level"] | null
+          recent_activities?: Json | null
           response_time_hours?: number | null
           suburb?: string | null
           tier?: Database["public"]["Enums"]["club_tier"] | null
@@ -268,6 +272,7 @@ export type Database = {
           insta_followers?: number | null
           insta_url?: string | null
           instagram_handle?: string | null
+          instagram_profile_pic_url?: string | null
           key_individuals?: string[] | null
           linkedin?: string | null
           logo?: string | null
@@ -282,6 +287,7 @@ export type Database = {
           phone?: string | null
           pipeline_stage?: Database["public"]["Enums"]["pipeline_stage"] | null
           priority?: Database["public"]["Enums"]["priority_level"] | null
+          recent_activities?: Json | null
           response_time_hours?: number | null
           suburb?: string | null
           tier?: Database["public"]["Enums"]["club_tier"] | null
