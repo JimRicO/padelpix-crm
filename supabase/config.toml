@@ -12,6 +12,9 @@ verify_jwt = false
 [functions.enrich-organization]
 verify_jwt = false
 
+[functions.enrich-club]
+verify_jwt = false
+
 [functions.get-enrichment-status]
 verify_jwt = false
 

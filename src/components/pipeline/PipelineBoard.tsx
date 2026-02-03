@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { useClubs, useUpdateClubStage } from '@/hooks/useClubs';
 import { useOwnershipGroupsList } from '@/hooks/useOwnershipGroups';
+import { useClubEnrichmentPolling } from '@/hooks/useClubEnrichment';
 import { Club, PipelineStage, PIPELINE_STAGES } from '@/types/database';
 import { ClubCard } from './ClubCard';
 import { ClubCardCompact } from './ClubCardCompact';
@@ -61,6 +62,9 @@ export function PipelineBoard({ onClubClick, searchQuery }: PipelineBoardProps) 
   const [selectedGroupName, setSelectedGroupName] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'name' | 'country' | 'courts'>('name');
   const [countryFilter, setCountryFilter] = useState<string>('all');
+
+  // Enable enrichment polling for clubs with pending status
+  useClubEnrichmentPolling(clubs);
 
   // Get unique countries for filter dropdown
   const uniqueCountries = useMemo(() => {
