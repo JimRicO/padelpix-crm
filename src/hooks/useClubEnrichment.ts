@@ -1,0 +1,222 @@
+import { useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import type { Club } from '@/types/database';
+
+interface EnrichmentStatusResponse {
+  success: boolean;
+  status?: {
+    job_id: string;
+    status: string;
+    total_rows: number;
+    processed_rows: number;
+    progress_percent: number;
+    is_complete: boolean;
+  };
+  results?: Array<{
+    id: string;
+    club_name: string;
+    website_url?: string;
+    instagram_handle?: string;
+    instagram_followers?: number;
+    instagram_bio?: string;
+    description?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    logo_storage_url?: string;
+    color_palette?: { primary?: string; secondary?: string; accent?: string; background?: string };
+    fonts?: { primary?: string; heading?: string };
+    attitude?: string;
+    aesthetics?: string;
+    perplexity_description?: string;
+    founder_info?: string;
+    founding_year?: string;
+    recent_activities?: unknown;
+    perplexity_citations?: string[];
+  }>;
+  error?: string;
+}
+
+export function useClubEnrichmentPolling(clubs: Club[] | undefined) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  // Find clubs with pending enrichment
+  const pendingClubs = clubs?.filter(
+    c => c.enrichment_status === 'pending' || c.enrichment_status === 'processing'
+  ) || [];
+
+  // Poll for status updates
+  const { data: statusUpdates } = useQuery({
+    queryKey: ['club-enrichment-status', pendingClubs.map(c => c.enrichment_job_id).join(',')],
+    queryFn: async () => {
+      const results: Record<string, EnrichmentStatusResponse> = {};
+      
+      await Promise.all(
+        pendingClubs.map(async (club) => {
+          if (!club.enrichment_job_id) return;
+          
+          try {
+            const { data, error } = await supabase.functions.invoke('get-enrichment-status', {
+              body: { job_id: club.enrichment_job_id },
+            });
+            
+            if (!error && data) {
+              results[club.id] = data;
+            }
+          } catch (err) {
+            console.error(`Failed to check status for ${club.club_name}:`, err);
+          }
+        })
+      );
+      
+      return results;
+    },
+    enabled: pendingClubs.length > 0,
+    refetchInterval: 30000, // Poll every 30 seconds
+    refetchIntervalInBackground: false,
+  });
+
+  // Apply results when enrichment completes
+  const applyResultsMutation = useMutation({
+    mutationFn: async ({ clubId, results }: { clubId: string; results: unknown }) => {
+      // Handle different result structures - API returns { clubs: [...] }
+      let clubsArray: Array<Record<string, unknown>> = [];
+      
+      if (Array.isArray(results)) {
+        clubsArray = results;
+      } else if (results && typeof results === 'object' && 'clubs' in results) {
+        const resultsObj = results as { clubs?: unknown };
+        if (Array.isArray(resultsObj.clubs)) {
+          clubsArray = resultsObj.clubs;
+        }
+      }
+      
+      if (clubsArray.length === 0) {
+        console.log('No enrichment results found for club');
+        return null;
+      }
+      
+      const enrichmentData = clubsArray[0]; // Take first result
+      
+      const updateData: Record<string, unknown> = {
+        enrichment_status: 'completed',
+        enriched_at: new Date().toISOString(),
+      };
+
+      // Map enrichment fields to clubs columns
+      if (enrichmentData.description) updateData.business_description = enrichmentData.description;
+      if (enrichmentData.instagram_handle) updateData.instagram_handle = enrichmentData.instagram_handle;
+      if (enrichmentData.instagram_followers) updateData.insta_followers = enrichmentData.instagram_followers;
+      if (enrichmentData.instagram_bio) updateData.insta_bio = enrichmentData.instagram_bio;
+      if (enrichmentData.address) updateData.address = enrichmentData.address;
+      if (enrichmentData.logo_storage_url) updateData.logo = enrichmentData.logo_storage_url;
+      if (enrichmentData.email) updateData.email = enrichmentData.email;
+      if (enrichmentData.phone) updateData.phone = enrichmentData.phone;
+      if (enrichmentData.website_url) updateData.website = enrichmentData.website_url;
+
+      console.log('Applying club enrichment data:', updateData);
+
+      const { error } = await supabase
+        .from('clubs')
+        .update(updateData)
+        .eq('id', clubId);
+
+      if (error) throw error;
+      return updateData;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['clubs'] });
+      const club = pendingClubs.find(c => c.id === variables.clubId);
+      toast({
+        title: 'Enrichment complete',
+        description: `${club?.club_name || 'Club'} has been enriched with new data`,
+      });
+    },
+    onError: (error: Error) => {
+      console.error('Failed to apply club enrichment results:', error);
+      toast({
+        title: 'Failed to save enrichment',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Check for completed enrichments and apply results
+  useEffect(() => {
+    if (!statusUpdates) return;
+
+    Object.entries(statusUpdates).forEach(([clubId, response]) => {
+      if (response.status?.is_complete && response.results) {
+        applyResultsMutation.mutate({ clubId, results: response.results });
+      }
+    });
+  }, [statusUpdates]);
+
+  return {
+    pendingCount: pendingClubs.length,
+    isPolling: pendingClubs.length > 0,
+  };
+}
+
+export function useStartClubEnrichment() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ 
+      clubId, 
+      name, 
+      website, 
+      instagramHandle 
+    }: { 
+      clubId: string; 
+      name: string; 
+      website?: string; 
+      instagramHandle?: string;
+    }) => {
+      // Submit enrichment request
+      const { data, error } = await supabase.functions.invoke('enrich-club', {
+        body: {
+          club_name: name,
+          website_url: website || undefined,
+          instagram_handle: instagramHandle || undefined,
+        },
+      });
+
+      if (error) throw error;
+
+      // Save job ID and status to database
+      if (data?.job_id) {
+        const { error: updateError } = await supabase
+          .from('clubs')
+          .update({
+            enrichment_job_id: data.job_id,
+            enrichment_status: 'pending',
+          })
+          .eq('id', clubId);
+
+        if (updateError) throw updateError;
+      }
+
+      return data;
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['clubs'] });
+      toast({
+        title: 'Enrichment started',
+        description: `${variables.name} is being enriched`,
+      });
+    },
+    onError: (error: Error, variables) => {
+      toast({
+        title: 'Enrichment failed',
+        description: error.message || `Could not start enrichment for ${variables.name}`,
+        variant: 'destructive',
+      });
+    },
+  });
+}

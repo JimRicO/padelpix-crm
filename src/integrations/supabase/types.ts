@@ -122,6 +122,9 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           email: string | null
+          enriched_at: string | null
+          enrichment_job_id: string | null
+          enrichment_status: string | null
           facebook: string | null
           first_comment_date: string | null
           first_dm_date: string | null
@@ -174,6 +177,9 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           email?: string | null
+          enriched_at?: string | null
+          enrichment_job_id?: string | null
+          enrichment_status?: string | null
           facebook?: string | null
           first_comment_date?: string | null
           first_dm_date?: string | null
@@ -226,6 +232,9 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           email?: string | null
+          enriched_at?: string | null
+          enrichment_job_id?: string | null
+          enrichment_status?: string | null
           facebook?: string | null
           first_comment_date?: string | null
           first_dm_date?: string | null

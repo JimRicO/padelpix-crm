@@ -64,6 +64,10 @@ export interface Club {
   avg_video_views: number | null;
   top_hashtags: string[] | null;
   key_individuals: string[] | null;
+  // Enrichment fields
+  enrichment_job_id: string | null;
+  enrichment_status: string | null;
+  enriched_at: string | null;
 }
 
 export interface Activity {

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Club, PIPELINE_STAGES, TIERS, PRIORITIES, PriorityLevel } from '@/types/database';
 import { useUpdateClub, useDeleteClub, useOwnershipGroups } from '@/hooks/useClubs';
+import { useStartClubEnrichment } from '@/hooks/useClubEnrichment';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Instagram, Globe, Phone, Mail, MapPin, Trash2, Save, ExternalLink, Users, Check, ChevronsUpDown, Linkedin, Upload, X, Link, Facebook, Twitter, Heart, MessageCircle, Video, Hash } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Instagram, Globe, Phone, Mail, MapPin, Trash2, Save, ExternalLink, Users, Check, ChevronsUpDown, Linkedin, Upload, X, Link, Facebook, Twitter, Heart, MessageCircle, Video, Hash, Sparkles, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
@@ -64,8 +66,21 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
 
   const updateClub = useUpdateClub();
   const deleteClub = useDeleteClub();
+  const startEnrichment = useStartClubEnrichment();
   const { data: ownershipGroups = [] } = useOwnershipGroups();
   const [ownershipOpen, setOwnershipOpen] = useState(false);
+
+  const isEnriching = club.enrichment_status === 'pending' || club.enrichment_status === 'processing';
+  const isEnriched = club.enrichment_status === 'completed';
+
+  const handleEnrich = () => {
+    startEnrichment.mutate({
+      clubId: club.id,
+      name: club.club_name,
+      website: club.website || undefined,
+      instagramHandle: club.instagram_handle || undefined,
+    });
+  };
 
   // Check if form has unsaved changes
   const hasChanges = JSON.stringify(formData) !== JSON.stringify(initialFormData);
@@ -627,36 +642,68 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
       </div>
 
       <div className="flex justify-between pt-4 border-t">
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="destructive" size="sm">
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete Club
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete {club.club_name}?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This will permanently delete this club and all related activities, tasks, and content.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <div className="flex gap-2">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm">
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Club
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete {club.club_name}?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete this club and all related activities, tasks, and content.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
 
-        <Button 
-          onClick={handleSave} 
-          disabled={updateClub.isPending || !hasChanges}
-          className={hasChanges && !updateClub.isPending ? 'bg-primary hover:bg-primary/90' : ''}
-          variant={hasChanges && !updateClub.isPending ? 'default' : 'secondary'}
-        >
-          <Save className="w-4 h-4 mr-2" />
-          {updateClub.isPending ? 'Saving...' : 'Save Changes'}
-        </Button>
+        <div className="flex gap-2">
+          {/* Enrichment Button */}
+          {isEnriching ? (
+            <Button variant="outline" size="sm" disabled>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Enriching...
+            </Button>
+          ) : isEnriched ? (
+            <Button variant="outline" size="sm" onClick={handleEnrich} disabled={startEnrichment.isPending}>
+              <Sparkles className="w-4 h-4 mr-2 text-primary" />
+              Re-enrich
+              <Badge variant="secondary" className="ml-2 text-xs">Done</Badge>
+            </Button>
+          ) : (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleEnrich}
+              disabled={startEnrichment.isPending}
+            >
+              {startEnrichment.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4 mr-2" />
+              )}
+              Enrich
+            </Button>
+          )}
+
+          <Button 
+            onClick={handleSave} 
+            disabled={updateClub.isPending || !hasChanges}
+            className={hasChanges && !updateClub.isPending ? 'bg-primary hover:bg-primary/90' : ''}
+            variant={hasChanges && !updateClub.isPending ? 'default' : 'secondary'}
+          >
+            <Save className="w-4 h-4 mr-2" />
+            {updateClub.isPending ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </div>
       </div>
     </div>
   );
