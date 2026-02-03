@@ -1,13 +1,15 @@
 import { 
   ExternalLink, Instagram, Info, Sparkles, Users, Palette, Type, 
   Activity, Link2, ChevronDown, User, Globe, MapPin, Phone, Mail,
-  Calendar, Building2
+  Calendar, Building2, Plus
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { Club } from '@/types/database';
+import { CreatePersonFromKeyPeopleDialog } from './CreatePersonFromKeyPeopleDialog';
 
 // Interface for structured key_people data from API
 interface KeyPerson {
@@ -18,6 +20,8 @@ interface KeyPerson {
 
 interface ClubEnrichmentSectionsProps {
   club: Club;
+  clubId: string;
+  clubName: string;
 }
 
 // Safe parser for key_people JSONB data
@@ -36,8 +40,10 @@ function parseKeyPeople(data: unknown): KeyPerson[] {
   return [];
 }
 
-export function ClubEnrichmentSections({ club }: ClubEnrichmentSectionsProps) {
+export function ClubEnrichmentSections({ club, clubId, clubName }: ClubEnrichmentSectionsProps) {
   const [citationsOpen, setCitationsOpen] = useState(false);
+  const [selectedKeyPerson, setSelectedKeyPerson] = useState<KeyPerson | null>(null);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   // Parse key_people from JSONB - prefer structured data, fallback to key_individuals
   const keyPeople = parseKeyPeople(club.key_people);
@@ -303,7 +309,6 @@ export function ClubEnrichmentSections({ club }: ClubEnrichmentSectionsProps) {
         </div>
       )}
 
-      {/* Key People - two column grid with neu-subtle chip effect */}
       {keyPeople.length > 0 ? (
         <div className="detail-section">
           <div className="detail-section-header">
@@ -312,20 +317,36 @@ export function ClubEnrichmentSections({ club }: ClubEnrichmentSectionsProps) {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
             {keyPeople.map((person, idx) => (
-              <div key={idx} className="neu-subtle rounded-xl p-3">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <User className="w-5 h-5 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground">{person.name}</p>
-                    <p className="text-xs text-primary font-medium">{person.role}</p>
-                  </div>
-                </div>
-                {person.context && (
-                  <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{person.context}</p>
-                )}
-              </div>
+              <Tooltip key={idx}>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => {
+                      setSelectedKeyPerson(person);
+                      setCreateDialogOpen(true);
+                    }}
+                    className="neu-subtle rounded-xl p-3 text-left w-full cursor-pointer transition-all hover:ring-2 hover:ring-primary/50 group"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 relative">
+                        <User className="w-5 h-5 text-primary" />
+                        <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Plus className="w-3 h-3 text-primary-foreground" />
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground">{person.name}</p>
+                        <p className="text-xs text-primary font-medium">{person.role}</p>
+                      </div>
+                    </div>
+                    {person.context && (
+                      <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{person.context}</p>
+                    )}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Click to create person record</p>
+                </TooltipContent>
+              </Tooltip>
             ))}
           </div>
         </div>
@@ -337,16 +358,32 @@ export function ClubEnrichmentSections({ club }: ClubEnrichmentSectionsProps) {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
             {keyIndividuals.map((name, idx) => (
-              <div key={idx} className="neu-subtle rounded-xl p-3">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <User className="w-5 h-5 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground">{name}</p>
-                  </div>
-                </div>
-              </div>
+              <Tooltip key={idx}>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => {
+                      setSelectedKeyPerson({ name, role: '' });
+                      setCreateDialogOpen(true);
+                    }}
+                    className="neu-subtle rounded-xl p-3 text-left w-full cursor-pointer transition-all hover:ring-2 hover:ring-primary/50 group"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 relative">
+                        <User className="w-5 h-5 text-primary" />
+                        <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Plus className="w-3 h-3 text-primary-foreground" />
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground">{name}</p>
+                      </div>
+                    </div>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Click to create person record</p>
+                </TooltipContent>
+              </Tooltip>
             ))}
           </div>
         </div>
@@ -405,6 +442,17 @@ export function ClubEnrichmentSections({ club }: ClubEnrichmentSectionsProps) {
             </div>
           )}
         </div>
+      )}
+
+      {/* Create Person Dialog */}
+      {selectedKeyPerson && (
+        <CreatePersonFromKeyPeopleDialog
+          open={createDialogOpen}
+          onOpenChange={setCreateDialogOpen}
+          keyPerson={selectedKeyPerson}
+          clubId={clubId}
+          clubName={clubName}
+        />
       )}
     </div>
   );

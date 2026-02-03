@@ -614,7 +614,7 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
       </div>
 
       {/* AI Enrichment Data */}
-      <ClubEnrichmentSections club={club} />
+      <ClubEnrichmentSections club={club} clubId={club.id} clubName={club.club_name} />
       <div className="space-y-4">
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Notes & Actions</h3>
         <div className="space-y-2">
