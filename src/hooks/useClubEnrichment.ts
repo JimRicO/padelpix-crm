@@ -80,9 +80,9 @@ export function useClubEnrichmentPolling(clubs: Club[] | undefined) {
     refetchIntervalInBackground: false,
   });
 
-  // Apply results when enrichment completes
+  // Apply results when enrichment completes - uses AI to intelligently map ALL fields
   const applyResultsMutation = useMutation({
-    mutationFn: async ({ clubId, results }: { clubId: string; results: unknown }) => {
+    mutationFn: async ({ clubId, results, clubName }: { clubId: string; results: unknown; clubName?: string }) => {
       // Handle different result structures - API returns { clubs: [...] }
       let clubsArray: Array<Record<string, unknown>> = [];
       
@@ -100,36 +100,76 @@ export function useClubEnrichmentPolling(clubs: Club[] | undefined) {
         return null;
       }
       
-      const enrichmentData = clubsArray[0]; // Take first result
-      
-      const updateData: Record<string, unknown> = {
+      const rawEnrichmentData = clubsArray[0]; // Take first result
+      console.log('Raw enrichment data from API:', rawEnrichmentData);
+      console.log('Raw enrichment keys:', Object.keys(rawEnrichmentData));
+
+      // Use Claude Sonnet to intelligently map ALL enrichment data
+      console.log('Calling AI normalization for intelligent field mapping...');
+      const { data: normalizeResult, error: normalizeError } = await supabase.functions.invoke(
+        'normalize-club-enrichment',
+        {
+          body: {
+            enrichmentData: rawEnrichmentData,
+            clubName: clubName,
+          },
+        }
+      );
+
+      if (normalizeError) {
+        console.error('AI normalization failed, falling back to manual mapping:', normalizeError);
+        // Fallback to basic mapping if AI fails
+      }
+
+      let updateData: Record<string, unknown> = {
         enrichment_status: 'completed',
         enriched_at: new Date().toISOString(),
       };
 
-      // Map enrichment fields to clubs columns
-      if (enrichmentData.description) updateData.business_description = enrichmentData.description;
-      if (enrichmentData.instagram_handle) updateData.instagram_handle = enrichmentData.instagram_handle;
-      if (enrichmentData.instagram_followers) updateData.insta_followers = enrichmentData.instagram_followers;
-      if (enrichmentData.instagram_bio) updateData.insta_bio = enrichmentData.instagram_bio;
-      if (enrichmentData.address) updateData.address = enrichmentData.address;
-      if (enrichmentData.logo_storage_url) updateData.logo = enrichmentData.logo_storage_url;
-      if (enrichmentData.email) updateData.email = enrichmentData.email;
-      if (enrichmentData.phone) updateData.phone = enrichmentData.phone;
-      if (enrichmentData.website_url) updateData.website = enrichmentData.website_url;
-      // Map brand identity fields
-      if (enrichmentData.color_palette) updateData.color_palette = enrichmentData.color_palette;
-      if (enrichmentData.fonts) updateData.fonts = enrichmentData.fonts;
-      if (enrichmentData.attitude) updateData.attitude = enrichmentData.attitude;
-      if (enrichmentData.aesthetics) updateData.aesthetics = enrichmentData.aesthetics;
-      if (enrichmentData.founder_info) updateData.founder_info = enrichmentData.founder_info;
-      if (enrichmentData.founding_year) updateData.founding_year = enrichmentData.founding_year;
-      if (enrichmentData.perplexity_description) updateData.perplexity_description = enrichmentData.perplexity_description;
-      if (enrichmentData.perplexity_citations) updateData.perplexity_citations = enrichmentData.perplexity_citations;
-      if (enrichmentData.recent_activities) updateData.recent_activities = enrichmentData.recent_activities;
-      if (enrichmentData.instagram_profile_pic_url) updateData.instagram_profile_pic_url = enrichmentData.instagram_profile_pic_url;
+      if (normalizeResult?.success && normalizeResult?.mappedData) {
+        // Use AI-mapped data - this captures ALL fields including new ones
+        console.log('Using AI-mapped enrichment data:', normalizeResult.mappedData);
+        console.log('Mapped keys:', normalizeResult.mappedKeys);
+        
+        // Merge AI-mapped data with status fields
+        updateData = {
+          ...normalizeResult.mappedData,
+          enrichment_status: 'completed',
+          enriched_at: new Date().toISOString(),
+        };
+        
+        // Remove any fields that shouldn't be in the update (like club_name, id)
+        delete updateData.club_name;
+        delete updateData.id;
+      } else {
+        // Fallback: manual field mapping (legacy behavior)
+        console.log('Fallback to manual mapping');
+        const enrichmentData = rawEnrichmentData;
+        
+        if (enrichmentData.description) updateData.business_description = enrichmentData.description;
+        if (enrichmentData.instagram_handle) updateData.instagram_handle = enrichmentData.instagram_handle;
+        if (enrichmentData.instagram_followers) updateData.insta_followers = enrichmentData.instagram_followers;
+        if (enrichmentData.instagram_bio) updateData.insta_bio = enrichmentData.instagram_bio;
+        if (enrichmentData.address) updateData.address = enrichmentData.address;
+        if (enrichmentData.logo_storage_url) updateData.logo = enrichmentData.logo_storage_url;
+        if (enrichmentData.email) updateData.email = enrichmentData.email;
+        if (enrichmentData.phone) updateData.phone = enrichmentData.phone;
+        if (enrichmentData.website_url) updateData.website = enrichmentData.website_url;
+        if (enrichmentData.color_palette) updateData.color_palette = enrichmentData.color_palette;
+        if (enrichmentData.fonts) updateData.fonts = enrichmentData.fonts;
+        if (enrichmentData.attitude) updateData.attitude = enrichmentData.attitude;
+        if (enrichmentData.aesthetics) updateData.aesthetics = enrichmentData.aesthetics;
+        if (enrichmentData.founder_info) updateData.founder_info = enrichmentData.founder_info;
+        if (enrichmentData.founding_year) updateData.founding_year = enrichmentData.founding_year;
+        if (enrichmentData.perplexity_description) updateData.perplexity_description = enrichmentData.perplexity_description;
+        if (enrichmentData.perplexity_citations) updateData.perplexity_citations = enrichmentData.perplexity_citations;
+        if (enrichmentData.recent_activities) updateData.recent_activities = enrichmentData.recent_activities;
+        if (enrichmentData.instagram_profile_pic_url) updateData.instagram_profile_pic_url = enrichmentData.instagram_profile_pic_url;
+        if (enrichmentData.key_individuals) updateData.key_individuals = enrichmentData.key_individuals;
+        if (enrichmentData.key_people) updateData.key_individuals = enrichmentData.key_people;
+      }
 
-      console.log('Applying club enrichment data:', updateData);
+      console.log('Final update data for club:', updateData);
 
       const { error } = await supabase
         .from('clubs')
@@ -163,7 +203,12 @@ export function useClubEnrichmentPolling(clubs: Club[] | undefined) {
 
     Object.entries(statusUpdates).forEach(([clubId, response]) => {
       if (response.status?.is_complete && response.results) {
-        applyResultsMutation.mutate({ clubId, results: response.results });
+        const club = pendingClubs.find(c => c.id === clubId);
+        applyResultsMutation.mutate({ 
+          clubId, 
+          results: response.results,
+          clubName: club?.club_name,
+        });
       }
     });
   }, [statusUpdates]);
