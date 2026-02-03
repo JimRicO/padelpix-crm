@@ -214,7 +214,12 @@ export function useClubEnrichmentPolling(clubs: Club[] | undefined) {
       return updateData;
     },
     onSuccess: (_, variables) => {
+      // Force immediate refetch of all club queries
       queryClient.invalidateQueries({ queryKey: ['clubs'] });
+      queryClient.invalidateQueries({ queryKey: ['club', variables.clubId] });
+      // Also refetch immediately to ensure UI updates
+      queryClient.refetchQueries({ queryKey: ['clubs'] });
+      
       const club = pendingClubs.find(c => c.id === variables.clubId);
       toast({
         title: 'Enrichment complete',
