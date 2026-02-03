@@ -303,28 +303,28 @@ export function ClubEnrichmentSections({ club }: ClubEnrichmentSectionsProps) {
         </div>
       )}
 
-      {/* Key People - two column grid with avatar, name, role, context */}
+      {/* Key People - two column grid with neu-subtle chip effect */}
       {keyPeople.length > 0 ? (
         <div className="detail-section">
           <div className="detail-section-header">
             <Users className="w-4 h-4 text-primary" />
             Key People
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
             {keyPeople.map((person, idx) => (
-              <div key={idx} className="detail-section-content p-3">
+              <div key={idx} className="neu-subtle rounded-xl p-3">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                     <User className="w-5 h-5 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold">{person.name}</p>
+                    <p className="text-sm font-semibold text-foreground">{person.name}</p>
                     <p className="text-xs text-primary font-medium">{person.role}</p>
-                    {person.context && (
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-3">{person.context}</p>
-                    )}
                   </div>
                 </div>
+                {person.context && (
+                  <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{person.context}</p>
+                )}
               </div>
             ))}
           </div>
@@ -335,15 +335,15 @@ export function ClubEnrichmentSections({ club }: ClubEnrichmentSectionsProps) {
             <Users className="w-4 h-4 text-primary" />
             Key People
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
             {keyIndividuals.map((name, idx) => (
-              <div key={idx} className="detail-section-content p-3">
+              <div key={idx} className="neu-subtle rounded-xl p-3">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                     <User className="w-5 h-5 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold">{name}</p>
+                    <p className="text-sm font-semibold text-foreground">{name}</p>
                   </div>
                 </div>
               </div>
@@ -359,12 +359,12 @@ export function ClubEnrichmentSections({ club }: ClubEnrichmentSectionsProps) {
             <Activity className="w-4 h-4 text-primary" />
             Recent Activities
           </div>
-          <div className="space-y-2 mt-2">
+          <div className="space-y-1.5 mt-3">
             {recentActivities.slice(0, 5).map((activity, i) => (
-              <div key={i} className="detail-section-content py-2.5 px-3 flex items-start gap-3">
+              <div key={i} className="flex items-start gap-3 py-1.5">
                 <div className="w-2 h-2 rounded-full bg-primary mt-1.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
-                  {activity.title && <p className="text-sm">{activity.title}</p>}
+                  {activity.title && <p className="text-sm text-foreground">{activity.title}</p>}
                   {activity.date && (
                     <p className="text-xs text-muted-foreground">{activity.date}</p>
                   )}
@@ -375,7 +375,7 @@ export function ClubEnrichmentSections({ club }: ClubEnrichmentSectionsProps) {
         </div>
       )}
 
-      {/* Citations */}
+      {/* Sources - Collapsible */}
       {club.perplexity_citations && club.perplexity_citations.length > 0 && (
         <div className="detail-section">
           <button
@@ -383,20 +383,20 @@ export function ClubEnrichmentSections({ club }: ClubEnrichmentSectionsProps) {
             className="detail-section-header w-full justify-between hover:bg-muted/50 p-2 -m-2 rounded-lg transition-colors"
           >
             <div className="flex items-center gap-2">
-              <Link2 className="w-4 h-4" />
+              <Link2 className="w-4 h-4 text-primary" />
               Sources ({club.perplexity_citations.length})
             </div>
             <ChevronDown className={`w-4 h-4 transition-transform ${citationsOpen ? 'rotate-180' : ''}`} />
           </button>
           {citationsOpen && (
-            <div className="space-y-1 mt-2 pl-6">
+            <div className="neu-pressed rounded-lg p-3 mt-3 space-y-1.5">
               {club.perplexity_citations.map((url, i) => (
                 <a
                   key={i}
                   href={url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-xs text-primary hover:underline flex items-center gap-1 truncate"
+                  className="text-xs text-primary hover:underline flex items-center gap-1.5 truncate"
                 >
                   <ExternalLink className="w-3 h-3 flex-shrink-0" />
                   <span className="truncate">{url}</span>
