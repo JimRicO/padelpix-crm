@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useClub } from '@/hooks/useClubs';
 import { Header } from '@/components/layout/Header';
 import { PipelineBoard } from '@/components/pipeline/PipelineBoard';
 import { ClubDetailModal } from '@/components/club/ClubDetailModal';
@@ -11,7 +12,9 @@ import { Club } from '@/types/database';
 export default function Index() {
   const { user, loading } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedClub, setSelectedClub] = useState<Club | null>(null);
+  const [selectedClubId, setSelectedClubId] = useState<string | null>(null);
+  const [selectedClubSnapshot, setSelectedClubSnapshot] = useState<Club | null>(null);
+  const { data: selectedClubFresh } = useClub(selectedClubId);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
 
@@ -38,15 +41,23 @@ export default function Index() {
       
       <main className="flex-1 p-6 overflow-hidden">
         <PipelineBoard 
-          onClubClick={setSelectedClub}
+          onClubClick={(club) => {
+            setSelectedClubId(club.id);
+            setSelectedClubSnapshot(club);
+          }}
           searchQuery={searchQuery}
         />
       </main>
 
       <ClubDetailModal 
-        club={selectedClub}
-        open={!!selectedClub}
-        onOpenChange={(open) => !open && setSelectedClub(null)}
+        club={selectedClubFresh ?? selectedClubSnapshot}
+        open={!!selectedClubId}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedClubId(null);
+            setSelectedClubSnapshot(null);
+          }
+        }}
       />
 
       <AddClubDialog 

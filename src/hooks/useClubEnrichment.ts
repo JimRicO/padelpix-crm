@@ -36,6 +36,8 @@ interface EnrichmentStatusResponse {
     founding_year?: string;
     recent_activities?: Array<{ title?: string; date?: string; description?: string }>;
     perplexity_citations?: string[];
+    key_people?: Array<{ name?: string; role?: string; context?: string }>;
+    key_individuals?: string[];
   }>;
   error?: string;
 }
@@ -144,7 +146,7 @@ export function useClubEnrichmentPolling(clubs: Club[] | undefined) {
       } else {
         // Fallback: manual field mapping (legacy behavior)
         console.log('Fallback to manual mapping');
-        const enrichmentData = rawEnrichmentData;
+        const enrichmentData = rawEnrichmentData as Record<string, unknown>;
         
         if (enrichmentData.description) updateData.business_description = enrichmentData.description;
         if (enrichmentData.instagram_handle) updateData.instagram_handle = enrichmentData.instagram_handle;
@@ -166,7 +168,25 @@ export function useClubEnrichmentPolling(clubs: Club[] | undefined) {
         if (enrichmentData.recent_activities) updateData.recent_activities = enrichmentData.recent_activities;
         if (enrichmentData.instagram_profile_pic_url) updateData.instagram_profile_pic_url = enrichmentData.instagram_profile_pic_url;
         if (enrichmentData.key_individuals) updateData.key_individuals = enrichmentData.key_individuals;
-        if (enrichmentData.key_people) updateData.key_individuals = enrichmentData.key_people;
+        if (enrichmentData.key_people) {
+          updateData.key_people = enrichmentData.key_people;
+
+          // If API provided structured key_people but not a separate key_individuals list,
+          // derive the names so downstream UI still has a lightweight fallback.
+          if (!updateData.key_individuals && Array.isArray(enrichmentData.key_people)) {
+            const names = enrichmentData.key_people
+              .map((p) => {
+                if (typeof p === 'string') return p;
+                if (p && typeof p === 'object' && 'name' in p && typeof (p as any).name === 'string') {
+                  return (p as any).name as string;
+                }
+                return null;
+              })
+              .filter(Boolean) as string[];
+
+            if (names.length > 0) updateData.key_individuals = names;
+          }
+        }
       }
 
       console.log('Final update data for club:', updateData);
