@@ -40,7 +40,7 @@ export function ClubEnrichmentSections({ club }: ClubEnrichmentSectionsProps) {
   const [citationsOpen, setCitationsOpen] = useState(false);
 
   // Parse key_people from JSONB - prefer structured data, fallback to key_individuals
-  const keyPeople = parseKeyPeople((club as any).key_people);
+  const keyPeople = parseKeyPeople(club.key_people);
   const keyIndividuals = club.key_individuals;
 
   const hasEnrichmentData = club.enrichment_status === 'completed' && (
