@@ -116,6 +116,15 @@ export function useClubEnrichmentPolling(clubs: Club[] | undefined) {
       if (enrichmentData.email) updateData.email = enrichmentData.email;
       if (enrichmentData.phone) updateData.phone = enrichmentData.phone;
       if (enrichmentData.website_url) updateData.website = enrichmentData.website_url;
+      // Map brand identity fields
+      if (enrichmentData.color_palette) updateData.color_palette = enrichmentData.color_palette;
+      if (enrichmentData.fonts) updateData.fonts = enrichmentData.fonts;
+      if (enrichmentData.attitude) updateData.attitude = enrichmentData.attitude;
+      if (enrichmentData.aesthetics) updateData.aesthetics = enrichmentData.aesthetics;
+      if (enrichmentData.founder_info) updateData.founder_info = enrichmentData.founder_info;
+      if (enrichmentData.founding_year) updateData.founding_year = enrichmentData.founding_year;
+      if (enrichmentData.perplexity_description) updateData.perplexity_description = enrichmentData.perplexity_description;
+      if (enrichmentData.perplexity_citations) updateData.perplexity_citations = enrichmentData.perplexity_citations;
 
       console.log('Applying club enrichment data:', updateData);
 
