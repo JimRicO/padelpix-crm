@@ -21,6 +21,7 @@ interface EnrichmentStatusResponse {
     instagram_handle?: string;
     instagram_followers?: number;
     instagram_bio?: string;
+    instagram_profile_pic_url?: string;
     description?: string;
     email?: string;
     phone?: string;
@@ -33,7 +34,7 @@ interface EnrichmentStatusResponse {
     perplexity_description?: string;
     founder_info?: string;
     founding_year?: string;
-    recent_activities?: unknown;
+    recent_activities?: Array<{ title?: string; date?: string; description?: string }>;
     perplexity_citations?: string[];
   }>;
   error?: string;
@@ -125,6 +126,8 @@ export function useClubEnrichmentPolling(clubs: Club[] | undefined) {
       if (enrichmentData.founding_year) updateData.founding_year = enrichmentData.founding_year;
       if (enrichmentData.perplexity_description) updateData.perplexity_description = enrichmentData.perplexity_description;
       if (enrichmentData.perplexity_citations) updateData.perplexity_citations = enrichmentData.perplexity_citations;
+      if (enrichmentData.recent_activities) updateData.recent_activities = enrichmentData.recent_activities;
+      if (enrichmentData.instagram_profile_pic_url) updateData.instagram_profile_pic_url = enrichmentData.instagram_profile_pic_url;
 
       console.log('Applying club enrichment data:', updateData);
 

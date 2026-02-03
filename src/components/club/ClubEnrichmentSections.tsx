@@ -1,4 +1,4 @@
-import { ExternalLink, Info, Sparkles } from 'lucide-react';
+import { ExternalLink, Instagram, Info, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import type { Club } from '@/types/database';
@@ -9,13 +9,17 @@ interface ClubEnrichmentSectionsProps {
 
 export function ClubEnrichmentSections({ club }: ClubEnrichmentSectionsProps) {
   const hasEnrichmentData = club.enrichment_status === 'completed' && (
+    club.business_description || 
+    club.instagram_handle || 
+    club.insta_followers ||
     club.color_palette || 
     club.fonts || 
     club.attitude || 
     club.aesthetics ||
     club.founder_info ||
     club.founding_year ||
-    club.perplexity_description
+    club.perplexity_description ||
+    club.recent_activities
   );
 
   if (!hasEnrichmentData) {
@@ -24,6 +28,7 @@ export function ClubEnrichmentSections({ club }: ClubEnrichmentSectionsProps) {
 
   const colorPalette = club.color_palette;
   const fonts = club.fonts;
+  const recentActivities = club.recent_activities;
 
   return (
     <>
@@ -39,6 +44,45 @@ export function ClubEnrichmentSections({ club }: ClubEnrichmentSectionsProps) {
           </span>
         )}
       </div>
+
+      {/* Description */}
+      {club.business_description && (
+        <div className="space-y-1">
+          <h4 className="text-sm font-medium">Description</h4>
+          <p className="text-sm text-muted-foreground">{club.business_description}</p>
+        </div>
+      )}
+
+      {/* Instagram */}
+      {(club.instagram_handle || club.insta_followers || club.insta_bio) && (
+        <div className="space-y-2">
+          <h4 className="text-sm font-medium flex items-center gap-2">
+            <Instagram className="w-4 h-4" />
+            Instagram
+          </h4>
+          <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+            {club.instagram_handle && (
+              <a 
+                href={`https://instagram.com/${club.instagram_handle.replace('@', '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-primary hover:underline flex items-center gap-1"
+              >
+                @{club.instagram_handle.replace('@', '')}
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            )}
+            {club.insta_followers && (
+              <p className="text-sm font-medium">
+                {club.insta_followers.toLocaleString()} followers
+              </p>
+            )}
+            {club.insta_bio && (
+              <p className="text-sm text-muted-foreground">{club.insta_bio}</p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Brand Identity */}
       {(colorPalette || fonts || club.attitude || club.aesthetics) && (
@@ -114,6 +158,26 @@ export function ClubEnrichmentSections({ club }: ClubEnrichmentSectionsProps) {
             {club.founder_info && (
               <p className="text-sm text-muted-foreground">{club.founder_info}</p>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Recent Activities */}
+      {recentActivities && recentActivities.length > 0 && (
+        <div className="space-y-2">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Recent Activities</h3>
+          <div className="space-y-2">
+            {recentActivities.slice(0, 3).map((activity, i) => (
+              <div key={i} className="bg-muted/50 rounded p-2 text-sm">
+                {activity.title && <p className="font-medium">{activity.title}</p>}
+                {activity.description && (
+                  <p className="text-muted-foreground text-xs">{activity.description}</p>
+                )}
+                {activity.date && (
+                  <p className="text-xs text-muted-foreground mt-1">{activity.date}</p>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       )}

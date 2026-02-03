@@ -77,6 +77,8 @@ export interface Club {
   founding_year: string | null;
   perplexity_description: string | null;
   perplexity_citations: string[] | null;
+  recent_activities: Array<{ title?: string; date?: string; description?: string }> | null;
+  instagram_profile_pic_url: string | null;
 }
 
 export interface Activity {
