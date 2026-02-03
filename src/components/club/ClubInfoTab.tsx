@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { MarkdownPreview } from '@/components/ui/markdown-renderer';
+import { ClubEnrichmentSections } from './ClubEnrichmentSections';
 
 interface ClubInfoTabProps {
   club: Club;
@@ -612,7 +613,8 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
         </div>
       </div>
 
-      {/* Notes & Actions */}
+      {/* AI Enrichment Data */}
+      <ClubEnrichmentSections club={club} />
       <div className="space-y-4">
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Notes & Actions</h3>
         <div className="space-y-2">

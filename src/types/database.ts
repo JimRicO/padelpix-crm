@@ -68,6 +68,15 @@ export interface Club {
   enrichment_job_id: string | null;
   enrichment_status: string | null;
   enriched_at: string | null;
+  // Brand identity fields
+  color_palette: { primary?: string; secondary?: string; accent?: string; background?: string } | null;
+  fonts: { primary?: string; heading?: string } | null;
+  attitude: string | null;
+  aesthetics: string | null;
+  founder_info: string | null;
+  founding_year: string | null;
+  perplexity_description: string | null;
+  perplexity_citations: string[] | null;
 }
 
 export interface Activity {

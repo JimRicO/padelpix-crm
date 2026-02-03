@@ -108,6 +108,8 @@ export type Database = {
       clubs: {
         Row: {
           address: string | null
+          aesthetics: string | null
+          attitude: string | null
           avg_comments: number | null
           avg_likes: number | null
           avg_video_views: number | null
@@ -115,6 +117,7 @@ export type Database = {
           city: string | null
           club_name: string
           coaches: string[] | null
+          color_palette: Json | null
           contact_name: string | null
           content_created_date: string | null
           converted_date: string | null
@@ -130,6 +133,9 @@ export type Database = {
           first_dm_date: string | null
           first_response_date: string | null
           followed_date: string | null
+          fonts: Json | null
+          founder_info: string | null
+          founding_year: string | null
           google_maps_url: string | null
           id: string
           insta_bio: string | null
@@ -145,6 +151,8 @@ export type Database = {
           number_of_clubs: number | null
           number_of_courts: number | null
           ownership_group: string | null
+          perplexity_citations: string[] | null
+          perplexity_description: string | null
           phone: string | null
           pipeline_stage: Database["public"]["Enums"]["pipeline_stage"] | null
           priority: Database["public"]["Enums"]["priority_level"] | null
@@ -163,6 +171,8 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          aesthetics?: string | null
+          attitude?: string | null
           avg_comments?: number | null
           avg_likes?: number | null
           avg_video_views?: number | null
@@ -170,6 +180,7 @@ export type Database = {
           city?: string | null
           club_name: string
           coaches?: string[] | null
+          color_palette?: Json | null
           contact_name?: string | null
           content_created_date?: string | null
           converted_date?: string | null
@@ -185,6 +196,9 @@ export type Database = {
           first_dm_date?: string | null
           first_response_date?: string | null
           followed_date?: string | null
+          fonts?: Json | null
+          founder_info?: string | null
+          founding_year?: string | null
           google_maps_url?: string | null
           id?: string
           insta_bio?: string | null
@@ -200,6 +214,8 @@ export type Database = {
           number_of_clubs?: number | null
           number_of_courts?: number | null
           ownership_group?: string | null
+          perplexity_citations?: string[] | null
+          perplexity_description?: string | null
           phone?: string | null
           pipeline_stage?: Database["public"]["Enums"]["pipeline_stage"] | null
           priority?: Database["public"]["Enums"]["priority_level"] | null
@@ -218,6 +234,8 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          aesthetics?: string | null
+          attitude?: string | null
           avg_comments?: number | null
           avg_likes?: number | null
           avg_video_views?: number | null
@@ -225,6 +243,7 @@ export type Database = {
           city?: string | null
           club_name?: string
           coaches?: string[] | null
+          color_palette?: Json | null
           contact_name?: string | null
           content_created_date?: string | null
           converted_date?: string | null
@@ -240,6 +259,9 @@ export type Database = {
           first_dm_date?: string | null
           first_response_date?: string | null
           followed_date?: string | null
+          fonts?: Json | null
+          founder_info?: string | null
+          founding_year?: string | null
           google_maps_url?: string | null
           id?: string
           insta_bio?: string | null
@@ -255,6 +277,8 @@ export type Database = {
           number_of_clubs?: number | null
           number_of_courts?: number | null
           ownership_group?: string | null
+          perplexity_citations?: string[] | null
+          perplexity_description?: string | null
           phone?: string | null
           pipeline_stage?: Database["public"]["Enums"]["pipeline_stage"] | null
           priority?: Database["public"]["Enums"]["priority_level"] | null
