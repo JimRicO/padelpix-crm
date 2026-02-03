@@ -303,25 +303,28 @@ export function ClubEnrichmentSections({ club }: ClubEnrichmentSectionsProps) {
         </div>
       )}
 
-      {/* Key People - prefer structured data with role/context */}
+      {/* Key People - two column grid with avatar, name, role, context */}
       {keyPeople.length > 0 ? (
         <div className="detail-section">
           <div className="detail-section-header">
-            <Users className="w-4 h-4" />
+            <Users className="w-4 h-4 text-primary" />
             Key People
           </div>
-          <div className="space-y-2 mt-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
             {keyPeople.map((person, idx) => (
-              <div key={idx} className="detail-section-content py-2">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm font-medium">{person.name}</p>
-                  <Badge variant="secondary" className="text-xs flex-shrink-0">
-                    {person.role}
-                  </Badge>
+              <div key={idx} className="detail-section-content p-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <User className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold">{person.name}</p>
+                    <p className="text-xs text-primary font-medium">{person.role}</p>
+                    {person.context && (
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-3">{person.context}</p>
+                    )}
+                  </div>
                 </div>
-                {person.context && (
-                  <p className="text-xs text-muted-foreground mt-1">{person.context}</p>
-                )}
               </div>
             ))}
           </div>
@@ -329,36 +332,43 @@ export function ClubEnrichmentSections({ club }: ClubEnrichmentSectionsProps) {
       ) : keyIndividuals && keyIndividuals.length > 0 ? (
         <div className="detail-section">
           <div className="detail-section-header">
-            <Users className="w-4 h-4" />
+            <Users className="w-4 h-4 text-primary" />
             Key People
           </div>
-          <div className="space-y-2 mt-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
             {keyIndividuals.map((name, idx) => (
-              <div key={idx} className="detail-section-content py-2">
-                <p className="text-sm font-medium">{name}</p>
+              <div key={idx} className="detail-section-content p-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <User className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold">{name}</p>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
         </div>
       ) : null}
 
-      {/* Recent Activities */}
+      {/* Recent Activities - bullet list with orange dots */}
       {recentActivities && recentActivities.length > 0 && (
         <div className="detail-section">
           <div className="detail-section-header">
-            <Activity className="w-4 h-4" />
+            <Activity className="w-4 h-4 text-primary" />
             Recent Activities
           </div>
           <div className="space-y-2 mt-2">
             {recentActivities.slice(0, 5).map((activity, i) => (
-              <div key={i} className="detail-section-content py-2">
-                {activity.title && <p className="text-sm font-medium">{activity.title}</p>}
-                {activity.description && (
-                  <p className="text-xs text-muted-foreground">{activity.description}</p>
-                )}
-                {activity.date && (
-                  <p className="text-xs text-muted-foreground mt-1">{activity.date}</p>
-                )}
+              <div key={i} className="detail-section-content py-2.5 px-3 flex items-start gap-3">
+                <div className="w-2 h-2 rounded-full bg-primary mt-1.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  {activity.title && <p className="text-sm">{activity.title}</p>}
+                  {activity.date && (
+                    <p className="text-xs text-muted-foreground">{activity.date}</p>
+                  )}
+                </div>
               </div>
             ))}
           </div>
