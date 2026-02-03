@@ -18,10 +18,16 @@ interface EnrichmentStatusResponse {
     id: string;
     club_name: string;
     website_url?: string;
+    // Social media fields
     instagram_handle?: string;
+    instagram_url?: string;
     instagram_followers?: number;
     instagram_bio?: string;
     instagram_profile_pic_url?: string;
+    facebook_url?: string;
+    twitter_handle?: string;
+    linkedin_url?: string;
+    // Contact & description
     description?: string;
     email?: string;
     phone?: string;
@@ -150,23 +156,31 @@ export function useClubEnrichmentPolling(clubs: Club[] | undefined) {
         
         if (enrichmentData.description) updateData.business_description = enrichmentData.description;
         if (enrichmentData.instagram_handle) updateData.instagram_handle = enrichmentData.instagram_handle;
+        if (enrichmentData.instagram_url) updateData.insta_url = enrichmentData.instagram_url;
         if (enrichmentData.instagram_followers) updateData.insta_followers = enrichmentData.instagram_followers;
         if (enrichmentData.instagram_bio) updateData.insta_bio = enrichmentData.instagram_bio;
+        if (enrichmentData.instagram_profile_pic_url) updateData.instagram_profile_pic_url = enrichmentData.instagram_profile_pic_url;
+        // Social media mappings
+        if (enrichmentData.facebook_url) updateData.facebook = enrichmentData.facebook_url;
+        if (enrichmentData.twitter_handle) updateData.twitter = enrichmentData.twitter_handle;
+        if (enrichmentData.linkedin_url) updateData.linkedin = enrichmentData.linkedin_url;
+        // Contact & location
         if (enrichmentData.address) updateData.address = enrichmentData.address;
         if (enrichmentData.logo_storage_url) updateData.logo = enrichmentData.logo_storage_url;
         if (enrichmentData.email) updateData.email = enrichmentData.email;
         if (enrichmentData.phone) updateData.phone = enrichmentData.phone;
         if (enrichmentData.website_url) updateData.website = enrichmentData.website_url;
+        // Brand identity
         if (enrichmentData.color_palette) updateData.color_palette = enrichmentData.color_palette;
         if (enrichmentData.fonts) updateData.fonts = enrichmentData.fonts;
         if (enrichmentData.attitude) updateData.attitude = enrichmentData.attitude;
         if (enrichmentData.aesthetics) updateData.aesthetics = enrichmentData.aesthetics;
+        // Research data
         if (enrichmentData.founder_info) updateData.founder_info = enrichmentData.founder_info;
         if (enrichmentData.founding_year) updateData.founding_year = enrichmentData.founding_year;
         if (enrichmentData.perplexity_description) updateData.perplexity_description = enrichmentData.perplexity_description;
         if (enrichmentData.perplexity_citations) updateData.perplexity_citations = enrichmentData.perplexity_citations;
         if (enrichmentData.recent_activities) updateData.recent_activities = enrichmentData.recent_activities;
-        if (enrichmentData.instagram_profile_pic_url) updateData.instagram_profile_pic_url = enrichmentData.instagram_profile_pic_url;
         if (enrichmentData.key_individuals) updateData.key_individuals = enrichmentData.key_individuals;
         if (enrichmentData.key_people) {
           updateData.key_people = enrichmentData.key_people;
