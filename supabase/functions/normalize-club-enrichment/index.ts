@@ -51,9 +51,10 @@ const CLUB_SCHEMA = {
   recent_activities: 'array of objects - Recent events [{title, date, description}]',
   perplexity_citations: 'array of strings - Source URLs from research',
   
-  // People
+  // People - FULL STRUCTURED DATA
   contact_name: 'string - Primary contact person name',
-  key_individuals: 'array of strings - Key people at the club (owners, managers, pros)',
+  key_people: 'array of objects - Key people with full details [{name, role, context}]',
+  key_individuals: 'array of strings - Key people names only (for backwards compatibility)',
   coaches: 'array of strings - Coach names',
   
   // Organization
@@ -96,11 +97,15 @@ ${JSON.stringify(CLUB_SCHEMA, null, 2)}
 
 CRITICAL MAPPING RULES:
 
-1. KEY_PEOPLE FIELD (VERY IMPORTANT):
+1. KEY_PEOPLE FIELD (MOST IMPORTANT):
    - The API returns "key_people" as an array of objects: [{name, role, context}, ...]
-   - Extract JUST THE NAMES and put them in "key_individuals" as a string array
-   - Example: key_people: [{name: "John Smith", role: "CEO", context: "..."}] → key_individuals: ["John Smith"]
-   - DO NOT lose this data - always extract the names
+   - Store the FULL ARRAY in "key_people" field - preserve name, role, AND context
+   - ALSO extract just the names into "key_individuals" for backwards compatibility
+   - Example input: key_people: [{name: "John Smith", role: "CEO", context: "Founded in 2015"}]
+   - Output: 
+     - key_people: [{name: "John Smith", role: "CEO", context: "Founded in 2015"}]
+     - key_individuals: ["John Smith"]
+   - DO NOT lose the role or context data!
 
 2. Other field mappings:
    - "logo_storage_url" → "logo"

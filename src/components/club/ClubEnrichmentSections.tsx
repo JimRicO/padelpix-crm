@@ -9,12 +9,39 @@ import { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { Club } from '@/types/database';
 
+// Interface for structured key_people data from API
+interface KeyPerson {
+  name: string;
+  role: string;
+  context?: string;
+}
+
 interface ClubEnrichmentSectionsProps {
   club: Club;
 }
 
+// Safe parser for key_people JSONB data
+function parseKeyPeople(data: unknown): KeyPerson[] {
+  if (!data) return [];
+  if (typeof data === 'string') {
+    try {
+      return JSON.parse(data);
+    } catch {
+      return [];
+    }
+  }
+  if (Array.isArray(data)) {
+    return data.filter(p => p && typeof p === 'object' && 'name' in p) as KeyPerson[];
+  }
+  return [];
+}
+
 export function ClubEnrichmentSections({ club }: ClubEnrichmentSectionsProps) {
   const [citationsOpen, setCitationsOpen] = useState(false);
+
+  // Parse key_people from JSONB - prefer structured data, fallback to key_individuals
+  const keyPeople = parseKeyPeople((club as any).key_people);
+  const keyIndividuals = club.key_individuals;
 
   const hasEnrichmentData = club.enrichment_status === 'completed' && (
     club.business_description || 
@@ -28,7 +55,8 @@ export function ClubEnrichmentSections({ club }: ClubEnrichmentSectionsProps) {
     club.founding_year ||
     club.perplexity_description ||
     club.recent_activities ||
-    club.key_individuals
+    keyPeople.length > 0 ||
+    keyIndividuals
   );
 
   if (!hasEnrichmentData) {
@@ -38,7 +66,6 @@ export function ClubEnrichmentSections({ club }: ClubEnrichmentSectionsProps) {
   const colorPalette = club.color_palette;
   const fonts = club.fonts;
   const recentActivities = club.recent_activities;
-  const keyIndividuals = club.key_individuals;
 
   return (
     <div className="neu-card space-y-4">
@@ -276,8 +303,30 @@ export function ClubEnrichmentSections({ club }: ClubEnrichmentSectionsProps) {
         </div>
       )}
 
-      {/* Key People */}
-      {keyIndividuals && keyIndividuals.length > 0 && (
+      {/* Key People - prefer structured data with role/context */}
+      {keyPeople.length > 0 ? (
+        <div className="detail-section">
+          <div className="detail-section-header">
+            <Users className="w-4 h-4" />
+            Key People
+          </div>
+          <div className="space-y-2 mt-2">
+            {keyPeople.map((person, idx) => (
+              <div key={idx} className="detail-section-content py-2">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-sm font-medium">{person.name}</p>
+                  <Badge variant="secondary" className="text-xs flex-shrink-0">
+                    {person.role}
+                  </Badge>
+                </div>
+                {person.context && (
+                  <p className="text-xs text-muted-foreground mt-1">{person.context}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : keyIndividuals && keyIndividuals.length > 0 ? (
         <div className="detail-section">
           <div className="detail-section-header">
             <Users className="w-4 h-4" />
@@ -291,7 +340,7 @@ export function ClubEnrichmentSections({ club }: ClubEnrichmentSectionsProps) {
             ))}
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Recent Activities */}
       {recentActivities && recentActivities.length > 0 && (

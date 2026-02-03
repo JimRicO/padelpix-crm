@@ -144,6 +144,7 @@ export type Database = {
           instagram_handle: string | null
           instagram_profile_pic_url: string | null
           key_individuals: string[] | null
+          key_people: Json | null
           linkedin: string | null
           logo: string | null
           next_action: string | null
@@ -209,6 +210,7 @@ export type Database = {
           instagram_handle?: string | null
           instagram_profile_pic_url?: string | null
           key_individuals?: string[] | null
+          key_people?: Json | null
           linkedin?: string | null
           logo?: string | null
           next_action?: string | null
@@ -274,6 +276,7 @@ export type Database = {
           instagram_handle?: string | null
           instagram_profile_pic_url?: string | null
           key_individuals?: string[] | null
+          key_people?: Json | null
           linkedin?: string | null
           logo?: string | null
           next_action?: string | null
