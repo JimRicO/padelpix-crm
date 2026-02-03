@@ -1,117 +1,78 @@
 
-# Plan: Complete Club Enrichment Parity with Organizations
 
-## Problem
-The club enrichment implementation is missing several fields that the API returns and that are already implemented for organizations. Comparing with the organization enrichment (`useEnrichmentStatus.ts` and `EnrichmentSections.tsx`), the club version is incomplete.
+# Plan: Create Person from Key People Card
 
-## Gap Analysis
-
-### Missing Database Columns
-| Field | Type | Purpose |
-|-------|------|---------|
-| `recent_activities` | JSONB | Array of recent events [{title, date}] |
-| `instagram_profile_pic_url` | TEXT | HD profile picture URL |
-
-### Missing Hook Mappings (`useClubEnrichment.ts`)
-The hook interface already declares `recent_activities` but doesn't map it to the database. Need to add:
-- `recent_activities` → `recent_activities`
-- `instagram_profile_pic_url` → new column
-
-### Missing UI Display (`ClubEnrichmentSections.tsx`)
-The organization version displays these sections that the club version doesn't:
-- **Description section** - shows `business_description`
-- **Instagram section** - shows handle, followers, bio (already stored but not shown in enrichment UI)
-- **Recent Activities section** - shows up to 3 recent events
+## Overview
+When a user clicks on a key person in the Club Enrichment section, a dialog will open pre-filled with the person's name, role, and context. On submit, the system will:
+1. Create a new person record
+2. Automatically link that person to the current club
 
 ## Implementation Steps
 
-### 1. Database Migration
-Add missing columns to `clubs` table:
-```sql
-ALTER TABLE public.clubs
-ADD COLUMN IF NOT EXISTS recent_activities JSONB,
-ADD COLUMN IF NOT EXISTS instagram_profile_pic_url TEXT;
-```
+### Step 1: Create a new dialog component for creating a person from enrichment data
 
-### 2. Update Hook (`src/hooks/useClubEnrichment.ts`)
-Add missing field mappings in `applyResultsMutation`:
-- Map `enrichmentData.recent_activities` → `updateData.recent_activities`
-- Map `enrichmentData.instagram_profile_pic_url` → `updateData.instagram_profile_pic_url`
+Create `src/components/club/CreatePersonFromKeyPeopleDialog.tsx`:
+- Accept props: `open`, `onOpenChange`, `keyPerson` (name, role, context), `clubId`, `clubName`
+- Pre-fill form fields:
+  - `full_name` = keyPerson.name
+  - `role` = keyPerson.role
+  - `notes` = keyPerson.context (background info)
+  - `country` = "South Africa" (default)
+- On submit:
+  1. Call `useCreatePerson` to create the person
+  2. Call `useCreatePersonLink` to link the person to the club
+  3. Show success toast with person name and club name
+  4. Close dialog
 
-Update the `EnrichmentStatusResponse` interface to include `instagram_profile_pic_url`.
+### Step 2: Update ClubEnrichmentSections to handle clicks
 
-### 3. Update Type Definition (`src/types/database.ts`)
-Add to Club interface:
-- `recent_activities: Array<{title?: string; date?: string; description?: string}> | null`
-- `instagram_profile_pic_url: string | null`
+Modify `src/components/club/ClubEnrichmentSections.tsx`:
+- Add state for selected key person and dialog visibility
+- Add `clubId` prop (needed for creating the link)
+- Make key person cards clickable with hover state
+- Add visual affordance (cursor-pointer, hover effect, maybe a small + icon)
+- Render the new dialog component
 
-### 4. Update UI Component (`src/components/club/ClubEnrichmentSections.tsx`)
-Mirror the organization `EnrichmentSections.tsx` exactly by adding:
+### Step 3: Update parent components to pass clubId
 
-**Description Section:**
+Modify `src/components/club/ClubInfoTab.tsx`:
+- Pass `club.id` to `ClubEnrichmentSections`
+
+---
+
+## Technical Details
+
+### New Dialog Component Structure
+
 ```tsx
-{club.business_description && (
-  <div className="space-y-1">
-    <h4 className="text-sm font-medium">Description</h4>
-    <p className="text-sm text-muted-foreground">{club.business_description}</p>
-  </div>
-)}
+interface CreatePersonFromKeyPeopleDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  keyPerson: { name: string; role: string; context?: string };
+  clubId: string;
+  clubName: string;
+}
 ```
 
-**Instagram Section:**
-```tsx
-{(club.instagram_handle || club.insta_followers || club.insta_bio) && (
-  <div className="space-y-2">
-    <h4 className="text-sm font-medium flex items-center gap-2">
-      <Instagram className="w-4 h-4" />
-      Instagram
-    </h4>
-    <div className="bg-muted/50 rounded-lg p-3 space-y-2">
-      {/* handle link, followers, bio */}
-    </div>
-  </div>
-)}
-```
+### Form Fields (pre-filled from enrichment data)
+- Full Name (from keyPerson.name) - required
+- Role (from keyPerson.role)
+- Email (empty, user can add)
+- LinkedIn (empty, user can add)
+- Notes (from keyPerson.context - background info)
 
-**Recent Activities Section:**
-```tsx
-{recentActivities && recentActivities.length > 0 && (
-  <div className="space-y-2">
-    <h4 className="text-sm font-medium">Recent Activities</h4>
-    <div className="space-y-2">
-      {recentActivities.slice(0, 3).map((activity, i) => (
-        <div key={i} className="bg-muted/50 rounded p-2 text-sm">
-          {/* title, description, date */}
-        </div>
-      ))}
-    </div>
-  </div>
-)}
-```
+### Database Operations (in sequence)
+1. Insert into `people` table
+2. Insert into `person_links` table with:
+   - `person_id` = new person's ID
+   - `link_type` = 'club'
+   - `club_id` = current club ID
+   - `role_at_entity` = keyPerson.role
+   - `is_primary` = true
 
-### 5. Update hasEnrichmentData Check
-Expand the check to include all enrichable fields:
-```tsx
-const hasEnrichmentData = club.enrichment_status === 'completed' && (
-  club.business_description || 
-  club.instagram_handle || 
-  club.insta_followers ||
-  club.color_palette || 
-  club.fonts || 
-  club.attitude || 
-  club.aesthetics ||
-  club.founder_info ||
-  club.founding_year ||
-  club.perplexity_description ||
-  club.recent_activities
-);
-```
+### UI Changes to Key People Cards
+- Add `cursor-pointer` class
+- Add hover state: `hover:ring-2 hover:ring-primary/50`
+- Add small "+" badge or overlay on hover to indicate action
+- Add tooltip: "Click to create person record"
 
-## Files to Modify
-1. **Database migration** - Add `recent_activities` and `instagram_profile_pic_url` columns
-2. `src/hooks/useClubEnrichment.ts` - Add missing field mappings
-3. `src/types/database.ts` - Add new fields to Club interface
-4. `src/components/club/ClubEnrichmentSections.tsx` - Add Description, Instagram, and Recent Activities sections
-
-## Outcome
-Club enrichment will have complete parity with organization enrichment, utilizing all fields returned by the API.
