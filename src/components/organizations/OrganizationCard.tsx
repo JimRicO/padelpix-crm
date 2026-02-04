@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Crown, Building2, MapPin, Sparkles, Loader2, Instagram, Check, Shield, Trash2, AlertCircle } from 'lucide-react';
+import { Crown, Building2, MapPin, Sparkles, Loader2, Instagram, Check, Shield, Trash2, AlertCircle, Calendar, ChevronDown } from 'lucide-react';
 import { useStartEnrichment } from '@/hooks/useEnrichmentStatus';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
-import { useDeleteOwnershipGroup, type OwnershipGroup } from '@/hooks/useOwnershipGroups';
+import { useDeleteOwnershipGroup, useUpdateOwnershipGroup, type OwnershipGroup } from '@/hooks/useOwnershipGroups';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,6 +17,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { AddOrganizationToAgendaDialog } from './AddOrganizationToAgendaDialog';
 
 interface OrganizationCardProps {
   group: OwnershipGroup;
@@ -24,30 +31,16 @@ interface OrganizationCardProps {
   onClick: () => void;
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  active: 'bg-green-500/10 text-green-600 border-green-500/20',
-  prospecting: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
-  negotiating: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20',
-  partner: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
-  on_hold: 'bg-orange-500/10 text-orange-600 border-orange-500/20',
-  inactive: 'bg-muted text-muted-foreground border-muted',
+const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
+  active: { label: 'Active', className: 'bg-green-500/10 text-green-600 border-green-500/20' },
+  prospecting: { label: 'Prospecting', className: 'bg-blue-500/10 text-blue-600 border-blue-500/20' },
+  negotiating: { label: 'Negotiating', className: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20' },
+  partner: { label: 'Partner', className: 'bg-purple-500/10 text-purple-600 border-purple-500/20' },
+  on_hold: { label: 'On Hold', className: 'bg-orange-500/10 text-orange-600 border-orange-500/20' },
+  inactive: { label: 'Inactive', className: 'bg-muted text-muted-foreground border-muted' },
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  active: 'Active',
-  prospecting: 'Prospecting',
-  negotiating: 'Negotiating',
-  partner: 'Partner',
-  on_hold: 'On Hold',
-  inactive: 'Inactive',
-};
-
-const ENRICHMENT_STATUS_DISPLAY: Record<string, { label: string; className: string }> = {
-  pending: { label: 'Enriching...', className: 'bg-yellow-500/10 text-yellow-600' },
-  processing: { label: 'Processing...', className: 'bg-blue-500/10 text-blue-600' },
-  completed: { label: 'Enriched', className: 'bg-green-500/10 text-green-600' },
-  failed: { label: 'Failed', className: 'bg-red-500/10 text-red-600' },
-};
+const STATUS_ORDER = ['prospecting', 'negotiating', 'active', 'partner', 'on_hold', 'inactive'];
 
 const TYPE_CONFIG = {
   commercial: {
@@ -64,7 +57,9 @@ const TYPE_CONFIG = {
 
 export function OrganizationCard({ group, clubCount, onClick }: OrganizationCardProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showAgendaDialog, setShowAgendaDialog] = useState(false);
   const startEnrichment = useStartEnrichment();
+  const updateGroup = useUpdateOwnershipGroup();
   const deleteGroup = useDeleteOwnershipGroup();
   const status = group.relationship_status || 'active';
   const enrichmentStatus = group.enrichment_status;
@@ -73,8 +68,6 @@ export function OrganizationCard({ group, clubCount, onClick }: OrganizationCard
   const orgType = group.organization_type || 'commercial';
   const typeConfig = TYPE_CONFIG[orgType];
   const TypeIcon = typeConfig.icon;
-
-  const colorPalette = group.color_palette as Record<string, string> | null;
 
   const handleEnrich = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -102,11 +95,25 @@ export function OrganizationCard({ group, clubCount, onClick }: OrganizationCard
     setShowDeleteDialog(false);
   };
 
+  const handleStatusChange = (newStatus: string) => {
+    updateGroup.mutate({
+      id: group.id,
+      relationship_status: newStatus,
+    });
+  };
+
+  const handleAgendaClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowAgendaDialog(true);
+  };
+
   const formatFollowers = (count: number): string => {
     if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
     if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
     return count.toString();
   };
+
+  const statusConfig = STATUS_CONFIG[status] || STATUS_CONFIG.active;
 
   return (
     <Card 
@@ -135,12 +142,35 @@ export function OrganizationCard({ group, clubCount, onClick }: OrganizationCard
           )}
 
           <div className="flex-1 min-w-0">
-            {/* Header: Name, Status, Type Badge */}
+            {/* Header: Name, Status Dropdown, Type Badge */}
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               <h3 className="card-title">{group.name}</h3>
-              <Badge variant="outline" className={STATUS_COLORS[status]}>
-                {STATUS_LABELS[status]}
-              </Badge>
+              
+              {/* Status Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                  <Badge 
+                    variant="outline" 
+                    className={`${statusConfig.className} cursor-pointer hover:opacity-80`}
+                  >
+                    {statusConfig.label}
+                    <ChevronDown className="w-3 h-3 ml-1" />
+                  </Badge>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" onClick={(e) => e.stopPropagation()}>
+                  {STATUS_ORDER.map((s) => (
+                    <DropdownMenuItem 
+                      key={s}
+                      onClick={() => handleStatusChange(s)}
+                      className={s === status ? 'bg-accent' : ''}
+                    >
+                      <span className={`w-2 h-2 rounded-full mr-2 ${STATUS_CONFIG[s].className.split(' ')[0]}`} />
+                      {STATUS_CONFIG[s].label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               <Badge variant="outline" className={typeConfig.badgeClass}>
                 <TypeIcon className="w-3 h-3 mr-1" />
                 {typeConfig.label}
@@ -150,7 +180,27 @@ export function OrganizationCard({ group, clubCount, onClick }: OrganizationCard
                   <Check className="w-3 h-3" />
                 </Badge>
               )}
+              
+              {/* Action Buttons */}
               <div className="ml-auto flex items-center gap-1">
+                {/* Agenda Button */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleAgendaClick}
+                      className="h-7 w-7 p-0 text-muted-foreground hover:text-primary"
+                    >
+                      <Calendar className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Add to Agenda</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                {/* Enrich Button */}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -178,6 +228,8 @@ export function OrganizationCard({ group, clubCount, onClick }: OrganizationCard
                     </TooltipContent>
                   )}
                 </Tooltip>
+
+                {/* Delete Button */}
                 <Button
                   variant="ghost"
                   size="sm"
@@ -222,6 +274,7 @@ export function OrganizationCard({ group, clubCount, onClick }: OrganizationCard
         </div>
       </CardContent>
 
+      {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent onClick={(e) => e.stopPropagation()}>
           <AlertDialogHeader>
@@ -238,6 +291,13 @@ export function OrganizationCard({ group, clubCount, onClick }: OrganizationCard
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Add to Agenda Dialog */}
+      <AddOrganizationToAgendaDialog
+        open={showAgendaDialog}
+        onOpenChange={setShowAgendaDialog}
+        organizationName={group.name}
+      />
     </Card>
   );
 }
