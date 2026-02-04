@@ -29,6 +29,17 @@ serve(async (req) => {
       );
     }
 
+    // Validate that at least one identifier is provided
+    if (!website_url && !instagram_handle) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Either website_url or instagram_handle is required for enrichment' 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     console.log(`Submitting enrichment job for: ${organization_name}`);
 
     // Build the payload for the enrichment platform
