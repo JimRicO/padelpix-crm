@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Crown, Building2, MapPin, Sparkles, Loader2, Instagram, Check, Shield, Trash2 } from 'lucide-react';
+import { Crown, Building2, MapPin, Sparkles, Loader2, Instagram, Check, Shield, Trash2, AlertCircle } from 'lucide-react';
 import { useStartEnrichment } from '@/hooks/useEnrichmentStatus';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { toast } from 'sonner';
 import { useDeleteOwnershipGroup, type OwnershipGroup } from '@/hooks/useOwnershipGroups';
 import {
   AlertDialog,
@@ -67,6 +69,7 @@ export function OrganizationCard({ group, clubCount, onClick }: OrganizationCard
   const status = group.relationship_status || 'active';
   const enrichmentStatus = group.enrichment_status;
   const isEnriching = startEnrichment.isPending || enrichmentStatus === 'pending' || enrichmentStatus === 'processing';
+  const canEnrich = !!(group.website || group.instagram_handle);
   const orgType = group.organization_type || 'commercial';
   const typeConfig = TYPE_CONFIG[orgType];
   const TypeIcon = typeConfig.icon;
@@ -75,6 +78,12 @@ export function OrganizationCard({ group, clubCount, onClick }: OrganizationCard
 
   const handleEnrich = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!canEnrich) {
+      toast.error('Cannot enrich', {
+        description: 'Add a website or Instagram handle first to enable enrichment.',
+      });
+      return;
+    }
     startEnrichment.mutate({
       groupId: group.id,
       name: group.name,
@@ -142,22 +151,33 @@ export function OrganizationCard({ group, clubCount, onClick }: OrganizationCard
                 </Badge>
               )}
               <div className="ml-auto flex items-center gap-1">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleEnrich}
-                  disabled={isEnriching || enrichmentStatus === 'completed'}
-                  className="h-7 text-xs"
-                >
-                  {isEnriching ? (
-                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                  ) : enrichmentStatus === 'completed' ? (
-                    <Check className="w-3 h-3 mr-1" />
-                  ) : (
-                    <Sparkles className="w-3 h-3 mr-1" />
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleEnrich}
+                      disabled={isEnriching || enrichmentStatus === 'completed'}
+                      className={`h-7 text-xs ${!canEnrich && enrichmentStatus !== 'completed' ? 'opacity-50' : ''}`}
+                    >
+                      {isEnriching ? (
+                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                      ) : enrichmentStatus === 'completed' ? (
+                        <Check className="w-3 h-3 mr-1" />
+                      ) : !canEnrich ? (
+                        <AlertCircle className="w-3 h-3 mr-1" />
+                      ) : (
+                        <Sparkles className="w-3 h-3 mr-1" />
+                      )}
+                      {enrichmentStatus === 'completed' ? 'Enriched' : 'Enrich'}
+                    </Button>
+                  </TooltipTrigger>
+                  {!canEnrich && enrichmentStatus !== 'completed' && (
+                    <TooltipContent>
+                      <p>Add a website or Instagram handle first</p>
+                    </TooltipContent>
                   )}
-                  {enrichmentStatus === 'completed' ? 'Enriched' : 'Enrich'}
-                </Button>
+                </Tooltip>
                 <Button
                   variant="ghost"
                   size="sm"
