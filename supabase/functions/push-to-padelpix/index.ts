@@ -1,11 +1,67 @@
  import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
  
+// GTM Engine API configuration (same as analyze-club-visual-dna)
+const GTM_API_BASE = "https://etscplmovnooalqfbzvy.supabase.co/functions/v1";
+
  const corsHeaders = {
    'Access-Control-Allow-Origin': '*',
    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
  };
  
+// Helper function to fetch enriched club data from GTM Engine
+async function fetchGtmClubData(club: Record<string, unknown>, crmApiKey: string): Promise<Record<string, unknown> | null> {
+  try {
+    // Try to find the club in GTM by enrichment_job_id first
+    if (club.enrichment_job_id) {
+      console.log(`Push to PadelPix: Looking up GTM club by job_id: ${club.enrichment_job_id}`);
+      const response = await fetch(
+        `${GTM_API_BASE}/api-get-clubs?job_id=${encodeURIComponent(club.enrichment_job_id as string)}`,
+        {
+          method: 'GET',
+          headers: {
+            'x-api-key': crmApiKey,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.clubs && data.clubs.length > 0) {
+          console.log(`Push to PadelPix: Found GTM club by job_id: ${data.clubs[0].id}`);
+          return data.clubs[0];
+        }
+      }
+    }
+
+    // Fallback: try to find by club name
+    console.log(`Push to PadelPix: Looking up GTM club by name: ${club.club_name}`);
+    const response = await fetch(
+      `${GTM_API_BASE}/api-get-clubs?club_name=${encodeURIComponent(club.club_name as string)}`,
+      {
+        method: 'GET',
+        headers: {
+          'x-api-key': crmApiKey,
+        },
+      }
+    );
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.clubs && data.clubs.length > 0) {
+        console.log(`Push to PadelPix: Found GTM club by name: ${data.clubs[0].id}`);
+        return data.clubs[0];
+      }
+    }
+
+    console.log('Push to PadelPix: Club not found in GTM');
+    return null;
+  } catch (error) {
+    console.error('Push to PadelPix: Error fetching GTM club data:', error);
+    return null;
+  }
+}
+
  serve(async (req) => {
    if (req.method === 'OPTIONS') {
      return new Response(null, { headers: corsHeaders });
@@ -16,6 +72,8 @@
      const PADELPIX_APP_API_KEY = Deno.env.get('PADELPIX_APP_API_KEY');
      const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
      const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const CRM_API_KEY = Deno.env.get('CRM_API_KEY');
+    const PADELPIX_ADMIN_EMAIL = Deno.env.get('PADELPIX_ADMIN_EMAIL');
  
      if (!PADELPIX_APP_URL || !PADELPIX_APP_API_KEY) {
        throw new Error('PadelPix API configuration is missing');
@@ -25,6 +83,10 @@
        throw new Error('Supabase configuration is missing');
      }
  
+    if (!PADELPIX_ADMIN_EMAIL) {
+      console.warn('Push to PadelPix: PADELPIX_ADMIN_EMAIL not configured');
+    }
+
      const { club_id } = await req.json();
  
      if (!club_id) {
@@ -54,6 +116,18 @@
  
      console.log(`Push to PadelPix: Found club "${club.club_name}"`);
  
+    // Fetch logo from GTM Engine (Fix 1: logo is stored in GTM, not CRM)
+    let gtmLogoUrl: string | null = null;
+    if (CRM_API_KEY) {
+      const gtmClub = await fetchGtmClubData(club, CRM_API_KEY);
+      if (gtmClub) {
+        gtmLogoUrl = (gtmClub.logo_storage_url as string) || null;
+        console.log(`Push to PadelPix: Got logo from GTM: ${gtmLogoUrl ? 'yes' : 'no'}`);
+      }
+    } else {
+      console.warn('Push to PadelPix: CRM_API_KEY not configured, cannot fetch logo from GTM');
+    }
+
      // Check if club has minimum required data
      if (!club.club_name) {
        throw new Error('Club must have a name to be pushed to PadelPix');
@@ -65,8 +139,12 @@
        // Required
        club_name: club.club_name,
        
+      // Admin email (Fix 3: Required for club to appear in PadelPix UI)
+      admin_email: PADELPIX_ADMIN_EMAIL || null,
+      
        // Identity & Contact
-       logo_url: club.logo || club.instagram_profile_pic_url || null,
+      // Fix 1: Prioritize GTM logo_storage_url over CRM logo
+      logo_url: gtmLogoUrl || club.logo || club.instagram_profile_pic_url || null,
        website_url: club.website || null,
        instagram_handle: club.instagram_handle || null,
        address: club.address || null,
@@ -101,6 +179,13 @@
        // Facility info
        number_of_courts: club.number_of_courts || null,
        
+      // Visual DNA fields (Fix 2: Send DNA analysis data)
+      visual_dna: club.visual_dna || null,
+      voice_dna: club.voice_dna || null,
+      ctlt_matches: club.ctlt_matches || null,
+      invisibility_score: club.invisibility_score || null,
+      invisibility_category: club.invisibility_category || null,
+      
        // Ownership
        ownership_group: club.ownership_group || null,
        
