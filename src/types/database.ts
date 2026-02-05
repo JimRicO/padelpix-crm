@@ -80,6 +80,9 @@ export interface Club {
   perplexity_citations: string[] | null;
   recent_activities: Array<{ title?: string; date?: string; description?: string }> | null;
   instagram_profile_pic_url: string | null;
+  // PadelPix integration fields
+  pushed_to_padelpix_at: string | null;
+  padelpix_club_profile_id: string | null;
 }
 
 export interface Activity {

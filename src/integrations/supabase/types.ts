@@ -153,11 +153,13 @@ export type Database = {
           number_of_clubs: number | null
           number_of_courts: number | null
           ownership_group: string | null
+          padelpix_club_profile_id: string | null
           perplexity_citations: string[] | null
           perplexity_description: string | null
           phone: string | null
           pipeline_stage: Database["public"]["Enums"]["pipeline_stage"] | null
           priority: Database["public"]["Enums"]["priority_level"] | null
+          pushed_to_padelpix_at: string | null
           recent_activities: Json | null
           response_time_hours: number | null
           suburb: string | null
@@ -219,11 +221,13 @@ export type Database = {
           number_of_clubs?: number | null
           number_of_courts?: number | null
           ownership_group?: string | null
+          padelpix_club_profile_id?: string | null
           perplexity_citations?: string[] | null
           perplexity_description?: string | null
           phone?: string | null
           pipeline_stage?: Database["public"]["Enums"]["pipeline_stage"] | null
           priority?: Database["public"]["Enums"]["priority_level"] | null
+          pushed_to_padelpix_at?: string | null
           recent_activities?: Json | null
           response_time_hours?: number | null
           suburb?: string | null
@@ -285,11 +289,13 @@ export type Database = {
           number_of_clubs?: number | null
           number_of_courts?: number | null
           ownership_group?: string | null
+          padelpix_club_profile_id?: string | null
           perplexity_citations?: string[] | null
           perplexity_description?: string | null
           phone?: string | null
           pipeline_stage?: Database["public"]["Enums"]["pipeline_stage"] | null
           priority?: Database["public"]["Enums"]["priority_level"] | null
+          pushed_to_padelpix_at?: string | null
           recent_activities?: Json | null
           response_time_hours?: number | null
           suburb?: string | null
