@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { Users, LayoutGrid, ArrowUpDown, Filter } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { groupClubsByOwnership } from '@/utils/ownershipPatterns';
+import { normalizeCountry, normalizeCountryList } from '@/utils/countryNormalization';
 
 const STAGE_CONFIG: Record<PipelineStage, { label: string; colorClass: string }> = {
   not_contacted: { label: 'Not Contacted', colorClass: 'bg-[hsl(var(--stage-not-contacted))]' },
@@ -66,11 +67,10 @@ export function PipelineBoard({ onClubClick, searchQuery }: PipelineBoardProps) 
   // Enable enrichment polling for clubs with pending status
   useClubEnrichmentPolling(clubs);
 
-  // Get unique countries for filter dropdown
+  // Get unique countries for filter dropdown (normalized)
   const uniqueCountries = useMemo(() => {
     if (!clubs) return [];
-    const countries = [...new Set(clubs.map(c => c.country || 'South Africa').filter(Boolean))];
-    return countries.sort((a, b) => a.localeCompare(b));
+    return normalizeCountryList(clubs.map(c => c.country || 'South Africa'));
   }, [clubs]);
 
   // Create a map of ownership group data for quick lookup
@@ -91,9 +91,11 @@ export function PipelineBoard({ onClubClick, searchQuery }: PipelineBoardProps) 
     
     let result = clubs;
     
-    // Apply country filter
+    // Apply country filter (with normalization)
     if (countryFilter && countryFilter !== 'all') {
-      result = result.filter(club => (club.country || 'South Africa') === countryFilter);
+      result = result.filter(club => 
+        normalizeCountry(club.country || 'South Africa') === countryFilter
+      );
     }
     
     // Apply search filter
@@ -109,13 +111,15 @@ export function PipelineBoard({ onClubClick, searchQuery }: PipelineBoardProps) 
       );
     }
     
-    // Apply sorting
+    // Apply sorting (with normalization for country)
     return [...result].sort((a, b) => {
       switch (sortBy) {
         case 'name':
           return a.club_name.localeCompare(b.club_name);
         case 'country':
-          return (a.country || 'South Africa').localeCompare(b.country || 'South Africa');
+          return (normalizeCountry(a.country) || 'South Africa').localeCompare(
+            normalizeCountry(b.country) || 'South Africa'
+          );
         case 'courts':
           return (b.number_of_courts || 0) - (a.number_of_courts || 0);
         default:
