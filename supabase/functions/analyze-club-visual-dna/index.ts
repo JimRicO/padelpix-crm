@@ -137,7 +137,8 @@
      }
  
      const analyzeResult = await analyzeResponse.json();
-     console.log('Visual DNA analysis result:', JSON.stringify(analyzeResult).substring(0, 500));
+  // FIX 1: Log FULL response from GTM analyze-visual-dna
+  console.log('Visual DNA analysis result (full):', JSON.stringify(analyzeResult));
  
      // Step 5: Fetch updated enriched club data from GTM
      console.log('Fetching updated GTM club data...');
@@ -149,7 +150,8 @@
      let visualDnaData = null;
      if (updatedGtmResponse.ok) {
        const updatedData = await updatedGtmResponse.json();
-       console.log('Updated GTM data:', JSON.stringify(updatedData).substring(0, 500));
+    // FIX 2: Log FULL response from GTM api-get-clubs
+    console.log('Updated GTM data (full):', JSON.stringify(updatedData));
        
        if (Array.isArray(updatedData) && updatedData.length > 0) {
          visualDnaData = updatedData[0];
@@ -159,39 +161,43 @@
          visualDnaData = updatedData;
        }
      }
- 
-     // Use analyzeResult if GTM refetch didn't work
-     if (!visualDnaData) {
-       visualDnaData = analyzeResult;
-     }
+
+  // Prefer the refetched club for DNA JSON blobs (if present), but always fall back to analyzeResult.
+  const visualDnaFromRefetch = visualDnaData as Record<string, unknown> | null;
+  const visualDnaFromAnalyze = (analyzeResult ?? null) as Record<string, unknown> | null;
  
      // Step 6: Store results in CRM clubs table
      const updatePayload: Record<string, unknown> = {
        visual_dna_analyzed_at: new Date().toISOString(),
      };
- 
-     if (visualDnaData.visual_dna) {
-       updatePayload.visual_dna = visualDnaData.visual_dna;
-     }
-     if (visualDnaData.voice_dna) {
-       updatePayload.voice_dna = visualDnaData.voice_dna;
-     }
-     if (visualDnaData.ctlt_matches) {
-       updatePayload.ctlt_matches = visualDnaData.ctlt_matches;
-     }
-     if (typeof visualDnaData.invisibility_score === 'number') {
-       updatePayload.invisibility_score = visualDnaData.invisibility_score;
-     }
-     if (visualDnaData.invisibility_category) {
-       updatePayload.invisibility_category = visualDnaData.invisibility_category;
-     }
- 
-     console.log('Updating CRM club with Visual DNA data:', Object.keys(updatePayload));
- 
-     const { error: updateError } = await supabase
-       .from('clubs')
-       .update(updatePayload)
-       .eq('id', club_id);
+
+  // Prefer blobs from refetch; fall back to analyze response if it already contains them.
+  const visualDnaBlob = visualDnaFromRefetch?.visual_dna ?? visualDnaFromAnalyze?.visual_dna;
+  const voiceDnaBlob = visualDnaFromRefetch?.voice_dna ?? visualDnaFromAnalyze?.voice_dna;
+  const ctltMatchesBlob = visualDnaFromRefetch?.ctlt_matches ?? visualDnaFromAnalyze?.ctlt_matches;
+
+  // Prefer scores from analyze response (it consistently includes these)
+  const invisibilityScore = visualDnaFromAnalyze?.invisibility_score ?? visualDnaFromRefetch?.invisibility_score;
+  const invisibilityCategory = visualDnaFromAnalyze?.invisibility_category ?? visualDnaFromRefetch?.invisibility_category;
+
+  if (visualDnaBlob) updatePayload.visual_dna = visualDnaBlob;
+  if (voiceDnaBlob) updatePayload.voice_dna = voiceDnaBlob;
+  if (ctltMatchesBlob) updatePayload.ctlt_matches = ctltMatchesBlob;
+  if (typeof invisibilityScore === 'number') updatePayload.invisibility_score = invisibilityScore;
+  if (invisibilityCategory) updatePayload.invisibility_category = invisibilityCategory;
+
+  // FIX 3: Log exact update payload before writing
+  console.log('CRM clubs update payload (full):', JSON.stringify(updatePayload));
+
+  const { data: updatedClub, error: updateError } = await supabase
+    .from('clubs')
+    .update(updatePayload)
+    .eq('id', club_id)
+    .select('id, visual_dna, voice_dna, ctlt_matches, invisibility_score, invisibility_category, visual_dna_analyzed_at')
+    .single();
+
+  // FIX 4: Log the UPDATE query result
+  console.log('CRM clubs update result (full):', JSON.stringify({ updatedClub, updateError }));
  
      if (updateError) {
        console.error('Failed to update club:', updateError);
@@ -207,11 +213,11 @@
        JSON.stringify({
          success: true,
          message: 'Visual DNA analyzed successfully',
-         visual_dna: updatePayload.visual_dna || null,
-         voice_dna: updatePayload.voice_dna || null,
-         ctlt_matches: updatePayload.ctlt_matches || null,
-         invisibility_score: updatePayload.invisibility_score || null,
-         invisibility_category: updatePayload.invisibility_category || null,
+          visual_dna: (updatedClub as any)?.visual_dna ?? updatePayload.visual_dna ?? null,
+          voice_dna: (updatedClub as any)?.voice_dna ?? updatePayload.voice_dna ?? null,
+          ctlt_matches: (updatedClub as any)?.ctlt_matches ?? updatePayload.ctlt_matches ?? null,
+          invisibility_score: (updatedClub as any)?.invisibility_score ?? updatePayload.invisibility_score ?? null,
+          invisibility_category: (updatedClub as any)?.invisibility_category ?? updatePayload.invisibility_category ?? null,
          analyzed_at: updatePayload.visual_dna_analyzed_at,
        }),
        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
