@@ -603,11 +603,12 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
       {/* AI Enrichment Data */}
       <ClubEnrichmentSections club={club} clubId={club.id} clubName={club.club_name} />
 
-      {/* Action Workflow Card */}
-      <ActionWorkflowCard club={club} />
-
-      {/* Visual DNA Card */}
-      <VisualDnaCard club={club} />
+      {/* Visual DNA Card with Action Workflow inside */}
+      <VisualDnaCard club={club}>
+        <div className="mt-6 pt-4 border-t border-border/50">
+          <ActionWorkflowCard club={club} />
+        </div>
+      </VisualDnaCard>
 
       <div className="space-y-4">
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Notes & Actions</h3>
