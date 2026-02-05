@@ -96,9 +96,12 @@ export interface VoiceDnaData {
 }
 
 export interface CtltMatchData {
-  top_matches?: Array<{ style: string; score: number }>;
-  styles_to_avoid?: string[];
+  // New format from API
+  matched_styles?: Array<{ style_name: string; match_score: number; reason?: string }>;
+  styles_to_avoid?: Array<{ style_name: string; reason?: string }> | string[];
   enhancement_suggestion?: string;
+  // Legacy format support
+  top_matches?: Array<{ style: string; score: number }>;
   [key: string]: unknown;
 }
 

@@ -370,15 +370,22 @@
              {ctltMatches && (
                <div className="space-y-3">
                  <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">CTLT Style Matches</h4>
-                 {ctltMatches.top_matches && ctltMatches.top_matches.length > 0 && (
+                  {/* Support both API formats: matched_styles (new) and top_matches (legacy) */}
+                  {(ctltMatches.matched_styles || ctltMatches.top_matches) && (
                    <div className="space-y-1">
                      <span className="text-xs text-muted-foreground">Top matches:</span>
                      <div className="flex flex-wrap gap-1">
-                       {ctltMatches.top_matches.slice(0, 5).map((match, i) => (
-                         <Badge key={i} className="bg-green-500/20 text-green-700 border-green-500/30">
-                           {match.style} ({match.score}/10)
-                         </Badge>
-                       ))}
+                        {(ctltMatches.matched_styles || []).slice(0, 5).map((match, i) => (
+                          <Badge key={i} className="bg-green-500/20 text-green-700 border-green-500/30">
+                            {match.style_name} ({match.match_score}/10)
+                          </Badge>
+                        ))}
+                        {/* Legacy format fallback */}
+                        {!ctltMatches.matched_styles && ctltMatches.top_matches && ctltMatches.top_matches.slice(0, 5).map((match, i) => (
+                          <Badge key={i} className="bg-green-500/20 text-green-700 border-green-500/30">
+                            {match.style} ({match.score}/10)
+                          </Badge>
+                        ))}
                      </div>
                    </div>
                  )}
@@ -386,11 +393,15 @@
                    <div className="space-y-1">
                      <span className="text-xs text-muted-foreground">Avoid:</span>
                      <div className="flex flex-wrap gap-1">
-                       {ctltMatches.styles_to_avoid.map((style, i) => (
-                         <Badge key={i} className="bg-red-500/20 text-red-700 border-red-500/30">
-                           {style}
-                         </Badge>
-                       ))}
+                        {ctltMatches.styles_to_avoid.map((style, i) => {
+                          // Handle both object format { style_name, reason } and string format
+                          const styleName = typeof style === 'string' ? style : style.style_name;
+                          return (
+                            <Badge key={i} className="bg-red-500/20 text-red-700 border-red-500/30">
+                              {styleName}
+                            </Badge>
+                          );
+                        })}
                      </div>
                    </div>
                  )}
