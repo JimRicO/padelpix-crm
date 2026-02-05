@@ -182,6 +182,7 @@ export interface Club {
   invisibility_score: number | null;
   invisibility_category: string | null;
   visual_dna_analyzed_at: string | null;
+  visual_dna_media_urls: string[] | null;
 }
 
 export interface Activity {

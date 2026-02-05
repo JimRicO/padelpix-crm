@@ -186,6 +186,12 @@
   if (typeof invisibilityScore === 'number') updatePayload.invisibility_score = invisibilityScore;
   if (invisibilityCategory) updatePayload.invisibility_category = invisibilityCategory;
 
+  // Save visual_dna_media_urls if present
+  const mediaUrls = visualDnaFromAnalyze?.visual_dna_media_urls ?? visualDnaFromRefetch?.visual_dna_media_urls;
+  if (mediaUrls && Array.isArray(mediaUrls) && mediaUrls.length > 0) {
+    updatePayload.visual_dna_media_urls = mediaUrls;
+  }
+
   // FIX 3: Log exact update payload before writing
   console.log('CRM clubs update payload (full):', JSON.stringify(updatePayload));
 
@@ -193,7 +199,7 @@
     .from('clubs')
     .update(updatePayload)
     .eq('id', club_id)
-    .select('id, visual_dna, voice_dna, ctlt_matches, invisibility_score, invisibility_category, visual_dna_analyzed_at')
+  .select('id, visual_dna, voice_dna, ctlt_matches, invisibility_score, invisibility_category, visual_dna_analyzed_at, visual_dna_media_urls')
     .single();
 
   // FIX 4: Log the UPDATE query result
@@ -218,6 +224,7 @@
           ctlt_matches: (updatedClub as any)?.ctlt_matches ?? updatePayload.ctlt_matches ?? null,
           invisibility_score: (updatedClub as any)?.invisibility_score ?? updatePayload.invisibility_score ?? null,
           invisibility_category: (updatedClub as any)?.invisibility_category ?? updatePayload.invisibility_category ?? null,
+         visual_dna_media_urls: (updatedClub as any)?.visual_dna_media_urls ?? updatePayload.visual_dna_media_urls ?? null,
          analyzed_at: updatePayload.visual_dna_analyzed_at,
        }),
        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
