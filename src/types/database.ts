@@ -13,6 +13,95 @@ export type PriorityLevel = 'high' | 'medium' | 'low';
 
 export type ClubTier = 'group_owned' | 'large' | 'multi_court' | 'boutique';
 
+// Visual DNA Types
+export interface PostingFrequencyDetail {
+  posts_last_30_days?: number;
+  posts_per_week_30d?: number;
+  posts_last_90_days?: number;
+  posts_per_week_90d?: number;
+  posts_last_12_months?: number;
+  posts_per_week_12mo?: number;
+  trend?: 'accelerating' | 'steady' | 'declining' | 'dormant';
+  last_post_days_ago?: number;
+  longest_gap_days?: number;
+}
+
+export interface ScoreBreakdown {
+  posting_frequency?: { weight: number; score: number; value?: string | number };
+  content_quality?: { weight: number; score: number; value?: string };
+  brand_consistency?: { weight: number; score: number; value?: string | number };
+  engagement_rate?: { weight: number; score: number; value?: string | number };
+  caption_effort?: { weight: number; score: number; value?: string };
+}
+
+export interface PhotographyStyle {
+  primary_style?: string;
+  secondary_style?: string;
+  lighting?: string;
+  saturation?: string;
+  contrast?: string;
+}
+
+export interface Composition {
+  primary_shot_type?: string;
+  action_vs_lifestyle_ratio?: string;
+  people_presence?: string;
+  court_visibility?: string;
+}
+
+export interface BrandingElements {
+  logo_visible?: boolean;
+  logo_placement?: string;
+  watermark?: boolean;
+  text_overlays?: string;
+  branded_templates?: boolean;
+}
+
+export interface ContentMix {
+  action?: number;
+  lifestyle?: number;
+  events?: number;
+  coaching?: number;
+  facility?: number;
+  community?: number;
+  promotional?: number;
+}
+
+export interface VisualDnaData {
+  dominant_colors?: string[];
+  photography_style?: PhotographyStyle;
+  composition?: Composition;
+  branding_elements?: BrandingElements;
+  content_mix?: ContentMix;
+  score_breakdown?: ScoreBreakdown;
+  posting_frequency_detail?: PostingFrequencyDetail;
+  [key: string]: unknown;
+}
+
+export interface VoiceDnaData {
+  tone?: string;
+  energy_level?: string;
+  caption_length_avg?: number;
+  emoji_frequency?: string;
+  top_emojis?: string[];
+  hashtag_avg_count?: number;
+  branded_hashtags?: string[];
+  hashtag_placement?: string;
+  cta_frequency?: string;
+  cta_style?: string;
+  languages_detected?: string[];
+  recurring_themes?: string[];
+  signature_phrases?: string[];
+  [key: string]: unknown;
+}
+
+export interface CtltMatchData {
+  top_matches?: Array<{ style: string; score: number }>;
+  styles_to_avoid?: string[];
+  enhancement_suggestion?: string;
+  [key: string]: unknown;
+}
+
 export interface Club {
   id: string;
   club_name: string;
@@ -83,6 +172,13 @@ export interface Club {
   // PadelPix integration fields
   pushed_to_padelpix_at: string | null;
   padelpix_club_profile_id: string | null;
+  // Visual DNA fields
+  visual_dna: VisualDnaData | null;
+  voice_dna: VoiceDnaData | null;
+  ctlt_matches: CtltMatchData | null;
+  invisibility_score: number | null;
+  invisibility_category: string | null;
+  visual_dna_analyzed_at: string | null;
 }
 
 export interface Activity {

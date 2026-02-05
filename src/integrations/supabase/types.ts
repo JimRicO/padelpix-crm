@@ -124,6 +124,7 @@ export type Database = {
           country: string | null
           created_at: string | null
           created_by: string | null
+          ctlt_matches: Json | null
           email: string | null
           enriched_at: string | null
           enrichment_job_id: string | null
@@ -143,6 +144,8 @@ export type Database = {
           insta_url: string | null
           instagram_handle: string | null
           instagram_profile_pic_url: string | null
+          invisibility_category: string | null
+          invisibility_score: number | null
           key_individuals: string[] | null
           key_people: Json | null
           linkedin: string | null
@@ -171,6 +174,9 @@ export type Database = {
           trial_start_date: string | null
           twitter: string | null
           updated_at: string | null
+          visual_dna: Json | null
+          visual_dna_analyzed_at: string | null
+          voice_dna: Json | null
           website: string | null
           whatsapp: string | null
         }
@@ -192,6 +198,7 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           created_by?: string | null
+          ctlt_matches?: Json | null
           email?: string | null
           enriched_at?: string | null
           enrichment_job_id?: string | null
@@ -211,6 +218,8 @@ export type Database = {
           insta_url?: string | null
           instagram_handle?: string | null
           instagram_profile_pic_url?: string | null
+          invisibility_category?: string | null
+          invisibility_score?: number | null
           key_individuals?: string[] | null
           key_people?: Json | null
           linkedin?: string | null
@@ -239,6 +248,9 @@ export type Database = {
           trial_start_date?: string | null
           twitter?: string | null
           updated_at?: string | null
+          visual_dna?: Json | null
+          visual_dna_analyzed_at?: string | null
+          voice_dna?: Json | null
           website?: string | null
           whatsapp?: string | null
         }
@@ -260,6 +272,7 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           created_by?: string | null
+          ctlt_matches?: Json | null
           email?: string | null
           enriched_at?: string | null
           enrichment_job_id?: string | null
@@ -279,6 +292,8 @@ export type Database = {
           insta_url?: string | null
           instagram_handle?: string | null
           instagram_profile_pic_url?: string | null
+          invisibility_category?: string | null
+          invisibility_score?: number | null
           key_individuals?: string[] | null
           key_people?: Json | null
           linkedin?: string | null
@@ -307,6 +322,9 @@ export type Database = {
           trial_start_date?: string | null
           twitter?: string | null
           updated_at?: string | null
+          visual_dna?: Json | null
+          visual_dna_analyzed_at?: string | null
+          voice_dna?: Json | null
           website?: string | null
           whatsapp?: string | null
         }
