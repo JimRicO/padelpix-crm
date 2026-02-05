@@ -77,6 +77,8 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
   const { data: ownershipGroups = [] } = useOwnershipGroups();
   const [ownershipOpen, setOwnershipOpen] = useState(false);
   const [showPushConfirm, setShowPushConfirm] = useState(false);
+  const [showMissingDnaWarning, setShowMissingDnaWarning] = useState(false);
+  const [pendingPushAfterAnalyze, setPendingPushAfterAnalyze] = useState(false);
 
   const isEnriching = club.enrichment_status === 'pending' || club.enrichment_status === 'processing';
   const isEnriched = club.enrichment_status === 'completed';
@@ -87,9 +89,38 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
   // Club is pushable if it has enrichment data (at minimum club_name and instagram_handle)
   const canPushToPadelpix = club.club_name && (club.instagram_handle || club.website);
 
-  const handlePushToPadelpix = () => {
+  const handlePushButtonClick = () => {
+    // Check if Visual DNA has been analyzed
+    if (!club.visual_dna_analyzed_at) {
+      setShowMissingDnaWarning(true);
+    } else {
+      setShowPushConfirm(true);
+    }
+  };
+
+  const handlePushToPadelpix = async () => {
     setShowPushConfirm(false);
     pushToPadelpix.mutate(club.id);
+  };
+
+  const handlePushWithoutDna = () => {
+    setShowMissingDnaWarning(false);
+    pushToPadelpix.mutate(club.id);
+  };
+
+  const handleAnalyzeThenPush = () => {
+    setShowMissingDnaWarning(false);
+    setPendingPushAfterAnalyze(true);
+    analyzeVisualDna.mutate(club.id, {
+      onSuccess: () => {
+        // Auto-push after successful analysis
+        pushToPadelpix.mutate(club.id);
+        setPendingPushAfterAnalyze(false);
+      },
+      onError: () => {
+        setPendingPushAfterAnalyze(false);
+      },
+    });
   };
 
   const handleEnrich = () => {
@@ -780,7 +811,7 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setShowPushConfirm(true)}
+                    onClick={handlePushButtonClick}
                     disabled={pushToPadelpix.isPending}
                     className="text-primary border-primary/30 hover:bg-accent hover:text-accent-foreground"
                   >
@@ -796,15 +827,15 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
                 <Button
                   variant="default"
                   size="sm"
-                  onClick={() => setShowPushConfirm(true)}
-                  disabled={pushToPadelpix.isPending}
+                  onClick={handlePushButtonClick}
+                  disabled={pushToPadelpix.isPending || pendingPushAfterAnalyze}
                 >
-                  {pushToPadelpix.isPending ? (
+                  {pushToPadelpix.isPending || pendingPushAfterAnalyze ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   ) : (
                     <Send className="w-4 h-4 mr-2" />
                   )}
-                  Push to PadelPix
+                  {pendingPushAfterAnalyze ? 'Analyzing & Pushing...' : 'Push to PadelPix'}
                 </Button>
               )}
               
@@ -829,6 +860,39 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
                     >
                       {isPushedToPadelpix ? 'Re-sync' : 'Push to PadelPix'}
                     </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+
+              {/* Missing Visual DNA Warning Dialog */}
+              <AlertDialog open={showMissingDnaWarning} onOpenChange={setShowMissingDnaWarning}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="flex items-center gap-2">
+                      <Eye className="w-5 h-5 text-amber-500" />
+                      Visual DNA Not Analyzed
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This club hasn't been analyzed with Visual DNA yet. Push without Visual DNA data, or analyze first?
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <Button
+                      variant="outline"
+                      onClick={handlePushWithoutDna}
+                      className="border-amber-500/30 text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950"
+                    >
+                      <Send className="w-4 h-4 mr-2" />
+                      Push Without DNA
+                    </Button>
+                    <Button
+                      onClick={handleAnalyzeThenPush}
+                      className="bg-cyan-600 hover:bg-cyan-700 text-white"
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      Analyze First
+                    </Button>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
