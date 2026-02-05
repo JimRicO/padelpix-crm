@@ -28,10 +28,21 @@ export function useCreatePerson() {
 
   return useMutation({
     mutationFn: async (person: Partial<Person>) => {
+      // Check for existing person with same name (case-insensitive)
+      const { data: existing } = await supabase
+        .from('people')
+        .select('id, full_name')
+        .ilike('full_name', person.full_name!.trim())
+        .maybeSingle();
+
+      if (existing) {
+        throw new Error(`A person named "${existing.full_name}" already exists`);
+      }
+
       const { data, error } = await supabase
         .from('people')
         .insert({
-          full_name: person.full_name!,
+          full_name: person.full_name!.trim(),
           role: person.role,
           email: person.email,
           phone: person.phone,
@@ -48,7 +59,13 @@ export function useCreatePerson() {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // Handle unique constraint violation gracefully
+        if (error.code === '23505') {
+          throw new Error('A person with this name already exists');
+        }
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {
@@ -56,7 +73,7 @@ export function useCreatePerson() {
       toast.success('Person created successfully');
     },
     onError: (error) => {
-      toast.error('Failed to create person: ' + error.message);
+      toast.error(error.message);
     },
   });
 }
@@ -129,10 +146,29 @@ export function useBulkCreatePeople() {
   return useMutation({
     mutationFn: async (people: BulkPersonData[]) => {
       if (!user) throw new Error('Not authenticated');
-      if (people.length === 0) return { created: 0 };
+      if (people.length === 0) return { created: 0, skipped: 0 };
 
-      const peopleWithUser = people.map(person => ({
-        full_name: person.full_name,
+      // Get existing people names to filter duplicates
+      const { data: existingPeople } = await supabase
+        .from('people')
+        .select('full_name');
+
+      const existingNames = new Set(
+        (existingPeople || []).map(p => p.full_name.toLowerCase().trim())
+      );
+
+      // Filter out duplicates
+      const uniquePeople = people.filter(
+        p => !existingNames.has(p.full_name.toLowerCase().trim())
+      );
+      const skippedCount = people.length - uniquePeople.length;
+
+      if (uniquePeople.length === 0) {
+        return { created: 0, skipped: skippedCount };
+      }
+
+      const peopleWithUser = uniquePeople.map(person => ({
+        full_name: person.full_name.trim(),
         role: person.role,
         email: person.email,
         phone: person.phone,
@@ -151,12 +187,21 @@ export function useBulkCreatePeople() {
         .insert(peopleWithUser)
         .select();
 
-      if (error) throw error;
-      return { created: data.length, data };
+      if (error) {
+        if (error.code === '23505') {
+          throw new Error('Some people already exist in your contacts');
+        }
+        throw error;
+      }
+      return { created: data.length, skipped: skippedCount, data };
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['people'] });
-      toast.success(`${result.created} people imported successfully`);
+      if (result.skipped > 0) {
+        toast.success(`${result.created} people imported (${result.skipped} duplicates skipped)`);
+      } else {
+        toast.success(`${result.created} people imported successfully`);
+      }
     },
     onError: (error) => {
       toast.error('Failed to import people: ' + error.message);
