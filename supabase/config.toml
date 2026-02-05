@@ -1,5 +1,8 @@
 project_id = "vysrhwytayytcqnwdhwv"
 
+[functions.analyze-club-visual-dna]
+verify_jwt = false
+
 [functions.push-to-padelpix]
 verify_jwt = false
 

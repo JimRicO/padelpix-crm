@@ -3,6 +3,7 @@ import { Club, PIPELINE_STAGES, TIERS, PRIORITIES, PriorityLevel } from '@/types
 import { useUpdateClub, useDeleteClub, useOwnershipGroups } from '@/hooks/useClubs';
 import { useStartClubEnrichment } from '@/hooks/useClubEnrichment';
 import { usePushToPadelpix } from '@/hooks/usePushToPadelpix';
+import { useAnalyzeVisualDna } from '@/hooks/useAnalyzeVisualDna';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,13 +13,14 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Badge } from '@/components/ui/badge';
-import { Instagram, Globe, Phone, Mail, MapPin, Trash2, Save, ExternalLink, Users, Check, ChevronsUpDown, Linkedin, Upload, X, Link, Facebook, Twitter, Heart, MessageCircle, Video, Hash, Sparkles, Loader2, Send, RefreshCw } from 'lucide-react';
+import { Instagram, Globe, Phone, Mail, MapPin, Trash2, Save, ExternalLink, Users, Check, ChevronsUpDown, Linkedin, Upload, X, Link, Facebook, Twitter, Heart, MessageCircle, Video, Hash, Sparkles, Loader2, Send, RefreshCw, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { MarkdownPreview } from '@/components/ui/markdown-renderer';
 import { ClubEnrichmentSections } from './ClubEnrichmentSections';
+import { VisualDnaCard } from './VisualDnaCard';
 
 interface ClubInfoTabProps {
   club: Club;
@@ -71,6 +73,7 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
   const deleteClub = useDeleteClub();
   const startEnrichment = useStartClubEnrichment();
   const pushToPadelpix = usePushToPadelpix();
+  const analyzeVisualDna = useAnalyzeVisualDna();
   const { data: ownershipGroups = [] } = useOwnershipGroups();
   const [ownershipOpen, setOwnershipOpen] = useState(false);
   const [showPushConfirm, setShowPushConfirm] = useState(false);
@@ -78,6 +81,8 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
   const isEnriching = club.enrichment_status === 'pending' || club.enrichment_status === 'processing';
   const isEnriched = club.enrichment_status === 'completed';
   const isPushedToPadelpix = !!club.pushed_to_padelpix_at;
+  const isVisualDnaAnalyzed = !!club.visual_dna_analyzed_at;
+  const canAnalyzeVisualDna = isEnriched && !!club.instagram_handle;
   
   // Club is pushable if it has enrichment data (at minimum club_name and instagram_handle)
   const canPushToPadelpix = club.club_name && (club.instagram_handle || club.website);
@@ -94,6 +99,10 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
       website: club.website || undefined,
       instagramHandle: club.instagram_handle || undefined,
     });
+  };
+
+  const handleAnalyzeVisualDna = () => {
+    analyzeVisualDna.mutate(club.id);
   };
 
   // Check if form has unsaved changes
@@ -628,6 +637,10 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
 
       {/* AI Enrichment Data */}
       <ClubEnrichmentSections club={club} clubId={club.id} clubName={club.club_name} />
+
+      {/* Visual DNA Card */}
+      <VisualDnaCard club={club} />
+
       <div className="space-y-4">
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Notes & Actions</h3>
         <div className="space-y-2">
@@ -681,8 +694,82 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
         </div>
 
         <div className="flex gap-2">
-          {/* Push to PadelPix Button */}
-          {canPushToPadelpix && (
+          {/* Enrichment Button - Step 1 */}
+          {isEnriching ? (
+            <Button variant="outline" size="sm" disabled>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Enriching...
+            </Button>
+          ) : isEnriched ? (
+            <Button variant="outline" size="sm" onClick={handleEnrich} disabled={startEnrichment.isPending}>
+              <Sparkles className="w-4 h-4 mr-2 text-primary" />
+              Re-enrich
+              <Badge variant="secondary" className="ml-2 text-xs">Done</Badge>
+            </Button>
+          ) : (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleEnrich}
+              disabled={startEnrichment.isPending}
+            >
+              {startEnrichment.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4 mr-2" />
+              )}
+              Enrich
+            </Button>
+          )}
+
+          {/* Analyze Visual DNA Button - Step 2 */}
+          {canAnalyzeVisualDna && (
+            isVisualDnaAnalyzed ? (
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Check className="w-3 h-3 text-cyan-500" />
+                  <span>DNA {format(new Date(club.visual_dna_analyzed_at!), 'MMM d')}</span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAnalyzeVisualDna}
+                  disabled={analyzeVisualDna.isPending}
+                  className="border-cyan-500/30 text-cyan-700 hover:bg-cyan-50 dark:text-cyan-400 dark:hover:bg-cyan-950"
+                >
+                  {analyzeVisualDna.isPending ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                  )}
+                  Re-analyze
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleAnalyzeVisualDna}
+                disabled={analyzeVisualDna.isPending}
+                className="border-cyan-500/30 text-cyan-700 hover:bg-cyan-50 dark:text-cyan-400 dark:hover:bg-cyan-950"
+              >
+                {analyzeVisualDna.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Analyzing... (30-60s)
+                  </>
+                ) : (
+                  <>
+                    <Eye className="w-4 h-4 mr-2" />
+                    Analyze Visual DNA
+                  </>
+                )}
+              </Button>
+            )
+          )}
+
+          {/* Push to PadelPix Button - Step 3 */}
+          {canPushToPadelpix && isEnriched && (
             <>
               {isPushedToPadelpix ? (
                 <div className="flex items-center gap-2">
@@ -746,34 +833,6 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
                 </AlertDialogContent>
               </AlertDialog>
             </>
-          )}
-
-          {/* Enrichment Button */}
-          {isEnriching ? (
-            <Button variant="outline" size="sm" disabled>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Enriching...
-            </Button>
-          ) : isEnriched ? (
-            <Button variant="outline" size="sm" onClick={handleEnrich} disabled={startEnrichment.isPending}>
-              <Sparkles className="w-4 h-4 mr-2 text-primary" />
-              Re-enrich
-              <Badge variant="secondary" className="ml-2 text-xs">Done</Badge>
-            </Button>
-          ) : (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleEnrich}
-              disabled={startEnrichment.isPending}
-            >
-              {startEnrichment.isPending ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Sparkles className="w-4 h-4 mr-2" />
-              )}
-              Enrich
-            </Button>
           )}
 
           <Button 
