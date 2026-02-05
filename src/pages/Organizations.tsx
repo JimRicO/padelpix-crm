@@ -11,8 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Building2, RefreshCw, ArrowUpDown, Filter } from 'lucide-react';
 import { OrganizationCard } from '@/components/organizations/OrganizationCard';
 import { AddOrganizationDialog } from '@/components/organizations/AddOrganizationDialog';
-
 import { OwnershipGroupModal } from '@/components/group/OwnershipGroupModal';
+import { normalizeCountry, normalizeCountryList } from '@/utils/countryNormalization';
 
 type TypeFilter = 'all' | OrganizationType;
 
@@ -32,10 +32,9 @@ export default function Organizations() {
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
   const [countryFilter, setCountryFilter] = useState<string>('all');
 
-  // Get unique countries for filter dropdown
+  // Get unique countries for filter dropdown (normalized)
   const uniqueCountries = useMemo(() => {
-    const countries = [...new Set(groups.map(g => g.country || 'South Africa').filter(Boolean))];
-    return countries.sort((a, b) => a.localeCompare(b));
+    return normalizeCountryList(groups.map(g => g.country || 'South Africa'));
   }, [groups]);
   
   const syncMutation = useSyncMissingOrganizations();
@@ -92,9 +91,11 @@ export default function Organizations() {
       result = result.filter(group => (group.organization_type || 'commercial') === typeFilter);
     }
     
-    // Apply country filter
+    // Apply country filter (with normalization)
     if (countryFilter && countryFilter !== 'all') {
-      result = result.filter(group => (group.country || 'South Africa') === countryFilter);
+      result = result.filter(group => 
+        normalizeCountry(group.country || 'South Africa') === countryFilter
+      );
     }
     
     // Apply search filter
@@ -107,7 +108,7 @@ export default function Organizations() {
       );
     }
     
-    // Apply sorting
+    // Apply sorting (with normalization for country)
     return [...result].sort((a, b) => {
       switch (sortBy) {
         case 'name':
@@ -115,7 +116,9 @@ export default function Organizations() {
         case 'clubs':
           return (clubCountByGroup[b.name] || 0) - (clubCountByGroup[a.name] || 0);
         case 'country':
-          return (a.country || 'South Africa').localeCompare(b.country || 'South Africa');
+          return (normalizeCountry(a.country) || 'South Africa').localeCompare(
+            normalizeCountry(b.country) || 'South Africa'
+          );
         default:
           return 0;
       }

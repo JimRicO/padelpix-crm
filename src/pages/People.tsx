@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Users, ArrowUpDown, Filter } from 'lucide-react';
 import type { Person } from '@/types/people';
+import { normalizeCountry, normalizeCountryList } from '@/utils/countryNormalization';
 
 export default function People() {
   const { user, loading: authLoading } = useAuth();
@@ -22,18 +23,19 @@ export default function People() {
   const [sortBy, setSortBy] = useState<'name' | 'country' | 'role'>('name');
   const [countryFilter, setCountryFilter] = useState<string>('all');
 
-  // Get unique countries for filter dropdown
+  // Get unique countries for filter dropdown (normalized)
   const uniqueCountries = useMemo(() => {
-    const countries = [...new Set(people.map(p => p.country || 'South Africa').filter(Boolean))];
-    return countries.sort((a, b) => a.localeCompare(b));
+    return normalizeCountryList(people.map(p => p.country || 'South Africa'));
   }, [people]);
 
   const filteredPeople = useMemo(() => {
     let result = people;
     
-    // Apply country filter
+    // Apply country filter (with normalization)
     if (countryFilter && countryFilter !== 'all') {
-      result = result.filter(person => (person.country || 'South Africa') === countryFilter);
+      result = result.filter(person => 
+        normalizeCountry(person.country || 'South Africa') === countryFilter
+      );
     }
     
     // Apply search filter
@@ -48,13 +50,15 @@ export default function People() {
       );
     }
     
-    // Apply sorting
+    // Apply sorting (with normalization for country)
     return [...result].sort((a, b) => {
       switch (sortBy) {
         case 'name':
           return a.full_name.localeCompare(b.full_name);
         case 'country':
-          return (a.country || 'South Africa').localeCompare(b.country || 'South Africa');
+          return (normalizeCountry(a.country) || 'South Africa').localeCompare(
+            normalizeCountry(b.country) || 'South Africa'
+          );
         case 'role':
           return (a.role || '').localeCompare(b.role || '');
         default:
