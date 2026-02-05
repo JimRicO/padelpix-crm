@@ -1,5 +1,8 @@
 project_id = "vysrhwytayytcqnwdhwv"
 
+[functions.push-to-padelpix]
+verify_jwt = false
+
 [functions.extract-location]
 verify_jwt = false
 

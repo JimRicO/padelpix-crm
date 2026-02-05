@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Club, PIPELINE_STAGES, TIERS, PRIORITIES, PriorityLevel } from '@/types/database';
 import { useUpdateClub, useDeleteClub, useOwnershipGroups } from '@/hooks/useClubs';
 import { useStartClubEnrichment } from '@/hooks/useClubEnrichment';
+import { usePushToPadelpix } from '@/hooks/usePushToPadelpix';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,8 +12,9 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Badge } from '@/components/ui/badge';
-import { Instagram, Globe, Phone, Mail, MapPin, Trash2, Save, ExternalLink, Users, Check, ChevronsUpDown, Linkedin, Upload, X, Link, Facebook, Twitter, Heart, MessageCircle, Video, Hash, Sparkles, Loader2 } from 'lucide-react';
+import { Instagram, Globe, Phone, Mail, MapPin, Trash2, Save, ExternalLink, Users, Check, ChevronsUpDown, Linkedin, Upload, X, Link, Facebook, Twitter, Heart, MessageCircle, Video, Hash, Sparkles, Loader2, Send, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { format } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { MarkdownPreview } from '@/components/ui/markdown-renderer';
@@ -68,11 +70,22 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
   const updateClub = useUpdateClub();
   const deleteClub = useDeleteClub();
   const startEnrichment = useStartClubEnrichment();
+  const pushToPadelpix = usePushToPadelpix();
   const { data: ownershipGroups = [] } = useOwnershipGroups();
   const [ownershipOpen, setOwnershipOpen] = useState(false);
+  const [showPushConfirm, setShowPushConfirm] = useState(false);
 
   const isEnriching = club.enrichment_status === 'pending' || club.enrichment_status === 'processing';
   const isEnriched = club.enrichment_status === 'completed';
+  const isPushedToPadelpix = !!club.pushed_to_padelpix_at;
+  
+  // Club is pushable if it has enrichment data (at minimum club_name and instagram_handle)
+  const canPushToPadelpix = club.club_name && (club.instagram_handle || club.website);
+
+  const handlePushToPadelpix = () => {
+    setShowPushConfirm(false);
+    pushToPadelpix.mutate(club.id);
+  };
 
   const handleEnrich = () => {
     startEnrichment.mutate({
@@ -668,6 +681,73 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
         </div>
 
         <div className="flex gap-2">
+          {/* Push to PadelPix Button */}
+          {canPushToPadelpix && (
+            <>
+              {isPushedToPadelpix ? (
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Check className="w-3 h-3 text-success" />
+                    <span>Pushed {format(new Date(club.pushed_to_padelpix_at!), 'MMM d')}</span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowPushConfirm(true)}
+                    disabled={pushToPadelpix.isPending}
+                    className="text-primary border-primary/30 hover:bg-accent hover:text-accent-foreground"
+                  >
+                    {pushToPadelpix.isPending ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                    )}
+                    Re-sync
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => setShowPushConfirm(true)}
+                  disabled={pushToPadelpix.isPending}
+                >
+                  {pushToPadelpix.isPending ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4 mr-2" />
+                  )}
+                  Push to PadelPix
+                </Button>
+              )}
+              
+              {/* Push Confirmation Dialog */}
+              <AlertDialog open={showPushConfirm} onOpenChange={setShowPushConfirm}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      {isPushedToPadelpix ? 'Re-sync' : 'Push'} {club.club_name} to PadelPix?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {isPushedToPadelpix 
+                        ? 'This will update the existing club profile in PadelPix with the latest data.'
+                        : 'This will create a club profile in PadelPix ready for content generation.'}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={handlePushToPadelpix}
+                      className="bg-primary hover:bg-primary/90"
+                    >
+                      {isPushedToPadelpix ? 'Re-sync' : 'Push to PadelPix'}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </>
+          )}
+
           {/* Enrichment Button */}
           {isEnriching ? (
             <Button variant="outline" size="sm" disabled>
