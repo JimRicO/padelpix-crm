@@ -9,6 +9,7 @@ import { Plus, Calendar, ArrowUpDown, Filter } from 'lucide-react';
 import { EventCard } from '@/components/events/EventCard';
 import { AddEventDialog } from '@/components/events/AddEventDialog';
 import { EventDetailModal } from '@/components/events/EventDetailModal';
+import { normalizeCountry, normalizeCountryList } from '@/utils/countryNormalization';
 
 type TypeFilter = 'all' | string;
 type StatusFilter = 'all' | string;
@@ -25,10 +26,9 @@ export default function Events() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [countryFilter, setCountryFilter] = useState<string>('all');
 
-  // Get unique countries
+  // Get unique countries (normalized)
   const uniqueCountries = useMemo(() => {
-    const countries = [...new Set(events.map(e => e.country).filter(Boolean))] as string[];
-    return countries.sort((a, b) => a.localeCompare(b));
+    return normalizeCountryList(events.map(e => e.country));
   }, [events]);
 
   // Filter and sort events
@@ -45,9 +45,9 @@ export default function Events() {
       result = result.filter(e => e.status === statusFilter);
     }
 
-    // Country filter
+    // Country filter (with normalization)
     if (countryFilter !== 'all') {
-      result = result.filter(e => e.country === countryFilter);
+      result = result.filter(e => normalizeCountry(e.country) === countryFilter);
     }
 
     // Search filter
@@ -61,7 +61,7 @@ export default function Events() {
       );
     }
 
-    // Sort
+    // Sort (with normalization for country)
     return [...result].sort((a, b) => {
       switch (sortBy) {
         case 'date':
@@ -69,7 +69,7 @@ export default function Events() {
         case 'name':
           return a.name.localeCompare(b.name);
         case 'country':
-          return (a.country || '').localeCompare(b.country || '');
+          return (normalizeCountry(a.country) || '').localeCompare(normalizeCountry(b.country) || '');
         default:
           return 0;
       }
