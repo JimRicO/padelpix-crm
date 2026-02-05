@@ -8,9 +8,11 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Club, VisualDnaData, VoiceDnaData, CtltMatchData } from '@/types/database';
 import { cn } from '@/lib/utils';
+import { ReactNode } from 'react';
 
 interface VisualDnaCardProps {
   club: Club;
+  children?: ReactNode;
 }
 
 // Score color mapping
@@ -178,7 +180,7 @@ function ImageLightbox({
   );
 }
 
-export function VisualDnaCard({ club }: VisualDnaCardProps) {
+export function VisualDnaCard({ club, children }: VisualDnaCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [showRawJson, setShowRawJson] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -615,6 +617,9 @@ export function VisualDnaCard({ club }: VisualDnaCardProps) {
                   </div>
                 </CollapsibleContent>
               </Collapsible>
+
+              {/* Action Workflow (passed as children) */}
+              {children}
             </div>
           </CollapsibleContent>
         </Collapsible>
