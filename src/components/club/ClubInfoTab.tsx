@@ -1,9 +1,6 @@
 import { useState } from 'react';
 import { Club, PIPELINE_STAGES, TIERS, PRIORITIES, PriorityLevel } from '@/types/database';
 import { useUpdateClub, useDeleteClub, useOwnershipGroups } from '@/hooks/useClubs';
-import { useStartClubEnrichment } from '@/hooks/useClubEnrichment';
-import { usePushToPadelpix } from '@/hooks/usePushToPadelpix';
-import { useAnalyzeVisualDna } from '@/hooks/useAnalyzeVisualDna';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,15 +9,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Badge } from '@/components/ui/badge';
-import { Instagram, Globe, Phone, Mail, MapPin, Trash2, Save, ExternalLink, Users, Check, ChevronsUpDown, Linkedin, Upload, X, Link, Facebook, Twitter, Heart, MessageCircle, Video, Hash, Sparkles, Loader2, Send, RefreshCw, Eye } from 'lucide-react';
+import { Instagram, Globe, Phone, Mail, MapPin, Trash2, Save, ExternalLink, Users, Check, ChevronsUpDown, Linkedin, Upload, X, Link, Facebook, Twitter, Heart, MessageCircle, Video, Hash } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { format } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { MarkdownPreview } from '@/components/ui/markdown-renderer';
 import { ClubEnrichmentSections } from './ClubEnrichmentSections';
 import { VisualDnaCard } from './VisualDnaCard';
+import { ActionWorkflowCard } from './ActionWorkflowCard';
 
 interface ClubInfoTabProps {
   club: Club;
@@ -71,70 +67,8 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
 
   const updateClub = useUpdateClub();
   const deleteClub = useDeleteClub();
-  const startEnrichment = useStartClubEnrichment();
-  const pushToPadelpix = usePushToPadelpix();
-  const analyzeVisualDna = useAnalyzeVisualDna();
   const { data: ownershipGroups = [] } = useOwnershipGroups();
   const [ownershipOpen, setOwnershipOpen] = useState(false);
-  const [showPushConfirm, setShowPushConfirm] = useState(false);
-  const [showMissingDnaWarning, setShowMissingDnaWarning] = useState(false);
-  const [pendingPushAfterAnalyze, setPendingPushAfterAnalyze] = useState(false);
-
-  const isEnriching = club.enrichment_status === 'pending' || club.enrichment_status === 'processing';
-  const isEnriched = club.enrichment_status === 'completed';
-  const isPushedToPadelpix = !!club.pushed_to_padelpix_at;
-  const isVisualDnaAnalyzed = !!club.visual_dna_analyzed_at;
-  const canAnalyzeVisualDna = isEnriched && !!club.instagram_handle;
-  
-  // Club is pushable if it has enrichment data (at minimum club_name and instagram_handle)
-  const canPushToPadelpix = club.club_name && (club.instagram_handle || club.website);
-
-  const handlePushButtonClick = () => {
-    // Check if Visual DNA has been analyzed
-    if (!club.visual_dna_analyzed_at) {
-      setShowMissingDnaWarning(true);
-    } else {
-      setShowPushConfirm(true);
-    }
-  };
-
-  const handlePushToPadelpix = async () => {
-    setShowPushConfirm(false);
-    pushToPadelpix.mutate(club.id);
-  };
-
-  const handlePushWithoutDna = () => {
-    setShowMissingDnaWarning(false);
-    pushToPadelpix.mutate(club.id);
-  };
-
-  const handleAnalyzeThenPush = () => {
-    setShowMissingDnaWarning(false);
-    setPendingPushAfterAnalyze(true);
-    analyzeVisualDna.mutate(club.id, {
-      onSuccess: () => {
-        // Auto-push after successful analysis
-        pushToPadelpix.mutate(club.id);
-        setPendingPushAfterAnalyze(false);
-      },
-      onError: () => {
-        setPendingPushAfterAnalyze(false);
-      },
-    });
-  };
-
-  const handleEnrich = () => {
-    startEnrichment.mutate({
-      clubId: club.id,
-      name: club.club_name,
-      website: club.website || undefined,
-      instagramHandle: club.instagram_handle || undefined,
-    });
-  };
-
-  const handleAnalyzeVisualDna = () => {
-    analyzeVisualDna.mutate(club.id);
-  };
 
   // Check if form has unsaved changes
   const hasChanges = JSON.stringify(formData) !== JSON.stringify(initialFormData);
@@ -669,6 +603,9 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
       {/* AI Enrichment Data */}
       <ClubEnrichmentSections club={club} clubId={club.id} clubName={club.club_name} />
 
+      {/* Action Workflow Card */}
+      <ActionWorkflowCard club={club} />
+
       {/* Visual DNA Card */}
       <VisualDnaCard club={club} />
 
@@ -701,214 +638,36 @@ export function ClubInfoTab({ club, onClose }: ClubInfoTabProps) {
       </div>
 
       <div className="flex justify-between pt-4 border-t">
-        <div className="flex gap-2">
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="sm">
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete Club
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete {club.club_name}?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will permanently delete this club and all related activities, tasks, and content.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-
-        <div className="flex gap-2">
-          {/* Enrichment Button - Step 1 */}
-          {isEnriching ? (
-            <Button variant="outline" size="sm" disabled>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Enriching...
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="destructive" size="sm">
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete Club
             </Button>
-          ) : isEnriched ? (
-            <Button variant="outline" size="sm" onClick={handleEnrich} disabled={startEnrichment.isPending}>
-              <Sparkles className="w-4 h-4 mr-2 text-primary" />
-              Re-enrich
-              <Badge variant="secondary" className="ml-2 text-xs">Done</Badge>
-            </Button>
-          ) : (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleEnrich}
-              disabled={startEnrichment.isPending}
-            >
-              {startEnrichment.isPending ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Sparkles className="w-4 h-4 mr-2" />
-              )}
-              Enrich
-            </Button>
-          )}
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete {club.club_name}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete this club and all related activities, tasks, and content.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
-          {/* Analyze Visual DNA Button - Step 2 */}
-          {canAnalyzeVisualDna && (
-            isVisualDnaAnalyzed ? (
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Check className="w-3 h-3 text-cyan-500" />
-                  <span>DNA {format(new Date(club.visual_dna_analyzed_at!), 'MMM d')}</span>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleAnalyzeVisualDna}
-                  disabled={analyzeVisualDna.isPending}
-                  className="border-cyan-500/30 text-cyan-700 hover:bg-cyan-50 dark:text-cyan-400 dark:hover:bg-cyan-950"
-                >
-                  {analyzeVisualDna.isPending ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                  )}
-                  Re-analyze
-                </Button>
-              </div>
-            ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleAnalyzeVisualDna}
-                disabled={analyzeVisualDna.isPending}
-                className="border-cyan-500/30 text-cyan-700 hover:bg-cyan-50 dark:text-cyan-400 dark:hover:bg-cyan-950"
-              >
-                {analyzeVisualDna.isPending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Analyzing... (30-60s)
-                  </>
-                ) : (
-                  <>
-                    <Eye className="w-4 h-4 mr-2" />
-                    Analyze Visual DNA
-                  </>
-                )}
-              </Button>
-            )
-          )}
-
-          {/* Push to PadelPix Button - Step 3 */}
-          {canPushToPadelpix && isEnriched && (
-            <>
-              {isPushedToPadelpix ? (
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Check className="w-3 h-3 text-success" />
-                    <span>Pushed {format(new Date(club.pushed_to_padelpix_at!), 'MMM d')}</span>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handlePushButtonClick}
-                    disabled={pushToPadelpix.isPending}
-                    className="text-primary border-primary/30 hover:bg-accent hover:text-accent-foreground"
-                  >
-                    {pushToPadelpix.isPending ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <RefreshCw className="w-4 h-4 mr-2" />
-                    )}
-                    Re-sync
-                  </Button>
-                </div>
-              ) : (
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={handlePushButtonClick}
-                  disabled={pushToPadelpix.isPending || pendingPushAfterAnalyze}
-                >
-                  {pushToPadelpix.isPending || pendingPushAfterAnalyze ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Send className="w-4 h-4 mr-2" />
-                  )}
-                  {pendingPushAfterAnalyze ? 'Analyzing & Pushing...' : 'Push to PadelPix'}
-                </Button>
-              )}
-              
-              {/* Push Confirmation Dialog */}
-              <AlertDialog open={showPushConfirm} onOpenChange={setShowPushConfirm}>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      {isPushedToPadelpix ? 'Re-sync' : 'Push'} {club.club_name} to PadelPix?
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      {isPushedToPadelpix 
-                        ? 'This will update the existing club profile in PadelPix with the latest data.'
-                        : 'This will create a club profile in PadelPix ready for content generation.'}
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction 
-                      onClick={handlePushToPadelpix}
-                      className="bg-primary hover:bg-primary/90"
-                    >
-                      {isPushedToPadelpix ? 'Re-sync' : 'Push to PadelPix'}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-
-              {/* Missing Visual DNA Warning Dialog */}
-              <AlertDialog open={showMissingDnaWarning} onOpenChange={setShowMissingDnaWarning}>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle className="flex items-center gap-2">
-                      <Eye className="w-5 h-5 text-amber-500" />
-                      Visual DNA Not Analyzed
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This club hasn't been analyzed with Visual DNA yet. Push without Visual DNA data, or analyze first?
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <Button
-                      variant="outline"
-                      onClick={handlePushWithoutDna}
-                      className="border-amber-500/30 text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950"
-                    >
-                      <Send className="w-4 h-4 mr-2" />
-                      Push Without DNA
-                    </Button>
-                    <Button
-                      onClick={handleAnalyzeThenPush}
-                      className="bg-cyan-600 hover:bg-cyan-700 text-white"
-                    >
-                      <Eye className="w-4 h-4 mr-2" />
-                      Analyze First
-                    </Button>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </>
-          )}
-
-          <Button 
-            onClick={handleSave} 
-            disabled={updateClub.isPending || !hasChanges}
-            className={hasChanges && !updateClub.isPending ? 'bg-primary hover:bg-primary/90' : ''}
-            variant={hasChanges && !updateClub.isPending ? 'default' : 'secondary'}
-          >
-            <Save className="w-4 h-4 mr-2" />
-            {updateClub.isPending ? 'Saving...' : 'Save Changes'}
-          </Button>
-        </div>
+        <Button 
+          onClick={handleSave} 
+          disabled={updateClub.isPending || !hasChanges}
+          className={hasChanges && !updateClub.isPending ? 'bg-primary hover:bg-primary/90' : ''}
+          variant={hasChanges && !updateClub.isPending ? 'default' : 'secondary'}
+        >
+          <Save className="w-4 h-4 mr-2" />
+          {updateClub.isPending ? 'Saving...' : 'Save Changes'}
+        </Button>
       </div>
     </div>
   );
