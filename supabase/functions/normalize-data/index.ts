@@ -161,7 +161,7 @@ Return the normalized data as JSON following the schema rules.`;
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 8192,
+        max_tokens: 65536,
         messages: [
           { role: 'user', content: `${systemPrompt}\n\n${userPrompt}` }
         ],
@@ -183,7 +183,8 @@ Return the normalized data as JSON following the schema rules.`;
     }
 
     const anthropicResponse = await response.json();
-    console.log('Anthropic response received');
+    const stopReason = anthropicResponse.stop_reason;
+    console.log(`Anthropic response received (stop_reason: ${stopReason}, usage: ${JSON.stringify(anthropicResponse.usage)})`);
 
     // Extract the text content from Claude's response
     const textContent = anthropicResponse.content?.find((c: { type: string }) => c.type === 'text');
@@ -197,17 +198,47 @@ Return the normalized data as JSON following the schema rules.`;
       let jsonText = textContent.text.trim();
       // Strip markdown code fences if present
       jsonText = jsonText.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
+      
       // Try direct parse first
       try {
         parsedResult = JSON.parse(jsonText);
       } catch {
-        // Fallback: extract the outermost JSON object
+        // Extract the outermost JSON object
         const start = jsonText.indexOf('{');
-        const end = jsonText.lastIndexOf('}');
-        if (start === -1 || end === -1 || end <= start) {
-          throw new Error('No JSON object found in response');
+        if (start === -1) throw new Error('No JSON object found in response');
+        let candidate = jsonText.substring(start);
+        
+        // Try parsing as-is
+        try {
+          parsedResult = JSON.parse(candidate);
+        } catch {
+          // JSON is likely truncated — try to repair by closing open braces/brackets
+          // Remove trailing commas and incomplete values
+          candidate = candidate.replace(/,\s*$/, '');
+          // Remove any trailing incomplete string/value
+          candidate = candidate.replace(/,\s*\{[^}]*$/, '');
+          candidate = candidate.replace(/,\s*"[^"]*$/, '');
+          
+          // Count unbalanced braces and brackets
+          let braces = 0, brackets = 0;
+          for (const char of candidate) {
+            if (char === '{') braces++;
+            if (char === '}') braces--;
+            if (char === '[') brackets++;
+            if (char === ']') brackets--;
+          }
+          
+          // Close open structures
+          while (brackets > 0) { candidate += ']'; brackets--; }
+          while (braces > 0) { candidate += '}'; braces--; }
+          
+          // Remove trailing commas before closures
+          candidate = candidate.replace(/,\s*}/g, '}').replace(/,\s*]/g, ']');
+          
+          console.log('Attempting to parse repaired JSON...');
+          parsedResult = JSON.parse(candidate);
+          console.log('Successfully parsed repaired (truncated) JSON');
         }
-        parsedResult = JSON.parse(jsonText.substring(start, end + 1));
       }
     } catch (parseError) {
       console.error('Failed to parse Claude response:', textContent.text.substring(0, 500));
