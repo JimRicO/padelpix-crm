@@ -69,7 +69,7 @@ export function useSmartImport() {
 
       const { data, error } = await supabase.functions.invoke('normalize-data', {
         body: { rawData: input, dataFormat },
-      });
+      } as any);
 
       if (error) {
         throw new Error(error.message);
