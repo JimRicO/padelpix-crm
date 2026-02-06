@@ -194,14 +194,23 @@ Return the normalized data as JSON following the schema rules.`;
     // Parse the JSON from Claude's response
     let parsedResult;
     try {
-      // Try to extract JSON from the response (Claude sometimes wraps it in markdown)
-      const jsonMatch = textContent.text.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error('No JSON found in response');
+      let jsonText = textContent.text.trim();
+      // Strip markdown code fences if present
+      jsonText = jsonText.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
+      // Try direct parse first
+      try {
+        parsedResult = JSON.parse(jsonText);
+      } catch {
+        // Fallback: extract the outermost JSON object
+        const start = jsonText.indexOf('{');
+        const end = jsonText.lastIndexOf('}');
+        if (start === -1 || end === -1 || end <= start) {
+          throw new Error('No JSON object found in response');
+        }
+        parsedResult = JSON.parse(jsonText.substring(start, end + 1));
       }
-      parsedResult = JSON.parse(jsonMatch[0]);
     } catch (parseError) {
-      console.error('Failed to parse Claude response:', textContent.text);
+      console.error('Failed to parse Claude response:', textContent.text.substring(0, 500));
       throw new Error('Failed to parse AI response as JSON');
     }
 
