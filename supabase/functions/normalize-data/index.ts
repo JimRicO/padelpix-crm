@@ -161,7 +161,7 @@ Return the normalized data as JSON following the schema rules.`;
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 65536,
+        max_tokens: 64000,
         messages: [
           { role: 'user', content: `${systemPrompt}\n\n${userPrompt}` }
         ],
