@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { format, isToday, isTomorrow, isPast, startOfDay, compareAsc, eachDayOfInterval, parseISO } from 'date-fns';
-import { Plus, Calendar, List } from 'lucide-react';
+import { Plus, Calendar, List, CheckSquare } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -10,6 +10,7 @@ import { CalendarView } from '@/components/agenda/CalendarView';
 import { AddEventDialog } from '@/components/agenda/AddEventDialog';
 import { useAgendaEvents, type AgendaEvent } from '@/hooks/useAgendaEvents';
 import { useEvents } from '@/hooks/useEvents';
+import { useTasks } from '@/hooks/useTasks';
 import { useAuth } from '@/hooks/useAuth';
 
 interface GroupedEvents {
@@ -31,8 +32,9 @@ export default function Agenda() {
 
   const { data: agendaEvents = [], isLoading: agendaLoading } = useAgendaEvents();
   const { data: industryEvents = [], isLoading: eventsLoading } = useEvents();
+  const { data: tasks = [], isLoading: tasksLoading } = useTasks();
 
-  const isLoading = agendaLoading || eventsLoading;
+  const isLoading = agendaLoading || eventsLoading || tasksLoading;
 
   // Convert industry events to agenda format (expand multi-day events)
   const convertedIndustryEvents = useMemo((): AgendaEvent[] => {
@@ -69,10 +71,28 @@ export default function Agenda() {
     return converted;
   }, [industryEvents]);
 
-  // Merge agenda events with industry events
+  // Convert tasks with due dates to agenda format
+  const convertedTasks = useMemo((): AgendaEvent[] => {
+    return tasks
+      .filter((task) => task.due_date && task.status !== 'completed')
+      .map((task) => ({
+        id: `task-${task.id}`,
+        event_date: task.due_date!,
+        event_time: null,
+        title: `📋 ${task.title}`,
+        description: task.description || null,
+        event_type: 'task' as any,
+        club_id: task.club_id,
+        created_by: task.created_by || '',
+        created_at: task.created_at || '',
+        clubs: null,
+      }));
+  }, [tasks]);
+
+  // Merge agenda events with industry events and tasks
   const allEvents = useMemo(() => {
-    return [...agendaEvents, ...convertedIndustryEvents];
-  }, [agendaEvents, convertedIndustryEvents]);
+    return [...agendaEvents, ...convertedIndustryEvents, ...convertedTasks];
+  }, [agendaEvents, convertedIndustryEvents, convertedTasks]);
 
   // Filter events based on search
   const filteredEvents = useMemo(() => {
