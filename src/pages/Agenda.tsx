@@ -77,7 +77,7 @@ export default function Agenda() {
       .filter((task) => task.due_date && task.status !== 'completed')
       .map((task) => ({
         id: `task-${task.id}`,
-        event_date: task.due_date!,
+        event_date: format(parseISO(task.due_date!), 'yyyy-MM-dd'),
         event_time: null,
         title: `📋 ${task.title}`,
         description: task.description || null,
