@@ -9,6 +9,7 @@ import {
   Sparkles, 
   Eye, 
   User, 
+  Users, 
   Calendar, 
   Activity, 
   Link2, 
@@ -30,6 +31,21 @@ export function OrganizationDetailView({ group, clubCount }: OrganizationDetailV
   const colorPalette = group.color_palette as Record<string, string> | null;
   const fonts = group.fonts as { primary?: string; heading?: string; list?: string[] } | null;
   const recentActivities = group.recent_activities as Array<{ title?: string; date?: string; description?: string }> | null;
+  
+  // Parse key_people safely (handle potential double-encoded JSON)
+  let keyPeople: Array<{ name?: string; role?: string; context?: string }> | null = null;
+  if (group.key_people) {
+    try {
+      const raw = group.key_people;
+      if (Array.isArray(raw)) {
+        keyPeople = raw as Array<{ name?: string; role?: string; context?: string }>;
+      } else if (typeof raw === 'string') {
+        keyPeople = JSON.parse(raw);
+      }
+    } catch {
+      keyPeople = null;
+    }
+  }
 
   const formatFollowers = (count: number): string => {
     if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
@@ -174,7 +190,36 @@ export function OrganizationDetailView({ group, clubCount }: OrganizationDetailV
           </div>
         )}
 
-        {/* Attitude - Separate Section */}
+        {/* Key People */}
+        {keyPeople && keyPeople.length > 0 && (
+          <div className="detail-section">
+            <h3 className="detail-section-header">
+              <Users className="w-4 h-4 text-primary" />
+              Key People
+            </h3>
+            <div className="grid grid-cols-2 gap-3">
+              {keyPeople.map((person, idx) => (
+                <div key={idx} className="p-3 rounded-lg neu-subtle">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                      <User className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{person.name}</p>
+                      {person.role && (
+                        <p className="text-xs text-primary truncate">{person.role}</p>
+                      )}
+                    </div>
+                  </div>
+                  {person.context && (
+                    <p className="text-xs text-muted-foreground mt-2">{person.context}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {group.attitude && (
           <div className="detail-section">
             <h3 className="detail-section-header">

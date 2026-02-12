@@ -18,6 +18,9 @@ verify_jwt = false
 [functions.enrich-organization]
 verify_jwt = false
 
+[functions.normalize-organization-enrichment]
+verify_jwt = false
+
 [functions.enrich-club]
 verify_jwt = false
 

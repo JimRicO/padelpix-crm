@@ -50,6 +50,8 @@ export interface OwnershipGroup {
   founding_year: string | null;
   recent_activities: Json | null;
   perplexity_citations: string[] | null;
+  key_people: Json | null;
+  key_individuals: string[] | null;
   enrichment_job_id: string | null;
   enrichment_status: string | null;
   enriched_at: string | null;
