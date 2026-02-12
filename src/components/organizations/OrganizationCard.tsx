@@ -65,6 +65,7 @@ export function OrganizationCard({ group, clubCount, onClick }: OrganizationCard
   const enrichmentStatus = group.enrichment_status;
   const isEnriching = startEnrichment.isPending || enrichmentStatus === 'pending' || enrichmentStatus === 'processing';
   const canEnrich = !!(group.website || group.instagram_handle);
+  const isCompleted = enrichmentStatus === 'completed';
   const orgType = group.organization_type || 'commercial';
   const typeConfig = TYPE_CONFIG[orgType];
   const TypeIcon = typeConfig.icon;
@@ -207,22 +208,22 @@ export function OrganizationCard({ group, clubCount, onClick }: OrganizationCard
                       variant="outline"
                       size="sm"
                       onClick={handleEnrich}
-                      disabled={isEnriching || enrichmentStatus === 'completed'}
-                      className={`h-7 text-xs ${!canEnrich && enrichmentStatus !== 'completed' ? 'opacity-50' : ''}`}
+                      disabled={isEnriching}
+                      className={`h-7 text-xs ${!canEnrich && !isCompleted ? 'opacity-50' : ''}`}
                     >
                       {isEnriching ? (
                         <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                      ) : enrichmentStatus === 'completed' ? (
-                        <Check className="w-3 h-3 mr-1" />
+                      ) : isCompleted ? (
+                        <Sparkles className="w-3 h-3 mr-1" />
                       ) : !canEnrich ? (
                         <AlertCircle className="w-3 h-3 mr-1" />
                       ) : (
                         <Sparkles className="w-3 h-3 mr-1" />
                       )}
-                      {enrichmentStatus === 'completed' ? 'Enriched' : 'Enrich'}
+                      {isCompleted ? 'Re-enrich' : 'Enrich'}
                     </Button>
                   </TooltipTrigger>
-                  {!canEnrich && enrichmentStatus !== 'completed' && (
+                  {!canEnrich && !isCompleted && (
                     <TooltipContent>
                       <p>Add a website or Instagram handle first</p>
                     </TooltipContent>
