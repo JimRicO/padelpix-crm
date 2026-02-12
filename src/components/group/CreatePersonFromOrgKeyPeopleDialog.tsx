@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -50,6 +50,19 @@ export function CreatePersonFromOrgKeyPeopleDialog({
       notes: keyPerson.context || '',
     },
   });
+
+  // Reset form when a different key person is selected
+  useEffect(() => {
+    if (open) {
+      reset({
+        full_name: keyPerson.name,
+        role: keyPerson.role,
+        email: '',
+        linkedin: '',
+        notes: keyPerson.context || '',
+      });
+    }
+  }, [keyPerson, open, reset]);
 
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
