@@ -95,7 +95,7 @@ CRITICAL MAPPING RULES:
    - "logo_storage_url" → "logo_url"
    - "club_name" or "organization_name" → "name" (but DO NOT include in output - we handle this separately)
    - "email" → "contact_email"
-   - "phone" → "contact_phone"
+   - "phone" → "contact_phone" (MUST be a real phone number like "+27 12 345 6789" - NEVER map dates, timestamps, or IDs to this field. If the value looks like a date or timestamp, set contact_phone to null)
    - "website_url" → "website"
    - Color/palette data → "color_palette" object with {primary, secondary, accent, background}
    - Font data → "fonts" object with {primary, heading}
@@ -105,6 +105,9 @@ CRITICAL MAPPING RULES:
    - Arrays should be actual arrays, not comma-separated strings
    - Remove @ from Instagram handles
    - Add https:// to URLs if missing
+   - "instagram_handle" → "instagram_handle" (remove @ prefix if present)
+   - "instagram_followers" or "insta_followers" → "instagram_followers" (must be a number)
+   - "instagram_bio" or "insta_bio" → "instagram_bio"
 
 Respond with ONLY valid JSON - no markdown, no explanation. The JSON should contain only the mapped fields that have values.`;
 
