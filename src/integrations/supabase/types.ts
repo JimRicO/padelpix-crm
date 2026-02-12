@@ -599,6 +599,8 @@ export type Database = {
           instagram_bio: string | null
           instagram_followers: number | null
           instagram_handle: string | null
+          key_individuals: string[] | null
+          key_people: Json | null
           logo_url: string | null
           name: string
           notes: string | null
@@ -634,6 +636,8 @@ export type Database = {
           instagram_bio?: string | null
           instagram_followers?: number | null
           instagram_handle?: string | null
+          key_individuals?: string[] | null
+          key_people?: Json | null
           logo_url?: string | null
           name: string
           notes?: string | null
@@ -669,6 +673,8 @@ export type Database = {
           instagram_bio?: string | null
           instagram_followers?: number | null
           instagram_handle?: string | null
+          key_individuals?: string[] | null
+          key_people?: Json | null
           logo_url?: string | null
           name?: string
           notes?: string | null
