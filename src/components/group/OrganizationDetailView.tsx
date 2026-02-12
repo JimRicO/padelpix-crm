@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { 
   Building2, 
   Globe, 
@@ -14,13 +15,22 @@ import {
   Activity, 
   Link2, 
   ChevronDown,
-  ExternalLink
+  ExternalLink,
+  Plus
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import type { OwnershipGroup } from '@/hooks/useOwnershipGroups';
 import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
+import { CreatePersonFromOrgKeyPeopleDialog } from './CreatePersonFromOrgKeyPeopleDialog';
+
+interface KeyPerson {
+  name: string;
+  role: string;
+  context?: string;
+}
 
 interface OrganizationDetailViewProps {
   group: OwnershipGroup;
@@ -28,22 +38,25 @@ interface OrganizationDetailViewProps {
 }
 
 export function OrganizationDetailView({ group, clubCount }: OrganizationDetailViewProps) {
+  const [selectedKeyPerson, setSelectedKeyPerson] = useState<KeyPerson | null>(null);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+
   const colorPalette = group.color_palette as Record<string, string> | null;
   const fonts = group.fonts as { primary?: string; heading?: string; list?: string[] } | null;
   const recentActivities = group.recent_activities as Array<{ title?: string; date?: string; description?: string }> | null;
   
   // Parse key_people safely (handle potential double-encoded JSON)
-  let keyPeople: Array<{ name?: string; role?: string; context?: string }> | null = null;
+  let keyPeople: KeyPerson[] = [];
   if (group.key_people) {
     try {
       const raw = group.key_people;
       if (Array.isArray(raw)) {
-        keyPeople = raw as Array<{ name?: string; role?: string; context?: string }>;
+        keyPeople = raw as unknown as KeyPerson[];
       } else if (typeof raw === 'string') {
         keyPeople = JSON.parse(raw);
       }
     } catch {
-      keyPeople = null;
+      keyPeople = [];
     }
   }
 
@@ -191,30 +204,46 @@ export function OrganizationDetailView({ group, clubCount }: OrganizationDetailV
         )}
 
         {/* Key People */}
-        {keyPeople && keyPeople.length > 0 && (
+        {keyPeople.length > 0 && (
           <div className="detail-section">
             <h3 className="detail-section-header">
               <Users className="w-4 h-4 text-primary" />
               Key People
             </h3>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {keyPeople.map((person, idx) => (
-                <div key={idx} className="p-3 rounded-lg neu-subtle">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                      <User className="w-4 h-4 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{person.name}</p>
-                      {person.role && (
-                        <p className="text-xs text-primary truncate">{person.role}</p>
+                <Tooltip key={idx}>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => {
+                        setSelectedKeyPerson(person);
+                        setCreateDialogOpen(true);
+                      }}
+                      className="neu-subtle rounded-xl p-3 text-left w-full cursor-pointer transition-all hover:ring-2 hover:ring-primary/50 group"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 relative">
+                          <User className="w-5 h-5 text-primary" />
+                          <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Plus className="w-3 h-3 text-primary-foreground" />
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-foreground">{person.name}</p>
+                          {person.role && (
+                            <p className="text-xs text-primary font-medium">{person.role}</p>
+                          )}
+                        </div>
+                      </div>
+                      {person.context && (
+                        <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{person.context}</p>
                       )}
-                    </div>
-                  </div>
-                  {person.context && (
-                    <p className="text-xs text-muted-foreground mt-2">{person.context}</p>
-                  )}
-                </div>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Click to create person record</p>
+                  </TooltipContent>
+                </Tooltip>
               ))}
             </div>
           </div>
@@ -353,6 +382,16 @@ export function OrganizationDetailView({ group, clubCount }: OrganizationDetailV
           </Collapsible>
         )}
       </div>
+
+      {/* Create Person Dialog */}
+      {selectedKeyPerson && (
+        <CreatePersonFromOrgKeyPeopleDialog
+          open={createDialogOpen}
+          onOpenChange={setCreateDialogOpen}
+          keyPerson={selectedKeyPerson}
+          organizationName={group.name}
+        />
+      )}
     </ScrollArea>
   );
 }
