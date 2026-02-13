@@ -1,19 +1,35 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Mail, Phone, Instagram, MapPin, Calendar, MessageCircle } from 'lucide-react';
+import { Mail, Phone, Instagram, MapPin, Calendar, MessageCircle, Building2 } from 'lucide-react';
 import { format } from 'date-fns';
-import type { Person } from '@/types/people';
+import type { Person, PersonLink } from '@/types/people';
 import { CONTACT_METHODS } from '@/types/people';
+import { useClubs } from '@/hooks/useClubs';
+import { useMemo } from 'react';
 
 interface PersonCardProps {
   person: Person;
   onClick: () => void;
   suggestionsCount?: number;
-  linksCount?: number;
+  links?: PersonLink[];
 }
 
-export function PersonCard({ person, onClick, suggestionsCount = 0, linksCount = 0 }: PersonCardProps) {
+export function PersonCard({ person, onClick, suggestionsCount = 0, links = [] }: PersonCardProps) {
+  const { data: clubs = [] } = useClubs();
+
+  const linkNames = useMemo(() => {
+    return links.map(link => {
+      if (link.link_type === 'club' && link.club_id) {
+        const club = clubs.find(c => c.id === link.club_id);
+        return club?.club_name || null;
+      }
+      if (link.link_type === 'ownership_group' && link.ownership_group_name) {
+        return link.ownership_group_name;
+      }
+      return null;
+    }).filter(Boolean) as string[];
+  }, [links, clubs]);
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -105,11 +121,14 @@ export function PersonCard({ person, onClick, suggestionsCount = 0, linksCount =
           </div>
         )}
 
-        {linksCount > 0 && (
-          <div className="card-divider">
-            <Badge variant="secondary" className="text-xs px-1.5 py-0">
-              {linksCount} linked organization{linksCount !== 1 ? 's' : ''}
-            </Badge>
+        {linkNames.length > 0 && (
+          <div className="card-divider space-y-1">
+            {linkNames.map((name, i) => (
+              <div key={i} className="card-meta text-xs">
+                <Building2 className="card-icon shrink-0" />
+                <span className="truncate">{name}</span>
+              </div>
+            ))}
           </div>
         )}
       </CardContent>

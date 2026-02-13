@@ -190,7 +190,7 @@ function PersonCardWithCounts({
     <PersonCard
       person={person}
       onClick={onClick}
-      linksCount={links.length}
+      links={links}
       suggestionsCount={suggestions.length}
     />
   );
