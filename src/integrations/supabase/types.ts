@@ -865,6 +865,8 @@ export type Database = {
           full_name: string | null
           id: string
           updated_at: string | null
+          whatsapp_number: string | null
+          whatsapp_reminders_enabled: boolean
         }
         Insert: {
           avatar_url?: string | null
@@ -873,6 +875,8 @@ export type Database = {
           full_name?: string | null
           id: string
           updated_at?: string | null
+          whatsapp_number?: string | null
+          whatsapp_reminders_enabled?: boolean
         }
         Update: {
           avatar_url?: string | null
@@ -881,6 +885,8 @@ export type Database = {
           full_name?: string | null
           id?: string
           updated_at?: string | null
+          whatsapp_number?: string | null
+          whatsapp_reminders_enabled?: boolean
         }
         Relationships: []
       }
