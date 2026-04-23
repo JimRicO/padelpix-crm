@@ -35,10 +35,12 @@ export function EventDetailModal({ event, open, onOpenChange, onClubClick }: Eve
 
   const getInitialFormData = () => ({
     date: event ? new Date(event.event_date) : new Date(),
+    endDate: event?.end_date ? new Date(event.end_date) : undefined as Date | undefined,
     time: event?.event_time || '',
     title: event?.title || '',
     description: event?.description || '',
     clubId: event?.club_id || 'none',
+    eventType: (event?.event_type as 'manual' | 'system' | 'task' | 'industry') || 'manual',
   });
 
   const [formData, setFormData] = useState(getInitialFormData);
@@ -81,21 +83,24 @@ export function EventDetailModal({ event, open, onOpenChange, onClubClick }: Eve
       await updateEvent.mutateAsync({
         id: event.id,
         event_date: format(formData.date, 'yyyy-MM-dd'),
+        end_date: formData.endDate ? format(formData.endDate, 'yyyy-MM-dd') : null,
         event_time: formData.time || null,
         title: formData.title.trim(),
         description: formData.description.trim() || null,
         club_id: formData.clubId === 'none' ? null : formData.clubId,
+        event_type: formData.eventType,
       });
 
       toast.success('Event updated');
-      const newData = {
+      setInitialFormData({
         date: formData.date,
+        endDate: formData.endDate,
         time: formData.time,
         title: formData.title.trim(),
         description: formData.description.trim(),
         clubId: formData.clubId,
-      };
-      setInitialFormData(newData);
+        eventType: formData.eventType,
+      });
     } catch {
       toast.error('Failed to update event');
     }
