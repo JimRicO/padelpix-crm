@@ -11,6 +11,7 @@ const WHAPI_URL = "https://gate.whapi.cloud/messages/text";
 interface AgendaEventRow {
   id: string;
   event_date: string;
+  end_date: string | null;
   event_time: string | null;
   title: string;
   event_type: string;
@@ -66,9 +67,10 @@ async function buildAgendaForUser(
 ): Promise<string | null> {
   const { data: agenda } = await supabase
     .from("agenda_events")
-    .select("id,event_date,event_time,title,event_type,description,club_id")
+    .select("id,event_date,end_date,event_time,title,event_type,description,club_id")
     .eq("created_by", userId)
-    .eq("event_date", today)
+    .lte("event_date", today)
+    .or(`end_date.gte.${today},end_date.is.null`)
     .order("event_time", { ascending: true, nullsFirst: false });
 
   // Tasks: due today and not completed. Tasks belong to clubs (created_by on clubs).
@@ -103,7 +105,10 @@ async function buildAgendaForUser(
     .lte("start_date", today)
     .or(`end_date.gte.${today},end_date.is.null`);
 
-  const agendaItems = (agenda ?? []) as AgendaEventRow[];
+  const agendaItems = ((agenda ?? []) as AgendaEventRow[]).filter((e) => {
+    if (e.end_date) return e.event_date <= today && e.end_date >= today;
+    return e.event_date === today;
+  });
   const industryItems = (industry ?? []).filter((e: IndustryEventRow) => {
     if (e.end_date) return e.start_date <= today && e.end_date >= today;
     return e.start_date === today;
