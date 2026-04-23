@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Search, LogOut, User, Sparkles } from 'lucide-react';
+import { Search, LogOut, User, Sparkles, MessageCircle } from 'lucide-react';
 import { SmartImportDialog } from '@/components/import/SmartImportDialog';
+import { WhatsAppReminderSettings } from '@/components/settings/WhatsAppReminderSettings';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
@@ -33,6 +34,7 @@ export function PageHeader({
   const { user, signOut } = useAuth();
   const location = useLocation();
   const [smartImportOpen, setSmartImportOpen] = useState(false);
+  const [whatsAppOpen, setWhatsAppOpen] = useState(false);
 
   const getUserInitials = () => {
     const email = user?.email || '';
@@ -104,6 +106,10 @@ export function PageHeader({
               <User className="w-4 h-4" />
               {user?.email}
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setWhatsAppOpen(true)} className="gap-2">
+              <MessageCircle className="w-4 h-4" />
+              WhatsApp Reminders
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => signOut()} className="gap-2 text-destructive">
               <LogOut className="w-4 h-4" />
               Sign Out
@@ -115,6 +121,10 @@ export function PageHeader({
       <SmartImportDialog 
         open={smartImportOpen} 
         onOpenChange={setSmartImportOpen} 
+      />
+      <WhatsAppReminderSettings
+        open={whatsAppOpen}
+        onOpenChange={setWhatsAppOpen}
       />
     </header>
   );
