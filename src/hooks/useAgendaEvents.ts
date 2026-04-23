@@ -5,10 +5,11 @@ import { useAuth } from '@/hooks/useAuth';
 export interface AgendaEvent {
   id: string;
   event_date: string;
+  end_date: string | null;
   event_time: string | null;
   title: string;
   description: string | null;
-  event_type: 'manual' | 'system';
+  event_type: 'manual' | 'system' | 'task' | 'industry';
   club_id: string | null;
   created_by: string;
   created_at: string;
@@ -20,19 +21,23 @@ export interface AgendaEvent {
 
 export interface CreateAgendaEventInput {
   event_date: string;
+  end_date?: string | null;
   event_time?: string | null;
   title: string;
   description?: string | null;
   club_id?: string | null;
+  event_type?: 'manual' | 'system' | 'task' | 'industry';
 }
 
 export interface UpdateAgendaEventInput {
   id: string;
   event_date?: string;
+  end_date?: string | null;
   event_time?: string | null;
   title?: string;
   description?: string | null;
   club_id?: string | null;
+  event_type?: 'manual' | 'system' | 'task' | 'industry';
 }
 
 export function useAgendaEvents() {
@@ -72,7 +77,7 @@ export function useCreateAgendaEvent() {
         .from('agenda_events' as any)
         .insert({
           ...input,
-          event_type: 'manual',
+          event_type: input.event_type ?? 'manual',
           created_by: user.id,
         })
         .select()

@@ -57,6 +57,7 @@ export default function Agenda() {
         converted.push({
           id: `industry-${event.id}-${format(day, 'yyyy-MM-dd')}`,
           event_date: format(day, 'yyyy-MM-dd'),
+          end_date: null,
           event_time: null,
           title: `${event.name}${dayLabel}`,
           description: [event.location, event.city, event.country].filter(Boolean).join(', ') || event.description,
@@ -81,6 +82,7 @@ export default function Agenda() {
       .map((task) => ({
         id: `task-${task.id}`,
         event_date: format(parseISO(task.due_date!), 'yyyy-MM-dd'),
+        end_date: null,
         event_time: null,
         title: `📋 ${task.title}`,
         description: task.description || null,
@@ -94,7 +96,31 @@ export default function Agenda() {
 
   // Merge agenda events with industry events and tasks
   const allEvents = useMemo(() => {
-    return [...agendaEvents, ...convertedIndustryEvents, ...convertedTasks];
+    // Expand multi-day manual/system/task/industry events stored on agenda_events
+    const expanded: AgendaEvent[] = [];
+    agendaEvents.forEach((ev) => {
+      if (ev.end_date && ev.end_date !== ev.event_date) {
+        try {
+          const start = parseISO(ev.event_date);
+          const end = parseISO(ev.end_date);
+          const days = eachDayOfInterval({ start, end });
+          days.forEach((day, idx) => {
+            const isMulti = days.length > 1;
+            expanded.push({
+              ...ev,
+              id: `${ev.id}-day-${idx}`,
+              event_date: format(day, 'yyyy-MM-dd'),
+              title: isMulti ? `${ev.title} (Day ${idx + 1}/${days.length})` : ev.title,
+            });
+          });
+        } catch {
+          expanded.push(ev);
+        }
+      } else {
+        expanded.push(ev);
+      }
+    });
+    return [...expanded, ...convertedIndustryEvents, ...convertedTasks];
   }, [agendaEvents, convertedIndustryEvents, convertedTasks]);
 
   // Filter events based on search
