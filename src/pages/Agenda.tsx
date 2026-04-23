@@ -27,8 +27,11 @@ export default function Agenda() {
   const [addEventOpen, setAddEventOpen] = useState(false);
   const [prefilledDate, setPrefilledDate] = useState<Date | undefined>();
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
-  // Default to February 2026
-  const [currentMonth, setCurrentMonth] = useState(new Date(2026, 1, 1));
+  // Default to current month
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
 
   const { data: agendaEvents = [], isLoading: agendaLoading } = useAgendaEvents();
   const { data: industryEvents = [], isLoading: eventsLoading } = useEvents();
