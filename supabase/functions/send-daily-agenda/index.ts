@@ -14,12 +14,15 @@ interface AgendaEventRow {
   event_time: string | null;
   title: string;
   event_type: string;
+  description: string | null;
+  club_id: string | null;
 }
 
 interface TaskRow {
   id: string;
   title: string;
   club_id: string | null;
+  description: string | null;
 }
 
 interface IndustryEventRow {
@@ -27,6 +30,8 @@ interface IndustryEventRow {
   name: string;
   start_date: string;
   end_date: string | null;
+  description: string | null;
+  notes: string | null;
 }
 
 interface ClubRow {
@@ -61,7 +66,7 @@ async function buildAgendaForUser(
 ): Promise<string | null> {
   const { data: agenda } = await supabase
     .from("agenda_events")
-    .select("id,event_date,event_time,title,event_type")
+    .select("id,event_date,event_time,title,event_type,description,club_id")
     .eq("created_by", userId)
     .eq("event_date", today)
     .order("event_time", { ascending: true, nullsFirst: false });
@@ -83,7 +88,7 @@ async function buildAgendaForUser(
     const endOfDay = `${today}T23:59:59Z`;
     const { data: taskData } = await supabase
       .from("tasks")
-      .select("id,title,club_id,status,due_date")
+      .select("id,title,club_id,status,due_date,description")
       .in("club_id", clubIds)
       .neq("status", "completed")
       .gte("due_date", startOfDay)
@@ -93,7 +98,7 @@ async function buildAgendaForUser(
 
   const { data: industry } = await supabase
     .from("events")
-    .select("id,name,start_date,end_date")
+    .select("id,name,start_date,end_date,description,notes")
     .eq("created_by", userId)
     .lte("start_date", today)
     .or(`end_date.gte.${today},end_date.is.null`);
@@ -119,7 +124,11 @@ async function buildAgendaForUser(
     lines.push("");
     lines.push("*Events*");
     for (const ev of agendaItems) {
-      lines.push(`• ${formatTime(ev.event_time)}  ${ev.title}`);
+      const club = ev.club_id ? clubNameById.get(ev.club_id) : null;
+      lines.push(`• ${formatTime(ev.event_time)}  *${ev.title}*${club ? ` — ${club}` : ""}`);
+      if (ev.description?.trim()) {
+        lines.push(`    📝 ${ev.description.trim()}`);
+      }
     }
   }
 
@@ -128,7 +137,10 @@ async function buildAgendaForUser(
     lines.push("*Tasks due today*");
     for (const t of tasks) {
       const club = t.club_id ? clubNameById.get(t.club_id) : null;
-      lines.push(`• ${t.title}${club ? ` (${club})` : ""}`);
+      lines.push(`• *${t.title}*${club ? ` — ${club}` : ""}`);
+      if (t.description?.trim()) {
+        lines.push(`    📝 ${t.description.trim()}`);
+      }
     }
   }
 
@@ -136,7 +148,11 @@ async function buildAgendaForUser(
     lines.push("");
     lines.push("*Industry events*");
     for (const e of industryItems) {
-      lines.push(`• ${e.name}`);
+      lines.push(`• *${e.name}*`);
+      const note = e.notes?.trim() || e.description?.trim();
+      if (note) {
+        lines.push(`    📝 ${note}`);
+      }
     }
   }
 
