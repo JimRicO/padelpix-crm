@@ -84,10 +84,26 @@ export function AddEventDialog({ open, onOpenChange, prefilledDate }: AddEventDi
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Event Type */}
+          <div className="space-y-2">
+            <Label htmlFor="event-type">Type</Label>
+            <Select value={eventType} onValueChange={(v) => setEventType(v as typeof eventType)}>
+              <SelectTrigger id="event-type">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="manual">Manual</SelectItem>
+                <SelectItem value="system">System</SelectItem>
+                <SelectItem value="task">Task</SelectItem>
+                <SelectItem value="industry">Industry</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Date & Time Row */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label htmlFor="date">Date *</Label>
+              <Label htmlFor="date">Start Date *</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -123,6 +139,36 @@ export function AddEventDialog({ open, onOpenChange, prefilledDate }: AddEventDi
                 onChange={(e) => setTime(e.target.value)}
               />
             </div>
+          </div>
+
+          {/* End Date (optional, multi-day) */}
+          <div className="space-y-2">
+            <Label htmlFor="end-date">End Date (optional)</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  id="end-date"
+                  variant="outline"
+                  className={cn(
+                    'w-full justify-start text-left font-normal',
+                    !endDate && 'text-muted-foreground'
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {endDate ? format(endDate, 'MMM d, yyyy') : 'Single day'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={endDate}
+                  onSelect={setEndDate}
+                  disabled={(d) => date ? d < date : false}
+                  initialFocus
+                  className="pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Title */}
