@@ -96,7 +96,31 @@ export default function Agenda() {
 
   // Merge agenda events with industry events and tasks
   const allEvents = useMemo(() => {
-    return [...agendaEvents, ...convertedIndustryEvents, ...convertedTasks];
+    // Expand multi-day manual/system/task/industry events stored on agenda_events
+    const expanded: AgendaEvent[] = [];
+    agendaEvents.forEach((ev) => {
+      if (ev.end_date && ev.end_date !== ev.event_date) {
+        try {
+          const start = parseISO(ev.event_date);
+          const end = parseISO(ev.end_date);
+          const days = eachDayOfInterval({ start, end });
+          days.forEach((day, idx) => {
+            const isMulti = days.length > 1;
+            expanded.push({
+              ...ev,
+              id: `${ev.id}-day-${idx}`,
+              event_date: format(day, 'yyyy-MM-dd'),
+              title: isMulti ? `${ev.title} (Day ${idx + 1}/${days.length})` : ev.title,
+            });
+          });
+        } catch {
+          expanded.push(ev);
+        }
+      } else {
+        expanded.push(ev);
+      }
+    });
+    return [...expanded, ...convertedIndustryEvents, ...convertedTasks];
   }, [agendaEvents, convertedIndustryEvents, convertedTasks]);
 
   // Filter events based on search
