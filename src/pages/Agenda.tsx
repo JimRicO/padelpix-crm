@@ -57,6 +57,7 @@ export default function Agenda() {
         converted.push({
           id: `industry-${event.id}-${format(day, 'yyyy-MM-dd')}`,
           event_date: format(day, 'yyyy-MM-dd'),
+          end_date: null,
           event_time: null,
           title: `${event.name}${dayLabel}`,
           description: [event.location, event.city, event.country].filter(Boolean).join(', ') || event.description,
@@ -81,6 +82,7 @@ export default function Agenda() {
       .map((task) => ({
         id: `task-${task.id}`,
         event_date: format(parseISO(task.due_date!), 'yyyy-MM-dd'),
+        end_date: null,
         event_time: null,
         title: `📋 ${task.title}`,
         description: task.description || null,
