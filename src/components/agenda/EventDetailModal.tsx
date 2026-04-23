@@ -230,10 +230,29 @@ export function EventDetailModal({ event, open, onOpenChange, onClubClick }: Eve
             {/* Editable form for manual events */}
             {!isSystem && !isIndustry && (
               <div className="space-y-4">
+                {/* Event Type */}
+                <div className="space-y-2">
+                  <Label htmlFor="event-type">Type</Label>
+                  <Select
+                    value={formData.eventType}
+                    onValueChange={(v) => setFormData(prev => ({ ...prev, eventType: v as typeof prev.eventType }))}
+                  >
+                    <SelectTrigger id="event-type">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="manual">Manual</SelectItem>
+                      <SelectItem value="system">System</SelectItem>
+                      <SelectItem value="task">Task</SelectItem>
+                      <SelectItem value="industry">Industry</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {/* Date & Time Row */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
-                    <Label htmlFor="date">Date</Label>
+                    <Label htmlFor="date">Start Date</Label>
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
@@ -270,6 +289,36 @@ export function EventDetailModal({ event, open, onOpenChange, onClubClick }: Eve
                       placeholder="Optional"
                     />
                   </div>
+                </div>
+
+                {/* End Date (multi-day) */}
+                <div className="space-y-2">
+                  <Label htmlFor="end-date">End Date (optional)</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        id="end-date"
+                        variant="outline"
+                        className={cn(
+                          'w-full justify-start text-left font-normal',
+                          !formData.endDate && 'text-muted-foreground'
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.endDate ? format(formData.endDate, 'MMM d, yyyy') : 'Single day'}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={formData.endDate}
+                        onSelect={(d) => setFormData(prev => ({ ...prev, endDate: d }))}
+                        disabled={(d) => formData.date ? d < formData.date : false}
+                        initialFocus
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
                 {/* Title */}
