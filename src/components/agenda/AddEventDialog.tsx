@@ -22,10 +22,12 @@ interface AddEventDialogProps {
 
 export function AddEventDialog({ open, onOpenChange, prefilledDate }: AddEventDialogProps) {
   const [date, setDate] = useState<Date | undefined>(prefilledDate);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [time, setTime] = useState('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [clubId, setClubId] = useState<string>('none');
+  const [eventType, setEventType] = useState<'manual' | 'system' | 'task' | 'industry'>('manual');
 
   // Update date when prefilledDate changes
   useEffect(() => {
@@ -39,10 +41,12 @@ export function AddEventDialog({ open, onOpenChange, prefilledDate }: AddEventDi
 
   const resetForm = () => {
     setDate(undefined);
+    setEndDate(undefined);
     setTime('');
     setTitle('');
     setDescription('');
     setClubId('none');
+    setEventType('manual');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -56,10 +60,12 @@ export function AddEventDialog({ open, onOpenChange, prefilledDate }: AddEventDi
     try {
       await createEvent.mutateAsync({
         event_date: format(date, 'yyyy-MM-dd'),
+        end_date: endDate ? format(endDate, 'yyyy-MM-dd') : null,
         event_time: time || null,
         title: title.trim(),
         description: description.trim() || null,
         club_id: clubId === 'none' ? null : clubId,
+        event_type: eventType,
       });
 
       toast.success('Event created');
