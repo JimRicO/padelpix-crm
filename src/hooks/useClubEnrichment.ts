@@ -207,7 +207,7 @@ export function useClubEnrichmentPolling(clubs: Club[] | undefined) {
 
       const { error } = await supabase
         .from('clubs')
-        .update(updateData)
+        .update(updateData as never)
         .eq('id', clubId);
 
       if (error) throw error;

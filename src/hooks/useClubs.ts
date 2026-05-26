@@ -119,7 +119,7 @@ export function useUpdateClub() {
       
       const { data, error } = await supabase
         .from('clubs')
-        .update(updates)
+        .update(updates as never)
         .eq('id', id)
         .select()
         .single();
