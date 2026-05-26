@@ -182,7 +182,7 @@ export function useEnrichmentPolling(groups: OwnershipGroup[] | undefined) {
 
       const { error } = await supabase
         .from('ownership_groups')
-        .update(updateData)
+        .update(updateData as never)
         .eq('id', groupId);
 
       if (error) throw error;

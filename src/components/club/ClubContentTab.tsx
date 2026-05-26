@@ -75,7 +75,7 @@ export function ClubContentTab({ clubId }: ClubContentTabProps) {
       
       const { data, error } = await supabase
         .from('content_pieces')
-        .update(updates)
+        .update(updates as never)
         .eq('id', id)
         .select()
         .single();

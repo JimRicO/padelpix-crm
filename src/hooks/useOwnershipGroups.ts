@@ -147,7 +147,7 @@ export function useUpdateOwnershipGroup() {
     mutationFn: async ({ id, ...data }: OwnershipGroupUpdate & { id: string }) => {
       const { data: result, error } = await supabase
         .from('ownership_groups')
-        .update(data as Record<string, unknown>)
+        .update(data as never)
         .eq('id', id)
         .select()
         .single();
@@ -210,7 +210,7 @@ export function useUpsertOwnershipGroup() {
         // Update existing
         const { data: result, error } = await supabase
           .from('ownership_groups')
-          .update(data as Record<string, unknown>)
+          .update(data as never)
           .eq('id', existing.id)
           .select()
           .single();
