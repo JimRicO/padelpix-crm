@@ -39,7 +39,7 @@ export function AddClubDialog({ open, onOpenChange }: AddClubDialogProps) {
       whatsapp: formData.whatsapp || undefined,
       email: formData.email || undefined,
       number_of_courts: formData.number_of_courts ? Number(formData.number_of_courts) : undefined,
-      tier: formData.tier as 'group_owned' | 'large' | 'multi_court' | 'boutique' | undefined,
+      tier: formData.tier ? (formData.tier as 'group_owned' | 'large' | 'multi_court' | 'boutique') : undefined,
       priority: formData.priority as 'high' | 'medium' | 'low',
     }, {
       onSuccess: () => {
